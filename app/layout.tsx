@@ -16,26 +16,12 @@ const _jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'IRON DISTRICT // CrossFit',
-  description: 'Raw. Relentless. Results. No shortcuts. No excuses. Just iron.',
+  title: 'GAS STORE // Top Up Game Online',
+  description: 'Top up game favorit lo: Diamond MLBB, UC PUBG, VP Valorant, Genesis Genshin. Proses kilat, harga bersahabat, layanan 24 jam.',
   openGraph: {
-    title: 'IRON DISTRICT // CrossFit',
-    description: 'Raw brutalist CrossFit landing page. Heavy typography, aggressive animations, industrial textures. Built with Next.js and Tailwind.',
-    images: [
-      {
-        url: '/images/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'IRON DISTRICT - Break Every Limit',
-      },
-    ],
+    title: 'GAS STORE // Top Up Game Online',
+    description: 'Top up instant, jalur resmi publisher, layanan 24 jam. Pilih game, isi ID, gas!',
     type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'IRON DISTRICT // CrossFit',
-    description: 'Raw brutalist CrossFit landing page. Built with just prompts in v0.',
-    images: ['/images/og-image.jpg'],
   },
 }
 

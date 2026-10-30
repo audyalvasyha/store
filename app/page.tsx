@@ -1,10 +1,10 @@
 import { Hero } from "@/components/hero"
-import { HeroImages } from "@/components/hero-images"
+import { FeaturedGames } from "@/components/hero-images"
 import { MarqueeStrip } from "@/components/marquee-strip"
-import { ProgramGrid } from "@/components/program-grid"
-import { SplitFeature } from "@/components/split-feature"
-import { ScheduleBlock } from "@/components/schedule-block"
-import { CtaBlock } from "@/components/cta-block"
+import { GameGrid } from "@/components/program-grid"
+import { PriceList } from "@/components/schedule-block"
+import { WhyUs } from "@/components/split-feature"
+import { FinalCta } from "@/components/cta-block"
 import { Footer } from "@/components/footer"
 
 export default function Page() {
@@ -14,12 +14,12 @@ export default function Page() {
       <div className="noise-overlay" aria-hidden="true" />
 
       <Hero />
-      <HeroImages />
+      <FeaturedGames />
       <MarqueeStrip />
-      <ProgramGrid />
-      <SplitFeature />
-      <ScheduleBlock />
-      <CtaBlock />
+      <GameGrid />
+      <PriceList />
+      <WhyUs />
+      <FinalCta />
       <Footer />
     </main>
   )

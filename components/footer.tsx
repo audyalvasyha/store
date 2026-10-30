@@ -15,7 +15,7 @@ export function Footer() {
     return () => observer.disconnect()
   }, [])
 
-  const marqueeText = "IRON DISTRICT / CROSSFIT / "
+  const marqueeText = "GAS STORE / TOP UP GAME / "
 
   return (
     <footer className="relative bg-card border-t border-border">
@@ -46,27 +46,33 @@ export function Footer() {
             <div className="flex items-center gap-2 mb-3 md:mb-6">
               <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-accent" />
               <span className="font-mono text-[10px] md:text-xs tracking-[0.25em] md:tracking-[0.3em] text-foreground uppercase">
-                Iron District
+                Gas Store
               </span>
             </div>
             <p className="font-mono text-[10px] text-muted-foreground leading-relaxed">
-              Raw. Relentless. Results.
+              Top up instant.
               <br />
-              No shortcuts. No excuses.
+              Harga bersahabat.
               <br />
-              Just iron.
+              Jalur resmi publisher.
             </p>
           </div>
 
           {/* Links */}
           <div>
             <span className="font-mono text-[9px] md:text-[10px] text-accent tracking-[0.25em] md:tracking-[0.3em] uppercase block mb-2.5 md:mb-4">
-              Navigate
+              Navigasi
             </span>
             <nav className="flex flex-col gap-2 md:gap-3">
-              {["Programs", "Schedule", "Athletes", "Pricing", "FAQ"].map((link) => (
-                <a key={link} href="#" className="font-mono text-[10px] md:text-xs text-muted-foreground hover:text-accent transition-colors tracking-[0.08em] md:tracking-[0.1em] py-0.5 min-h-[32px] flex items-center">
-                  {link}
+              {[
+                { label: "Semua Game", href: "/#games" },
+                { label: "Price List", href: "/#harga" },
+                { label: "Cara Order", href: "/#cara" },
+                { label: "Top Up MLBB", href: "/top-up/mobile-legends" },
+                { label: "Riwayat Order", href: "/orders" },
+              ].map((link) => (
+                <a key={link.label} href={link.href} className="font-mono text-[10px] md:text-xs text-muted-foreground hover:text-accent transition-colors tracking-[0.08em] md:tracking-[0.1em] py-0.5 min-h-[32px] flex items-center">
+                  {link.label}
                 </a>
               ))}
             </nav>
@@ -75,35 +81,35 @@ export function Footer() {
           {/* Contact */}
           <div>
             <span className="font-mono text-[9px] md:text-[10px] text-accent tracking-[0.25em] md:tracking-[0.3em] uppercase block mb-2.5 md:mb-4">
-              Contact
+              Bantuan
             </span>
             <div className="flex flex-col gap-1.5 md:gap-3 font-mono text-[10px] md:text-xs text-muted-foreground">
-              <span>412 Industrial Blvd</span>
-              <span>Unit 7, Dock C</span>
-              <span>Portland, OR 97201</span>
-              <a href="mailto:info@irondistrict.com" className="hover:text-accent transition-colors mt-1 break-all">
-                info@irondistrict.com
+              <span>CS Telegram: @gasstore</span>
+              <span>WhatsApp: 0812-3456-7890</span>
+              <a href="mailto:cs@gasstore.id" className="hover:text-accent transition-colors mt-1 break-all">
+                cs@gasstore.id
               </a>
+              <span className="text-foreground/40 mt-1">Balasan &lt; 5 menit</span>
             </div>
           </div>
 
           {/* Hours */}
           <div>
             <span className="font-mono text-[9px] md:text-[10px] text-accent tracking-[0.25em] md:tracking-[0.3em] uppercase block mb-2.5 md:mb-4">
-              Hours
+              Layanan
             </span>
             <div className="flex flex-col gap-1.5 md:gap-3 font-mono text-[10px] md:text-xs text-muted-foreground">
               <div className="flex justify-between gap-4 max-w-[180px]">
-                <span>MON-FRI</span>
-                <span>05:30 - 20:30</span>
+                <span>TOP UP</span>
+                <span>24 JAM</span>
               </div>
               <div className="flex justify-between gap-4 max-w-[180px]">
-                <span>SAT</span>
-                <span>08:00 - 13:00</span>
+                <span>PROSES</span>
+                <span>&lt; 3 MENIT</span>
               </div>
               <div className="flex justify-between gap-4 max-w-[180px]">
-                <span>SUN</span>
-                <span className="text-accent">CLOSED</span>
+                <span>GARANSI</span>
+                <span className="text-accent">DANA KEMBALI</span>
               </div>
             </div>
           </div>
@@ -112,10 +118,10 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-5 md:mt-16 pt-4 md:pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 md:gap-4">
           <span className="font-mono text-[8px] md:text-[10px] text-muted-foreground">
-            &copy; 2026 IRON DISTRICT. ALL RIGHTS RESERVED.
+            &copy; 2026 GAS STORE // SEMUA GAME ADALAH MILIK PUBLISHER MASING-MASING
           </span>
           <div className="flex items-center gap-4 md:gap-6">
-            {["Instagram", "YouTube", "Twitter"].map((social) => (
+            {["Instagram", "TikTok", "Discord"].map((social) => (
               <a key={social} href="#" className="font-mono text-[8px] md:text-[10px] text-muted-foreground hover:text-accent transition-colors tracking-[0.1em] md:tracking-[0.15em] uppercase py-1 min-h-[32px] flex items-center">
                 {social}
               </a>
