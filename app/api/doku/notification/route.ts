@@ -2,7 +2,8 @@ import { NextResponse } from "next/server"
 import { verifyDokuNotification } from "@/lib/doku"
 import { getOrder, updateOrder } from "@/lib/orders"
 import { createApigamesTransaction, apigamesConfigured } from "@/lib/apigames"
-import { getGame, getDenomination } from "@/lib/catalog"
+import { getDenomination } from "@/lib/catalog"
+import { getDynamicGame } from "@/lib/content"
 
 export const dynamic = "force-dynamic"
 
@@ -46,7 +47,9 @@ export async function POST(request: Request) {
     paidAt: payload.transaction?.date ?? new Date().toISOString(),
   })
 
-  const game = getGame(order.gameSlug)
+  // Katalog dinamis dari DB (biar providerCode yang di-edit admin kebaca),
+  // fallback otomatis ke katalog statis kalau game nggak ada di DB.
+  const game = await getDynamicGame(order.gameSlug)
   const denom = game ? getDenomination(game, order.denomId) : undefined
   const productCode = denom?.providerCode
 

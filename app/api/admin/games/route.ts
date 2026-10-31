@@ -62,6 +62,11 @@ function sanitizeDenominations(input: unknown): GameItem["denominations"] {
 }
 
 export async function GET() {
+  // Katalog admin = data internal: wajib login admin, jangan bocor ke publik.
+  const jar = await cookies();
+  const email = await getAdminEmail(jar.get(SESSION_COOKIE)?.value);
+  if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   return NextResponse.json({ games: await getDynamicGames() });
 }
 

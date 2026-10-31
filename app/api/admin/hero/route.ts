@@ -6,6 +6,11 @@ import { clearHeroEvent, getHeroEvent, saveHeroEvent } from "@/lib/content";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  // Data admin: wajib login — jangan bocor ke publik.
+  const jar = await cookies();
+  const email = await getAdminEmail(jar.get(SESSION_COOKIE)?.value);
+  if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   return NextResponse.json({ hero: await getHeroEvent() });
 }
 

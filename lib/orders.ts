@@ -39,10 +39,18 @@ export type Order = {
   /** Order Gamestone (payment bawaan): id order upstream untuk polling status. */
   stoneOrderId?: string;
   stoneTotal?: number;
+  /** payment_code Gamestone (QRIS EMV / nomor VA / kode bayar). */
+  stonePaymentCode?: string;
+  /** Waktu kadaluarsa order Gamestone (ISO string). */
+  stoneExpiredAt?: string;
   /** Snapshot data penting dari order Gamestone. */
   stoneSnapshot?: { price?: number; fee?: number; paymentFee?: number; total?: number };
   /** Flag supaya sync Gamestone nggak di-poll terus kalau statusnya final. */
   stoneSynced?: boolean;
+  /** Provider yang nge-handle order ini: Gamestone (payment bawaan) atau APIGames (fallback). */
+  provider?: "gamestone" | "apigames";
+  /** Kalau Gamestone gagal dan order dilanjutkan via APIGames, alasan fallbacknya dicatat di sini. */
+  fallbackReason?: string;
   /** Status pengiriman item lewat APIGames */
   topupStatus?: TopupStatus;
   topupRef?: string;

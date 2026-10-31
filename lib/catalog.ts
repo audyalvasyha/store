@@ -156,6 +156,7 @@ export const GAMES: GameItem[] = [
     currency: "VP",
     glyph: "VA",
     hue: "0 85% 55%",
+    image: "https://static-src.vocagame.com/BisnisVocagame/valorant-e523-original.webp",
     needsServer: true,
     denominations: [
       { id: "va-475", label: "475 VP", price: 55000 },
@@ -175,6 +176,7 @@ export const GAMES: GameItem[] = [
     currency: "Oneiric Shards",
     glyph: "HS",
     hue: "190 80% 45%",
+    image: "https://static.wikia.nocookie.net/houkai-star-rail/images/8/8d/Honkai_Star_Rail_Login_Screen.png/revision/latest?cb=20241211022832",
     needsServer: true,
     denominations: [
       { id: "hsr-60", label: "60 Oneiric Shards", price: 15000 },
@@ -194,6 +196,7 @@ export const GAMES: GameItem[] = [
     currency: "Robux",
     glyph: "RX",
     hue: "25 80% 45%",
+    image: "https://static-src.vocagame.com/BisnisVocagame/roblox-27d8-original.webp",
     needsServer: false,
     denominations: [
       { id: "rbx-80", label: "80 Robux", price: 15000 },
@@ -212,6 +215,17 @@ export function getGame(slug: string): GameItem | undefined {
 
 export function getDenomination(game: GameItem, denomId: string): Denomination | undefined {
   return game.denominations.find((d) => d.id === denomId)
+}
+
+/** Filter katalog by nama game / short / publisher / category (case-insensitive). */
+export function filterGames(games: GameItem[], query: string): GameItem[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return games;
+  return games.filter((game) =>
+    [game.name, game.short, game.publisher, game.category].some((field) =>
+      String(field ?? "").toLowerCase().includes(q)
+    )
+  );
 }
 
 export function lowestPrice(game: GameItem): number {

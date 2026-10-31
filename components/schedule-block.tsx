@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { GAMES, formatIDR, formatPriceShort, type GameItem } from "@/lib/catalog";
 
@@ -31,7 +31,28 @@ export function PriceList({ games = GAMES }: { games?: GameItem[] }) {
     return () => observer.disconnect();
   }, []);
 
-  const activeGame: GameItem = games.find((g) => g.slug === activeSlug) ?? games[0];
+  // Tab menu cuma 5 game populer (featured dulu, lanjut urutan katalog).
+  const tabGames = useMemo(() => {
+    const featured = games.filter((g) => g.featured);
+    const rest = games.filter((g) => !g.featured);
+    return [...featured, ...rest].slice(0, 5);
+  }, [games]);
+
+  const activeGame: GameItem | undefined = games.find((g) => g.slug === activeSlug) ?? games[0];
+
+  // Guard: hasil search ga ketemu — jangan crash, kasih note aja.
+  if (!activeGame) {
+    return (
+      <section id="harga" className="px-4 md:px-8 lg:px-12 py-5 md:py-20 bg-card">
+        <div className="max-w-[1400px] mx-auto border border-border bg-background p-6 md:p-10 text-center">
+          <p className="font-mono text-[10px] md:text-xs text-foreground/50 tracking-[0.15em] uppercase">
+            [Harga] Ga ada game yang cocok buat carian itu.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   const denoms = activeGame.denominations;
 
   return (
@@ -91,7 +112,7 @@ export function PriceList({ games = GAMES }: { games?: GameItem[] }) {
           className={`transition-all duration-700 delay-200 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
         >
           <div className="flex border-b border-border overflow-x-auto">
-            {games.map((game) => (
+            {tabGames.map((game) => (
               <button
                 key={game.slug}
                 onClick={() => setActiveSlug(game.slug)}

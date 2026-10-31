@@ -4,7 +4,12 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    // Optimizer aktif: gambar eksternal di-resize + dikompress per ukuran layar.
+    remotePatterns: [
+      { protocol: "https", hostname: "static-src.vocagame.com" },
+      { protocol: "https", hostname: "static.wikia.nocookie.net" },
+      { protocol: "https", hostname: "api.qrserver.com" },
+    ],
   },
 }
 

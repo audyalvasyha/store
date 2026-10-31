@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { GAMES, lowestPrice, formatIDR, type GameItem } from "@/lib/catalog"
 
 export function FeaturedGames({ games = GAMES }: { games?: GameItem[] }) {
@@ -82,11 +83,13 @@ export function FeaturedGames({ games = GAMES }: { games?: GameItem[] }) {
                   <div className={`relative overflow-hidden ${i % 2 === 0 ? "aspect-[3/4]" : "aspect-[4/5]"}`}>
                     {/* Artwork asli dari Gamestone API, fallback gradient kalau kosong */}
                     {game.image ? (
-                      <img
+                      <Image
                         src={game.image}
                         alt={game.name}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        loading="lazy"
+                        fill
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        className="object-cover"
+                        priority={i < 2}
                       />
                     ) : (
                       <div
@@ -138,11 +141,12 @@ export function FeaturedGames({ games = GAMES }: { games?: GameItem[] }) {
               >
                 <div className="relative overflow-hidden aspect-[3/4]">
                   {game.image ? (
-                    <img
+                    <Image
                       src={game.image}
                       alt={game.name}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      loading="lazy"
+                      fill
+                      sizes="50vw"
+                      className="object-cover"
                     />
                   ) : (
                     <div

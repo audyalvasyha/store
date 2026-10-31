@@ -1,8 +1,13 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { Suspense, useState, useEffect, useRef } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { GAMES, lowestPrice, formatIDR, formatPriceShort, type GameItem } from "@/lib/catalog"
+import { GamesSearchInput } from "@/components/games-search-input"
+
+// Landing cuma render MAX_ROWS baris awal — sisanya via /games biar web ga berat.
+const MAX_ROWS = 12
 
 export function GameGrid({ games = GAMES }: { games?: GameItem[] }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -29,6 +34,24 @@ export function GameGrid({ games = GAMES }: { games?: GameItem[] }) {
       className="relative px-4 md:px-8 lg:px-12 py-5 md:py-20 overflow-hidden"
     >
       <div className="max-w-[1400px] mx-auto">
+        {/* Search bar — filter game via ?q= (server-side) */}
+        <div className="flex items-center justify-between gap-4 mb-2 md:mb-6">
+          <div className="w-full sm:max-w-md md:max-w-xl">
+            <Suspense fallback={null}>
+              <GamesSearchInput />
+            </Suspense>
+          </div>
+          <Link
+            href="/games"
+            className="hidden sm:inline-flex items-center gap-2 font-mono text-[10px] md:text-[11px] text-foreground/50 hover:text-accent transition-colors tracking-[0.2em] uppercase shrink-0"
+          >
+            Semua Game
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M1 11L11 1M11 1H3M11 1V9" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-0 mb-3 md:mb-8">
           {/* Left: Title + description */}
@@ -100,22 +123,37 @@ export function GameGrid({ games = GAMES }: { games?: GameItem[] }) {
           </div>
         </div>
 
-        {/* Game rows */}
+        {/* Game rows — dibatasi MAX_ROWS biar DOM & animasi enteng */}
         <div className="border-t border-border">
-          {games.map((game, idx) => (
+          {games.slice(0, MAX_ROWS).map((game, idx) => (
             <Link
               key={game.slug}
               href={`/top-up/${game.slug}`}
               className={`block border-b border-border group relative ${visible ? "anim-counter-pop" : "opacity-0"}`}
-              style={{ animationDelay: `${0.7 + idx * 0.1}s` }}
+              style={{ animationDelay: `${Math.min(0.7 + idx * 0.08, 1.8)}s` }}
               onMouseEnter={() => setHoveredId(game.slug)}
               onMouseLeave={() => setHoveredId(null)}
             >
               <div className={`absolute left-0 top-0 bottom-0 w-[3px] bg-accent transition-transform duration-300 origin-top ${hoveredId === game.slug ? "scale-y-100" : "scale-y-0"}`} />
 
               <div className="flex items-center justify-between py-3 md:py-6 pl-0 md:pl-4">
+                {/* Thumbnail artwork (optimizer Next -> kecil & cepat) */}
+                <div className={`relative overflow-hidden shrink-0 mr-3 md:mr-4 w-10 aspect-[3/4] md:w-16 transition-opacity duration-300 ${hoveredId === game.slug ? "opacity-100" : "opacity-75"}`}>
+                  {game.image ? (
+                    <Image src={game.image} alt={game.name} fill sizes="64px" className={`object-cover transition-transform duration-300 ${hoveredId === game.slug ? "scale-105" : ""}`} />
+                  ) : (
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background: `radial-gradient(ellipse at 30% 25%, hsl(${game.hue} / 0.55), transparent 60%), radial-gradient(ellipse at 75% 85%, hsl(${game.hue} / 0.35), transparent 55%), linear-gradient(180deg, hsl(0 0% 8%), hsl(0 0% 4%))`,
+                      }}
+                    />
+                  )}
+                  <div className="absolute inset-0 border border-border/60" />
+                </div>
+
                 {/* Left: ID + Title */}
-                <div className="flex items-baseline gap-2 md:gap-8 min-w-0">
+                <div className="flex items-center gap-2 md:gap-4 min-w-0">
                   <span className="font-mono text-[10px] md:text-xs text-foreground/30 tabular-nums">{String(idx + 1).padStart(2, "0")}</span>
                   <div>
                     <h3 className={`font-sans text-xl md:text-6xl lg:text-7xl tracking-tighter leading-none uppercase transition-colors duration-300 ${hoveredId === game.slug ? "text-accent" : "text-foreground"}`}>
@@ -149,6 +187,24 @@ export function GameGrid({ games = GAMES }: { games?: GameItem[] }) {
               </div>
             </Link>
           ))}
+
+          {/* Lihat semua — sisanya di halaman /games */}
+          {games.length > MAX_ROWS && (
+            <Link
+              href="/games"
+              className="flex items-center justify-between border-b border-border py-4 md:py-6 pl-0 md:pl-4 group"
+            >
+              <span className="font-sans text-lg md:text-4xl tracking-tighter text-foreground/60 group-hover:text-accent transition-colors uppercase leading-none">
+                Lihat semua game
+              </span>
+              <span className="font-mono text-[10px] md:text-xs text-foreground/40 group-hover:text-accent transition-colors tracking-[0.15em] uppercase flex items-center gap-2 md:gap-4">
+                {games.length - MAX_ROWS} game lagi
+                <svg width="14" height="14" viewBox="0 0 12 12" fill="none" className="text-accent" aria-hidden="true">
+                  <path d="M1 11L11 1M11 1H3M11 1V9" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+              </span>
+            </Link>
+          )}
         </div>
       </div>
     </section>

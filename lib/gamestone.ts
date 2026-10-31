@@ -67,6 +67,8 @@ export type StoneOrder = {
   total_price: number
   status: "pending" | "processing" | "delivered" | "cancelled" | "refunded" | "expired"
   is_paid: boolean
+  /** payment_code Gamestone: QRIS EMV (qris) / nomor VA / kode bayar. */
+  payment_code?: string | null
   type: "topup" | "voucher"
   expired_at?: string | null
   created_at?: string | null

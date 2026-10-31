@@ -170,7 +170,7 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
             ONLINE 24/7
           </span>
           <Link
-            href="#games"
+            href="/games"
             className="relative font-mono text-[10px] md:text-[11px] bg-accent text-accent-foreground px-3 md:px-5 py-2 md:py-2.5 tracking-[0.15em] uppercase overflow-hidden group anim-snap-in min-h-[36px] md:min-h-[40px] flex items-center"
             style={d(350)}
           >
@@ -253,7 +253,7 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
           {/* CTAs */}
           <div className="flex items-center justify-center md:justify-start gap-2 md:gap-4 mt-3 md:mt-6 anim-cut-in" style={d(900)}>
             <Link
-              href="#games"
+              href="/games"
               className="group relative font-mono text-[10px] sm:text-[10px] md:text-[11px] bg-foreground text-background px-3 sm:px-5 md:px-6 py-2 md:py-3 tracking-[0.12em] md:tracking-[0.2em] uppercase overflow-hidden min-h-[36px] md:min-h-[44px] flex items-center"
             >
               <span className="relative z-10 group-hover:text-accent-foreground transition-colors duration-300">Pilih Game</span>

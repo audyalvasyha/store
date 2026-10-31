@@ -75,10 +75,15 @@ export async function getDynamicGames(): Promise<GameItem[]> {
   const db = await getDb();
   const docs = await db.collection("games").find().sort({ slug: 1 }).toArray();
   if (docs.length === 0) return GAMES;
-  return docs.map(({ _id, ...game }) => {
+  // Merge: katalog statis sebagai dasar, dokumen DB menimpa slug yang sama.
+  // Admin edit di DB tetap menang, tapi game kurasi di lib/catalog tidak ilang
+  // walaupun katalog Gamestone di-sync penuh ke DB.
+  const bySlug = new Map<string, GameItem>(GAMES.map((g) => [g.slug, g]));
+  for (const { _id, ...game } of docs) {
     void _id;
-    return game as GameItem;
-  });
+    bySlug.set(game.slug, game as GameItem);
+  }
+  return [...bySlug.values()];
 }
 
 export async function getDynamicGame(slug: string): Promise<GameItem | undefined> {

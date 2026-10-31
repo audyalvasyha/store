@@ -4,6 +4,7 @@ import { getDynamicGame } from "@/lib/content"
 import { generateOrderCode, getOrder, saveOrder, updateOrder, type Order } from "@/lib/orders"
 import { createDokuCheckout, dokuConfigured } from "@/lib/doku"
 import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gamestoneConfigured, type StoneOrder, type StonePaymentMethod } from "@/lib/gamestone"
+import { apigamesConfigured } from "@/lib/apigames"
 
 export const dynamic = "force-dynamic"
 
@@ -27,6 +28,7 @@ async function syncStoneStatus(order: Order): Promise<void> {
 
   if (patch) {
     patch.stoneSnapshot = { price: so.price, fee: so.fee, paymentFee: so.payment_fee, total: so.total_price }
+    patch.stonePaymentCode = so.payment_code ?? order.stonePaymentCode
     await updateOrder(order.code, patch)
   }
 }
@@ -107,48 +109,83 @@ export async function POST(request: Request) {
     }
 
     // Flow Gamestone: nominal harus variant aktif di Gamestone, lalu order
-    // dibikin langsung di Gamestone (payment bawaan).
+    // dibikin langsung di Gamestone (payment bawaan). Kalau Gamestone gagal
+    // (down / Internal server error), otomatis fallback ke APIGames:
+    // bayar via DOKU hosted checkout, item dikirim oleh APIGames.
     if (stoneMode) {
       let variantId: number | null = null
+      let stoneError: string | null = null
       try {
         const stoneGame = await getStoneGame(game.stoneSlug as string)
         const variant = stoneGame
           ? activeStoneVariants(stoneGame).find((v) => String(v.id) === denom.id)
           : null
         if (variant) variantId = variant.id
-      } catch {
-        return NextResponse.json({ error: "Provider top-up sedang bermasalah, coba lagi." }, { status: 502 })
-      }
-
-      if (!variantId) {
-        return NextResponse.json({ error: "Nominal tidak tersedia di provider saat ini" }, { status: 400 })
-      }
-
-      let stoneOrder: StoneOrder
-      try {
-        stoneOrder = await createStoneOrder({
-          variant_id: variantId,
-          payment_method_code: String(method) as unknown as StonePaymentMethod,
-          phone_number: phoneRaw,
-          data: {
-            user_id: uid,
-            zone_id: game.needsServer ? serverId : undefined,
-          },
-        })
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Gagal membuat order di Gamestone"
-        return NextResponse.json({ error: `${msg}. Coba lagi / ganti metode bayar.` }, { status: 502 })
+        stoneError = err instanceof Error ? err.message : "Provider Gamestone bermasalah"
+        variantId = null
       }
 
-      const orderWithStone: Order = {
-        ...order,
-        quantity: 1,
-        amount: stoneOrder.total_price ?? order.amount,
-        stoneOrderId: stoneOrder.id,
-        stoneTotal: stoneOrder.total_price,
+      let stoneOrder: StoneOrder | null = null
+      if (variantId) {
+        try {
+          stoneOrder = await createStoneOrder({
+            variant_id: variantId,
+            payment_method_code: String(method) as unknown as StonePaymentMethod,
+            phone_number: phoneRaw,
+            data: {
+              user_id: uid,
+              zone_id: game.needsServer ? serverId : undefined,
+            },
+          })
+        } catch (err) {
+          stoneOrder = null
+          stoneError = err instanceof Error ? err.message : "Gagal membuat order di Gamestone"
+        }
       }
-      await saveOrder(orderWithStone)
-      return NextResponse.json({ order: await getOrder(order.code) }, { status: 201 })
+
+      // ── Sukses: order Gamestone terbentuk → simpan & balikin ke user.
+      if (stoneOrder) {
+        const orderWithStone: Order = {
+          ...order,
+          quantity: 1,
+          amount: stoneOrder.total_price ?? order.amount,
+          provider: "gamestone",
+          stoneOrderId: stoneOrder.id,
+          stoneTotal: stoneOrder.total_price,
+          stonePaymentCode: stoneOrder.payment_code ?? undefined,
+          stoneExpiredAt: stoneOrder.expired_at ?? undefined,
+        }
+        await saveOrder(orderWithStone)
+        return NextResponse.json({ order: await getOrder(order.code) }, { status: 201 })
+      }
+
+      // ── Fallback ke APIGames (via DOKU): Gamestone gagal/down →
+      // order disimpan dengan harga lokal, user bayar via DOKU hosted checkout,
+      // item dikirim APIGames pas webhook DOKU masuk (lihat /api/doku/notification).
+      if (apigamesConfigured() && dokuConfigured()) {
+        await saveOrder(order)
+        const fallbackError = stoneError ?? "Provider Gamestone gagal"
+        let updated = await updateOrder(order.code, {
+          provider: "apigames",
+          fallbackReason: `Gamestone gagal (${fallbackError}) — dilanjutkan via APIGames + DOKU`,
+        })
+        const checkout = await createDokuCheckout({
+          invoiceNumber: order.code,
+          amount: order.amount,
+          callbackUrl: `${appBaseUrl(request)}/orders/${order.code}`,
+        })
+        updated = checkout.ok
+          ? await updateOrder(order.code, { paymentUrl: checkout.paymentUrl })
+          : await updateOrder(order.code, { paymentError: checkout.error })
+        return NextResponse.json({ order: updated ?? order }, { status: 201 })
+      }
+
+      // Gamestone gagal & fallback nggak bisa: kasih error yang jelas ke user.
+      return NextResponse.json(
+        { error: `${stoneError ?? "Gamestone bermasalah"}. Coba lagi / ganti metode bayar.` },
+        { status: 502 }
+      )
     }
 
     await saveOrder(order)

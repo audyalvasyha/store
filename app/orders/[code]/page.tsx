@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { getOrder } from "@/lib/orders"
 import { PAYMENT_METHODS, STONE_PAYMENT_METHODS, formatIDR, WA_NUMBER } from "@/lib/catalog"
 import { StatusPoller } from "@/app/orders/[code]/status-poller"
+import { StonePayBox } from "@/app/orders/[code]/stone-pay-box"
 
 export const dynamic = "force-dynamic"
 
@@ -115,11 +116,23 @@ export default async function OrderPage({
                 Bayar Sekarang (DOKU)
               </a>
             )}
+
+            {/* Pembayaran bawaan Gamestone: QR (qris) / kode bayar (VA, retail, dll). */}
+            {order.stonePaymentCode && order.status === "MENUNGGU_PEMBAYARAN" && (
+              <StonePayBox
+                method={order.method}
+                methodLabel={METHOD_LABEL[order.method] ?? order.method}
+                paymentCode={order.stonePaymentCode}
+                amount={order.stoneTotal ?? order.amount}
+                expiredAt={order.stoneExpiredAt}
+              />
+            )}
             {order.paymentError && (
               <p className="mb-3 font-mono text-[10px] md:text-[11px] text-destructive border border-destructive/40 p-2 leading-relaxed">
                 Gateway otomatis: {order.paymentError}. Pakai instruksi manual di bawah.
               </p>
             )}
+            {!order.stonePaymentCode ? (
             <div className="flex flex-col gap-2 font-mono text-[10px] md:text-xs text-foreground/70 leading-relaxed">
               {order.stoneOrderId && (
                 <>
@@ -148,7 +161,13 @@ export default async function OrderPage({
               <p className="text-foreground">3. Klik tombol WhatsApp di bawah, sertakan bukti transfer.</p>
               <p className="text-foreground">4. Item diproses &amp; masuk akun. GG!</p>
             </div>
+            ) : (
+              <p className="font-mono text-[10px] md:text-xs text-foreground/60 leading-relaxed">
+                Status pembayaran &amp; pengiriman item ini sinkron otomatis langsung dari provider tiap ±8 detik — nggak perlu konfirmasi manual. GG!
+              </p>
+            )}
 
+            {order.stonePaymentCode ? null : (
             <a
               href={waLink}
               target="_blank"
@@ -157,6 +176,7 @@ export default async function OrderPage({
             >
               Konfirmasi via WhatsApp
             </a>
+            )}
 
             <Link
               href="/orders"
