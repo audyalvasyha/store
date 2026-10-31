@@ -37,4 +37,12 @@ export async function ensureIndexes(): Promise<void> {
     { key: { status: 1 } },
     { key: { gameSlug: 1 } },
   ]);
+  // Site content (hero event / games MC) + admin auth
+  await db.collection("admins").createIndexes([{ key: { email: 1 }, unique: true }]);
+  await db.collection("admin_sessions").createIndexes([
+    { key: { token: 1 }, unique: true },
+    { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
+  ]);
+  await db.collection("site_content").createIndexes([{ key: { key: 1 }, unique: true }]);
+  await db.collection("games").createIndexes([{ key: { slug: 1 }, unique: true }]);
 }

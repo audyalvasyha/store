@@ -6,18 +6,24 @@ import { PriceList } from "@/components/schedule-block"
 import { WhyUs } from "@/components/split-feature"
 import { FinalCta } from "@/components/cta-block"
 import { Footer } from "@/components/footer"
+import { getHeroEvent, getDynamicGames } from "@/lib/content"
 
-export default function Page() {
+export const dynamic = "force-dynamic"
+
+export default async function Page() {
+  // Konten live dari MongoDB (admin /admin ngatur ini) — fallback ke katalog statis.
+  const [games, heroEvent] = await Promise.all([getDynamicGames(), getHeroEvent()])
+
   return (
     <main className="relative">
       {/* Noise overlay for industrial texture */}
       <div className="noise-overlay" aria-hidden="true" />
 
-      <Hero />
-      <FeaturedGames />
+      <Hero event={heroEvent} />
+      <FeaturedGames games={games} />
       <MarqueeStrip />
-      <GameGrid />
-      <PriceList />
+      <GameGrid games={games} />
+      <PriceList games={games} />
       <WhyUs />
       <FinalCta />
       <Footer />

@@ -2,8 +2,7 @@ export type Denomination = {
   id: string
   label: string
   detail?: string
-  price: number
-  /**
+  price: number  /**
    * Kode produk di APIGames (lihat "Lihat Produk" di dashboard merchant).
    * Isi hanya dengan kode yang benar-benar ada di akun APIGames kamu.
    * Selama kosong, order tetap dibuat tapi pengiriman item ditandai MANUAL.
@@ -20,6 +19,10 @@ export type GameItem = {
   currency: string
   glyph: string
   hue: string
+  /** URL gambar artwork asli (source: Gamestone API). Optional, fallback ke gradient+hue. */
+  image?: string
+  /** Slug di Gamestone Merchant API untuk game yg terhubung provider. */
+  stoneSlug?: string
   needsServer: boolean
   featured?: boolean
   denominations: Denomination[]
@@ -30,6 +33,23 @@ export const PAYMENT_METHODS = [
   { id: "ewallet", label: "E-Wallet", detail: "DANA / OVO / GoPay / ShopeePay" },
   { id: "bank", label: "Transfer Bank", detail: "BCA / BNI / BRI / Mandiri" },
 ] as const
+
+/** Metode pembayaran via payment bawaan Gamestone (code = payment_method_code API). */
+export const STONE_PAYMENT_METHODS = [
+  { id: "qris", label: "QRIS", detail: "Semua e-wallet & m-banking" },
+  { id: "ovo", label: "OVO", detail: "OVO balance" },
+  { id: "linkaja", label: "LinkAja", detail: "LinkAja balance" },
+  { id: "mandiri", label: "Mandiri VA", detail: "Virtual account" },
+  { id: "bni", label: "BNI VA", detail: "Virtual account" },
+  { id: "bri", label: "BRI VA", detail: "Virtual account" },
+  { id: "permata", label: "Permata VA", detail: "Virtual account" },
+  { id: "bjb", label: "BJB VA", detail: "Virtual account" },
+  { id: "cimb", label: "CIMB VA", detail: "Virtual account" },
+  { id: "indomaret", label: "Indomaret", detail: "Bayar di kasir" },
+  { id: "alfamart", label: "Alfamart", detail: "Bayar di kasir" },
+] as const
+
+export const STONE_METHOD_IDS: string[] = STONE_PAYMENT_METHODS.map((m) => m.id)
 
 export const WA_NUMBER = "6281234567890"
 
@@ -47,6 +67,8 @@ export const GAMES: GameItem[] = [
     currency: "Diamonds",
     glyph: "ML",
     hue: "258 85% 55%",
+    image: "https://static-src.vocagame.com/BisnisVocagame/mlbbmy-12f6-original-50ca-original.webp",
+    stoneSlug: "mobile-legends-bang-bang-my-partner",
     needsServer: true,
     featured: true,
     denominations: [
@@ -69,6 +91,8 @@ export const GAMES: GameItem[] = [
     currency: "Diamonds",
     glyph: "FF",
     hue: "12 95% 50%",
+    image: "https://static-src.vocagame.com/BisnisVocagame/THUMBNAILSfree_fire%20my-ab9c-original.webp",
+    stoneSlug: "free-fire-malaysia",
     needsServer: false,
     featured: true,
     denominations: [
@@ -82,43 +106,45 @@ export const GAMES: GameItem[] = [
     ],
   },
   {
-    slug: "pubg-mobile",
-    short: "PUBGM",
-    name: "PUBG Mobile",
-    publisher: "Tencent",
+    slug: "call-of-duty-mobile",
+    short: "CODM",
+    name: "Call of Duty Mobile",
+    publisher: "Activision",
     category: "Battle Royale",
-    currency: "UC",
-    glyph: "PM",
-    hue: "45 90% 50%",
-    needsServer: false,
-    featured: true,
-    denominations: [
-      { id: "pm-60", label: "60 UC", price: 13000 },
-      { id: "pm-325", label: "325 UC", price: 63000 },
-      { id: "pm-660", label: "660 UC", price: 125000 },
-      { id: "pm-1800", label: "1800 UC", price: 315000 },
-      { id: "pm-3850", label: "3850 UC", price: 630000 },
-      { id: "pm-8100", label: "8100 UC", price: 1250000 },
-    ],
-  },
-  {
-    slug: "genshin-impact",
-    short: "GI",
-    name: "Genshin Impact",
-    publisher: "HoYoverse",
-    category: "Open World RPG",
-    currency: "Genesis Crystals",
-    glyph: "GI",
-    hue: "205 85% 48%",
+    currency: "CP",
+    glyph: "CODM",
+    hue: "0 100% 50%",
+    image: "https://static-src.vocagame.com/BisnisVocagame/codm-1633-original.webp",
+    stoneSlug: "call-of-duty-mobile-id",
     needsServer: true,
     featured: true,
     denominations: [
-      { id: "gi-60", label: "60 Genesis Crystals", price: 15000 },
-      { id: "gi-330", label: "330 Genesis Crystals", price: 75000 },
-      { id: "gi-1090", label: "1090 Genesis Crystals", price: 235000 },
-      { id: "gi-2240", label: "2240 Genesis Crystals", price: 465000 },
-      { id: "gi-3880", label: "3880 Genesis Crystals", price: 799000 },
-      { id: "gi-welkin", label: "Blessing of the Welkin Moon", detail: "90 primogems/hari, 30 hari", price: 75000 },
+      { id: "codm-480", label: "480 CP", price: 13000 },
+      { id: "codm-1950", label: "1950 CP", price: 52000 },
+      { id: "codm-4870", label: "4870 CP", price: 125000 },
+      { id: "codm-10180", label: "10180 CP", price: 250000 },
+      { id: "codm-19660", label: "19660 CP", price: 480000 },
+    ],
+  },
+  {
+    slug: "league-of-legends-pc",
+    short: "LoL PC",
+    name: "League of Legends - PC MY",
+    publisher: "Riot Games",
+    category: "MOBA",
+    currency: "Blue Essence",
+    glyph: "LoL",
+    hue: "205 85% 48%",
+    image: "https://static-src.vocagame.com/BisnisVocagame/league_of_legends%20my-4a6c-original.webp",
+    stoneSlug: "league-of-legends-pc-my",
+    needsServer: true,
+    featured: true,
+    denominations: [
+      { id: "lol-450", label: "450 Blue Essence", price: 15000 },
+      { id: "lol-1350", label: "1350 Blue Essence", price: 42000 },
+      { id: "lol-2850", label: "2850 Blue Essence", price: 88000 },
+      { id: "lol-5250", label: "5250 Blue Essence", price: 160000 },
+      { id: "lol-7650", label: "7650 Blue Essence", price: 240000 },
     ],
   },
   {

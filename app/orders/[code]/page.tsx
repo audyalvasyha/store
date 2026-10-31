@@ -1,14 +1,15 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getOrder } from "@/lib/orders"
-import { PAYMENT_METHODS, formatIDR, WA_NUMBER } from "@/lib/catalog"
+import { PAYMENT_METHODS, STONE_PAYMENT_METHODS, formatIDR, WA_NUMBER } from "@/lib/catalog"
+import { StatusPoller } from "@/app/orders/[code]/status-poller"
 
 export const dynamic = "force-dynamic"
 
 export const metadata = { title: "Status Order // GAS STORE" }
 
 const METHOD_LABEL: Record<string, string> = Object.fromEntries(
-  PAYMENT_METHODS.map((m) => [m.id, m.label])
+  [...PAYMENT_METHODS, ...STONE_PAYMENT_METHODS].map((m) => [m.id, m.label])
 )
 
 export default async function OrderPage({
@@ -46,18 +47,19 @@ export default async function OrderPage({
       </header>
 
       <section className="px-4 md:px-8 lg:px-12 pt-5 md:pt-12 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
-        <span className="font-mono text-[8px] md:text-[10px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
+        <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
           [Order Dibuat]
         </span>
         <h1 className="font-sans text-[12vw] sm:text-6xl md:text-8xl tracking-tighter text-foreground leading-[0.85] uppercase">
           {order.code}
         </h1>
+        <StatusPoller code={order.code} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4 md:gap-8 mt-6 md:mt-12 items-start">
           {/* Detail order */}
           <div className="flex flex-col gap-4">
             <div className="border border-border bg-card p-4 md:p-6">
-              <span className="font-mono text-[9px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3 md:mb-4">
+              <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3 md:mb-4">
                 [Detail]
               </span>
               <div className="flex flex-col gap-2 font-mono text-[10px] md:text-sm">
@@ -66,6 +68,7 @@ export default async function OrderPage({
                   { label: "Item", value: `${order.denomLabel} x${order.quantity}` },
                   { label: "User ID", value: order.server ? `${order.userId} (${order.server})` : order.userId },
                   { label: "Email", value: order.email },
+                  ...(order.phone ? [{ label: "Nomor WA", value: order.phone } as const] : []),
                   { label: "Pembayaran", value: METHOD_LABEL[order.method] ?? order.method },
                   { label: "Dibuat", value: new Date(order.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) },
                 ].map((row) => (
@@ -76,16 +79,16 @@ export default async function OrderPage({
                 ))}
               </div>
               <div className="border-t border-border mt-3 md:mt-4 pt-3 md:pt-4 flex items-baseline justify-between gap-2">
-                <span className="font-mono text-[8px] md:text-[10px] text-foreground/50 tracking-[0.2em] uppercase">Total</span>
+                <span className="font-mono text-[10px] md:text-[11px] text-foreground/50 tracking-[0.2em] uppercase">Total</span>
                 <span className="font-sans text-2xl md:text-4xl text-accent tabular-nums">{formatIDR(order.amount)}</span>
               </div>
             </div>
 
             <div className="border border-border bg-card p-4 md:p-6">
-              <span className="font-mono text-[9px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3">
+              <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3">
                 [Status] &mdash; {order.status.replace(/_/g, " ")}
               </span>
-              <p className="font-mono text-[9px] md:text-xs text-muted-foreground leading-relaxed">
+              <p className="font-mono text-[10px] md:text-xs text-muted-foreground leading-relaxed">
                 {order.topupStatus === "SUKSES"
                   ? `${order.currency} sudah dikirim ke akun ${order.userId}. Terima kasih sudah top up!`
                   : order.topupStatus === "DIKIRIM"
@@ -101,7 +104,7 @@ export default async function OrderPage({
 
           {/* Instruksi bayar */}
           <aside className="lg:sticky lg:top-4 border-2 border-accent bg-card p-4 md:p-6">
-            <span className="font-mono text-[9px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3 md:mb-4">
+            <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3 md:mb-4">
               [Bayar] &mdash; {METHOD_LABEL[order.method] ?? order.method}
             </span>
             {order.paymentUrl && order.status === "MENUNGGU_PEMBAYARAN" && (
@@ -113,24 +116,30 @@ export default async function OrderPage({
               </a>
             )}
             {order.paymentError && (
-              <p className="mb-3 font-mono text-[8px] md:text-[10px] text-destructive border border-destructive/40 p-2 leading-relaxed">
+              <p className="mb-3 font-mono text-[10px] md:text-[11px] text-destructive border border-destructive/40 p-2 leading-relaxed">
                 Gateway otomatis: {order.paymentError}. Pakai instruksi manual di bawah.
               </p>
             )}
-            <div className="flex flex-col gap-2 font-mono text-[9px] md:text-xs text-foreground/70 leading-relaxed">
-              {order.method === "qris" && (
+            <div className="flex flex-col gap-2 font-mono text-[10px] md:text-xs text-foreground/70 leading-relaxed">
+              {order.stoneOrderId && (
+                <>
+                  <p className="text-foreground">1. Selesaikan pembayaran metode <span className="text-accent uppercase">{METHOD_LABEL[order.method] ?? order.method}</span> dengan nominal PERSIS <span className="text-accent">{formatIDR(order.amount)}</span> sesuai instruksi pembayaran.</p>
+                  <p className="text-foreground">2. Setelah pembayaran lunas, status order ini otomatis diperbarui (polling tiap ±8 detik) &mdash; item dikirim otomatis ke akun.</p>
+                </>
+              )}
+              {!order.stoneOrderId && order.method === "qris" && (
                 <>
                   <p className="text-foreground">1. Scan QRIS &mdash; semua e-wallet/m-banking didukung.</p>
                   <p className="text-foreground">2. Transfer PERSIS <span className="text-accent">{formatIDR(order.amount)}</span>.</p>
                 </>
               )}
-              {order.method === "ewallet" && (
+              {!order.stoneOrderId && order.method === "ewallet" && (
                 <>
                   <p className="text-foreground">1. Transfer ke DANA / OVO / GoPay / ShopeePay: <span className="text-accent">0812-3456-7890</span> (Gas Store).</p>
                   <p className="text-foreground">2. Nominal PERSIS <span className="text-accent">{formatIDR(order.amount)}</span>.</p>
                 </>
               )}
-              {order.method === "bank" && (
+              {!order.stoneOrderId && order.method === "bank" && (
                 <>
                   <p className="text-foreground">1. Transfer bank (BCA / BNI / BRI / Mandiri): <span className="text-accent">1234567890</span> a.n. GAS STORE.</p>
                   <p className="text-foreground">2. Nominal PERSIS <span className="text-accent">{formatIDR(order.amount)}</span> (jangan bulatkan).</p>
@@ -151,7 +160,7 @@ export default async function OrderPage({
 
             <Link
               href="/orders"
-              className="block text-center font-mono text-[8px] md:text-[10px] text-foreground/40 hover:text-accent transition-colors tracking-[0.15em] uppercase mt-3 py-1"
+              className="block text-center font-mono text-[10px] md:text-[11px] text-foreground/40 hover:text-accent transition-colors tracking-[0.15em] uppercase mt-3 py-1"
             >
               Cek order lain &rarr;
             </Link>

@@ -49,7 +49,7 @@ const NAV_LINKS: Array<{ item: string; href: string }> = [
   { item: "Riwayat", href: "/orders" },
 ]
 
-export function Hero() {
+export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | null }) {
   const [go, setGo] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -67,9 +67,20 @@ export function Hero() {
 
   return (
     <section className="relative h-[100svh] flex flex-col overflow-hidden bg-background select-none">
-      {/* ── Background: synthetic neon grid, no photo ── */}
+      {/* ── Background: foto event dari admin, fallback gradient ── */}
       <div className="absolute inset-0 anim-cut-in" style={d(100)} aria-hidden="true">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,hsl(258_85%_25%_/_0.35),transparent_55%),radial-gradient(ellipse_at_30%_80%,hsl(0_100%_30%_/_0.3),transparent_55%),linear-gradient(160deg,transparent_45%,hsl(45_90%_50%_/_0.08)_46%,transparent_47%)]" />
+        {event?.imageUrl && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={event.imageUrl}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+        {!event?.imageUrl && (
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,hsl(258_85%_25%_/_0.35),transparent_55%),radial-gradient(ellipse_at_30%_80%,hsl(0_100%_30%_/_0.3),transparent_55%),linear-gradient(160deg,transparent_45%,hsl(45_90%_50%_/_0.08)_46%,transparent_47%)]" />
+        )}
         <div
           className="absolute inset-0 opacity-[0.12]"
           style={{
@@ -86,6 +97,29 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-background/10 hidden md:block" />
         <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/40 to-transparent hidden md:block" />
       </div>
+
+      {/* Event banner chip (dari admin) */}
+      {event?.label && (
+        <div className="absolute top-14 md:top-20 left-4 md:left-12 z-10 anim-slide-left" style={d(500)}>
+          {event.href ? (
+            <Link
+              href={event.href}
+              className="block bg-accent/90 text-accent-foreground px-3 py-1.5 font-mono text-[9px] md:text-[10px] tracking-[0.2em] uppercase hover:bg-foreground hover:text-background transition-colors"
+            >
+              {event.label}
+            </Link>
+          ) : (
+            <span className="block bg-accent/90 text-accent-foreground px-3 py-1.5 font-mono text-[9px] md:text-[10px] tracking-[0.2em] uppercase">
+              {event.label}
+            </span>
+          )}
+          {event.note && (
+            <span className="block mt-1 bg-background/80 px-3 py-1 font-mono text-[8px] md:text-[9px] text-foreground/70 tracking-[0.1em] uppercase">
+              {event.note}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Accent shard */}
       <div className="absolute top-[8%] md:top-[15%] left-0 w-[3px] h-[12vh] md:h-[40vh] bg-accent anim-grow-down z-10" style={d(400)} />
@@ -108,10 +142,10 @@ export function Hero() {
             <span className="relative font-sans text-sm md:text-lg text-accent-foreground leading-none">G$</span>
           </div>
           <div className="flex flex-col anim-slide-left" style={d(200)}>
-            <span className="font-mono text-[9px] md:text-[10px] tracking-[0.25em] md:tracking-[0.4em] text-foreground uppercase leading-none">
+            <span className="font-mono text-[10px] md:text-[10px] tracking-[0.25em] md:tracking-[0.4em] text-foreground uppercase leading-none">
               Gas Store
             </span>
-            <span className="font-mono text-[6px] md:text-[8px] tracking-[0.15em] text-foreground/40 uppercase">
+            <span className="font-mono text-[10px] md:text-[10px] tracking-[0.15em] text-foreground/40 uppercase">
               Game Top Up Center
             </span>
           </div>
@@ -132,12 +166,12 @@ export function Hero() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          <span className="font-mono text-[9px] text-foreground/30 hidden md:block tracking-[0.15em] anim-cut-in" style={d(300)}>
+          <span className="font-mono text-[10px] text-foreground/30 hidden md:block tracking-[0.15em] anim-cut-in" style={d(300)}>
             ONLINE 24/7
           </span>
           <Link
             href="#games"
-            className="relative font-mono text-[8px] md:text-[11px] bg-accent text-accent-foreground px-3 md:px-5 py-2 md:py-2.5 tracking-[0.15em] uppercase overflow-hidden group anim-snap-in min-h-[36px] md:min-h-[40px] flex items-center"
+            className="relative font-mono text-[10px] md:text-[11px] bg-accent text-accent-foreground px-3 md:px-5 py-2 md:py-2.5 tracking-[0.15em] uppercase overflow-hidden group anim-snap-in min-h-[36px] md:min-h-[40px] flex items-center"
             style={d(350)}
           >
             <span className="relative z-10">Top Up Now</span>
@@ -189,7 +223,7 @@ export function Hero() {
           {/* Tagline */}
           <div className="flex items-center justify-center md:justify-start gap-2 md:gap-4 mb-2 md:mb-5 anim-wipe-right" style={d(300)}>
             <div className="h-[1.5px] w-5 md:w-16 bg-accent" />
-            <span className="font-mono text-[7px] md:text-xs text-accent tracking-[0.15em] md:tracking-[0.4em] uppercase">
+            <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.15em] md:tracking-[0.4em] uppercase">
               Instant Top Up // Jalur Resmi
             </span>
             <div className="h-[1.5px] w-5 bg-accent md:hidden" />
@@ -212,7 +246,7 @@ export function Hero() {
           </div>
 
           {/* Copy */}
-          <p className="font-mono text-[8px] sm:text-[10px] md:text-[13px] text-foreground/60 max-w-[260px] sm:max-w-xs md:max-w-md mx-auto md:mx-0 leading-relaxed anim-cut-in" style={d(800)}>
+          <p className="font-mono text-[10px] sm:text-[10px] md:text-[13px] text-foreground/60 max-w-[260px] sm:max-w-xs md:max-w-md mx-auto md:mx-0 leading-relaxed anim-cut-in" style={d(800)}>
             Diamond, UC, VP, Genesis Crystals &mdash; masuk akun lo dalam hitungan menit. Harga bersahabat, layanan 24 jam.
           </p>
 
@@ -220,14 +254,14 @@ export function Hero() {
           <div className="flex items-center justify-center md:justify-start gap-2 md:gap-4 mt-3 md:mt-6 anim-cut-in" style={d(900)}>
             <Link
               href="#games"
-              className="group relative font-mono text-[7px] sm:text-[9px] md:text-[11px] bg-foreground text-background px-3 sm:px-5 md:px-6 py-2 md:py-3 tracking-[0.12em] md:tracking-[0.2em] uppercase overflow-hidden min-h-[36px] md:min-h-[44px] flex items-center"
+              className="group relative font-mono text-[10px] sm:text-[10px] md:text-[11px] bg-foreground text-background px-3 sm:px-5 md:px-6 py-2 md:py-3 tracking-[0.12em] md:tracking-[0.2em] uppercase overflow-hidden min-h-[36px] md:min-h-[44px] flex items-center"
             >
               <span className="relative z-10 group-hover:text-accent-foreground transition-colors duration-300">Pilih Game</span>
               <span className="absolute inset-0 bg-accent translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
             </Link>
             <Link
               href="#harga"
-              className="font-mono text-[7px] sm:text-[9px] md:text-[11px] text-foreground/60 px-3 sm:px-5 md:px-6 py-2 md:py-3 tracking-[0.12em] md:tracking-[0.2em] uppercase border border-foreground/20 hover:border-foreground hover:text-foreground transition-all min-h-[36px] md:min-h-[44px] flex items-center"
+              className="font-mono text-[10px] sm:text-[10px] md:text-[11px] text-foreground/60 px-3 sm:px-5 md:px-6 py-2 md:py-3 tracking-[0.12em] md:tracking-[0.2em] uppercase border border-foreground/20 hover:border-foreground hover:text-foreground transition-all min-h-[36px] md:min-h-[44px] flex items-center"
             >
               Lihat Harga
             </Link>
@@ -244,7 +278,7 @@ export function Hero() {
                 <span className="font-sans text-[8vw] sm:text-[7vw] md:text-7xl lg:text-8xl text-foreground leading-none block">
                   <Counter target={stat.target} suffix={stat.suffix} go />
                 </span>
-                <span className="font-mono text-[5px] sm:text-[7px] md:text-[10px] text-foreground/40 block tracking-[0.12em] md:tracking-[0.25em] uppercase mt-0.5 md:mt-2">
+                <span className="font-mono text-[10px] sm:text-[10px] md:text-[10px] text-foreground/40 block tracking-[0.12em] md:tracking-[0.25em] uppercase mt-0.5 md:mt-2">
                   {stat.label}
                 </span>
                 {i < 2 && (
@@ -261,11 +295,11 @@ export function Hero() {
         <div className="flex items-center justify-between max-w-[1400px] mx-auto w-full anim-cut-in" style={d(1000)}>
           <div className="flex items-center gap-3">
             <div className="w-[1px] h-10 bg-accent" />
-            <span className="font-mono text-[9px] text-foreground/40 tracking-[0.3em] uppercase">Scroll</span>
+            <span className="font-mono text-[10px] text-foreground/40 tracking-[0.3em] uppercase">Scroll</span>
           </div>
           <div className="flex items-center gap-6">
             {["QRIS TERIMA", "E-WALLET & VA", "LAYANAN 24/7"].map((info, i) => (
-              <span key={info} className="font-mono text-[9px] text-foreground/40 tracking-[0.2em] uppercase">
+              <span key={info} className="font-mono text-[10px] text-foreground/40 tracking-[0.2em] uppercase">
                 {i > 0 && <span className="text-accent mr-6">/</span>}
                 {info}
               </span>

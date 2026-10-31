@@ -24,7 +24,7 @@ export function FinalCta() {
 
       <div className="max-w-[1400px] mx-auto relative z-10 text-center">
         <div className={visible ? "brutal-reveal" : "opacity-0"}>
-          <span className="font-mono text-[9px] md:text-[10px] text-accent tracking-[0.25em] md:tracking-[0.3em] uppercase block mb-4 md:mb-8">
+          <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.25em] md:tracking-[0.3em] uppercase block mb-4 md:mb-8">
             [Gas Sekarang]
           </span>
           <h2 className="font-sans text-[10vw] sm:text-5xl md:text-[10vw] lg:text-[8vw] tracking-tighter text-foreground leading-[0.85] uppercase mb-3 md:mb-12">
@@ -32,7 +32,7 @@ export function FinalCta() {
             <br />
             <span className="text-accent">Gas.</span> Sekarang.
           </h2>
-          <p className="font-mono text-[9px] md:text-sm text-muted-foreground max-w-sm md:max-w-lg mx-auto leading-relaxed mb-4 md:mb-12">
+          <p className="font-mono text-[10px] md:text-sm text-muted-foreground max-w-sm md:max-w-lg mx-auto leading-relaxed mb-4 md:mb-12">
             Pilih game. Isi ID akun. Bayar.<br />
             Sisanya biar kami yang gas.
           </p>

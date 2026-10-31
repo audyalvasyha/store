@@ -9,8 +9,7 @@ const stats = [
   { value: "50", label: "Item Top Up", suffix: "+" },
 ]
 
-const steps = [
-  { id: "01", title: "Pilih Game", detail: "MLBB, FF, PUBGM, Genshin, Valorant, dll." },
+const steps = [   { id: "01", title: "Pilih Game", detail: "MLBB, FF, CODM, LoL PC, Valorant, dll." },
   { id: "02", title: "Isi ID + Nominal", detail: "Masukkan User ID & server, pilih nominal." },
   { id: "03", title: "Bayar & Kirim", detail: "QRIS / e-wallet / transfer, item masuk akun." },
 ]
@@ -38,7 +37,7 @@ export function WhyUs() {
           <div className="absolute top-0 right-0 w-16 md:w-20 h-full diagonal-stripes opacity-20 hidden md:block" aria-hidden="true" />
 
           <div className={visible ? "brutal-reveal" : "opacity-0"}>
-            <span className="font-mono text-[8px] md:text-[10px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-2 md:mb-8">
+            <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-2 md:mb-8">
               [Kenapa Gas Store]
             </span>
             {/* Single line on mobile */}
@@ -46,7 +45,7 @@ export function WhyUs() {
               Gas Itu Harus <span className="text-accent">Resmi.</span>
             </h2>
             <div className="w-8 md:w-16 h-[2px] bg-accent mb-2 md:mb-8" />
-            <p className="font-mono text-[9px] md:text-sm text-muted-foreground leading-relaxed max-w-md">
+            <p className="font-mono text-[10px] md:text-sm text-muted-foreground leading-relaxed max-w-md">
               Bukan top-up abal-abal. Semua item dikirim lewat jalur resmi publisher &mdash; akun aman, harga bersahabat, layanan gabisa tidur. Kalau order bermasalah, dana kembali 100%.
             </p>
           </div>
@@ -70,7 +69,7 @@ export function WhyUs() {
                     {stat.value}
                     <span className="text-accent">{stat.suffix}</span>
                   </span>
-                  <span className="font-mono text-[7px] md:text-[10px] text-muted-foreground block mt-1 md:mt-3 tracking-[0.08em] md:tracking-[0.2em] uppercase text-center">
+                  <span className="font-mono text-[9px] md:text-[11px] text-muted-foreground block mt-1 md:mt-3 tracking-[0.08em] md:tracking-[0.2em] uppercase text-center">
                     {stat.label}
                   </span>
                 </div>
@@ -84,7 +83,7 @@ export function WhyUs() {
       {/* Cara order : 3 langkah */}
       <div className="bg-background border-t border-border">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-5 md:py-14">
-          <span className={`font-mono text-[8px] md:text-[10px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-3 md:mb-6 ${visible ? "brutal-reveal" : "opacity-0"}`}>
+          <span className={`font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-3 md:mb-6 ${visible ? "brutal-reveal" : "opacity-0"}`}>
             [Cara Order]
           </span>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
@@ -94,13 +93,13 @@ export function WhyUs() {
                 className={`relative border border-border bg-card p-4 md:p-8 group hover:border-accent transition-colors duration-300 ${visible ? "anim-counter-pop" : "opacity-0"}`}
                 style={{ animationDelay: `${0.3 + i * 0.15}s` }}
               >
-                <span className="font-mono text-[8px] md:text-xs text-accent/60 group-hover:text-accent transition-colors tabular-nums">
+                <span className="font-mono text-[10px] md:text-xs text-accent/60 group-hover:text-accent transition-colors tabular-nums">
                   {step.id}
                 </span>
                 <h3 className="font-sans text-2xl md:text-4xl text-foreground tracking-tighter uppercase mt-2 group-hover:text-accent transition-colors duration-300">
                   {step.title}
                 </h3>
-                <p className="font-mono text-[9px] md:text-xs text-muted-foreground leading-relaxed mt-2 md:mt-4">
+                <p className="font-mono text-[10px] md:text-xs text-muted-foreground leading-relaxed mt-2 md:mt-4">
                   {step.detail}
                 </p>
                 <span className="font-sans text-[4rem] md:text-[6rem] leading-none text-foreground/[0.04] absolute top-2 right-3 select-none pointer-events-none" aria-hidden="true">

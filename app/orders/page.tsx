@@ -52,13 +52,13 @@ export default function OrdersPage() {
 
       <section className="px-4 md:px-8 lg:px-12 pt-8 md:pt-20 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
         <div className="max-w-2xl">
-          <span className="font-mono text-[8px] md:text-[10px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
+          <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
             [Riwayat] &mdash; Cek Status Order
           </span>
           <h1 className="font-sans text-[13vw] sm:text-6xl md:text-8xl tracking-tighter text-foreground leading-[0.85] uppercase mb-4 md:mb-8">
             Riwayat<br />Order<span className="text-accent">.</span>
           </h1>
-          <p className="font-mono text-[9px] md:text-xs text-muted-foreground leading-relaxed mb-6 md:mb-10 max-w-md">
+          <p className="font-mono text-[10px] md:text-xs text-muted-foreground leading-relaxed mb-6 md:mb-10 max-w-md">
             Masukin kode order yang kamu terima (format <span className="text-foreground">GAS-XXXXXX</span>) buat lihat status pembayaran &amp; instruksi selanjutnya.
           </p>
 
@@ -84,16 +84,16 @@ export default function OrdersPage() {
           </form>
 
           {error && (
-            <p className="mt-4 font-mono text-[9px] md:text-xs text-destructive border border-destructive/40 p-3 leading-relaxed">
+            <p className="mt-4 font-mono text-[10px] md:text-xs text-destructive border border-destructive/40 p-3 leading-relaxed">
               {error}
             </p>
           )}
 
           <div className="mt-6 md:mt-10 border border-border bg-card p-4 md:p-6">
-            <span className="font-mono text-[9px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3">
+            <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3">
               [Info] &mdash; Flow Pembayaran MVP
             </span>
-            <p className="font-mono text-[9px] md:text-xs text-muted-foreground leading-relaxed">
+            <p className="font-mono text-[10px] md:text-xs text-muted-foreground leading-relaxed">
               Karena integrasi payment gateway (QRIS/e-wallet otomatis) belum aktif, order yang kamu buat berstatus{" "}
               <span className="text-foreground">MENUNGGU PEMBAYARAN</span> dengan instruksi transfer di halaman detail order.
               Confirm via WhatsApp, dan item diproses manual oleh mekanis dalam hitungan menit &mdash; paket MVP ini tetap jalan end-to-end.

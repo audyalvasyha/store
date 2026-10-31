@@ -117,12 +117,12 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-5 md:mt-16 pt-4 md:pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 md:gap-4">
-          <span className="font-mono text-[8px] md:text-[10px] text-muted-foreground">
+          <span className="font-mono text-[10px] md:text-[11px] text-muted-foreground">
             &copy; 2026 GAS STORE // SEMUA GAME ADALAH MILIK PUBLISHER MASING-MASING
           </span>
           <div className="flex items-center gap-4 md:gap-6">
             {["Instagram", "TikTok", "Discord"].map((social) => (
-              <a key={social} href="#" className="font-mono text-[8px] md:text-[10px] text-muted-foreground hover:text-accent transition-colors tracking-[0.1em] md:tracking-[0.15em] uppercase py-1 min-h-[32px] flex items-center">
+              <a key={social} href="#" className="font-mono text-[10px] md:text-[11px] text-muted-foreground hover:text-accent transition-colors tracking-[0.1em] md:tracking-[0.15em] uppercase py-1 min-h-[32px] flex items-center">
                 {social}
               </a>
             ))}

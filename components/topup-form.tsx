@@ -4,33 +4,54 @@ import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import type { GameItem } from "@/lib/catalog"
-import { PAYMENT_METHODS, formatIDR } from "@/lib/catalog"
+import { PAYMENT_METHODS, STONE_PAYMENT_METHODS, formatIDR } from "@/lib/catalog"
+
+export type StoneVariantDenom = {
+  /** Gamestone variant id (string form untuk key/button). */
+  id: string
+  label: string
+  price: number
+  detail?: string
+}
 
 const MAX_QTY = 5
 
-export function TopupForm({ game }: { game: GameItem }) {
+export function TopupForm({
+  game,
+  stoneVariants,
+}: {
+  game: GameItem
+  /** Variant live dari Gamestone. Kalau ada, nominal & total pakai harga Gamestone. */
+  stoneVariants?: StoneVariantDenom[]
+}) {
+  const stoneMode = Boolean(game.stoneSlug && stoneVariants?.length)
   const router = useRouter()
 
-  const [denomId, setDenomId] = useState(game.denominations[0].id)
+  const depoms = stoneVariants?.length ? stoneVariants : game.denominations
+  const payments = stoneMode ? STONE_PAYMENT_METHODS : PAYMENT_METHODS
+
+  const [denomId, setDenomId] = useState(depoms[0].id)
   const [quantity, setQuantity] = useState(1)
   const [userId, setUserId] = useState("")
   const [server, setServer] = useState("")
+  const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
-  const [method, setMethod] = useState<string>(PAYMENT_METHODS[0].id)
+  const [method, setMethod] = useState<string>(payments[0].id)
   const [agree, setAgree] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const denom = useMemo(
-    () => game.denominations.find((d) => d.id === denomId) ?? game.denominations[0],
-    [game.denominations, denomId]
+    () => depoms.find((d) => d.id === denomId) ?? depoms[0],
+    [depoms, denomId]
   )
-  const total = denom.price * quantity
+  const total = denom.price * (stoneMode ? 1 : quantity)
 
   const uidValid = /^[A-Za-z0-9._:\-]{4,24}$/.test(userId.trim())
   const serverValid = !game.needsServer || /^[A-Za-z0-9]{1,16}$/.test(server.trim())
+  const phoneValid = /^(62|0)\d{8,13}$/.test(phone.trim())
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-  const canSubmit = uidValid && serverValid && emailValid && agree && !submitting
+  const canSubmit = uidValid && serverValid && phoneValid && emailValid && agree && !submitting
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -44,9 +65,10 @@ export function TopupForm({ game }: { game: GameItem }) {
         body: JSON.stringify({
           gameSlug: game.slug,
           denomId,
-          quantity,
+          quantity: stoneMode ? 1 : quantity,
           userId: userId.trim(),
           server: game.needsServer ? server.trim() : undefined,
+          phone: phone.trim(),
           email: email.trim(),
           method,
         }),
@@ -69,11 +91,11 @@ export function TopupForm({ game }: { game: GameItem }) {
       <div className="flex flex-col gap-4 md:gap-6">
         {/* STEP 1: nominal */}
         <fieldset className="border border-border bg-card p-4 md:p-6">
-          <legend className="font-mono text-[9px] md:text-xs text-accent tracking-[0.25em] uppercase px-2">
+          <legend className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase px-2">
             01 &mdash; Pilih Nominal ({game.currency})
           </legend>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3 mt-2 md:mt-3">
-            {game.denominations.map((d) => (
+            {depoms.map((d) => (
               <button
                 type="button"
                 key={d.id}
@@ -88,9 +110,9 @@ export function TopupForm({ game }: { game: GameItem }) {
                 <span className={`block font-sans text-sm md:text-xl tracking-tighter uppercase leading-tight ${denomId === d.id ? "text-accent" : "text-foreground"}`}>
                   {d.label}
                 </span>
-                <span className="block font-mono text-[8px] md:text-[10px] text-foreground/40 mt-1">{formatIDR(d.price)}</span>
+                <span className="block font-mono text-[10px] md:text-[11px] text-foreground/40 mt-1">{formatIDR(d.price)}</span>
                 {d.detail && (
-                  <span className="block font-mono text-[7px] md:text-[8px] text-accent/70 mt-0.5 leading-snug">{d.detail}</span>
+                  <span className="block font-mono text-[9px] md:text-[10px] text-accent/70 mt-0.5 leading-snug">{d.detail}</span>
                 )}
                 {denomId === d.id && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-accent" />}
               </button>
@@ -100,12 +122,12 @@ export function TopupForm({ game }: { game: GameItem }) {
 
         {/* STEP 2: akun */}
         <fieldset className="border border-border bg-card p-4 md:p-6">
-          <legend className="font-mono text-[9px] md:text-xs text-accent tracking-[0.25em] uppercase px-2">
+          <legend className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase px-2">
             02 &mdash; Data Akun {game.short}
           </legend>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mt-2 md:mt-3">
             <label className="flex flex-col gap-1.5">
-              <span className="font-mono text-[8px] md:text-[10px] text-foreground/60 tracking-[0.15em] uppercase">
+              <span className="font-mono text-[10px] md:text-[11px] text-foreground/60 tracking-[0.15em] uppercase">
                 User ID *
               </span>
               <input
@@ -116,12 +138,12 @@ export function TopupForm({ game }: { game: GameItem }) {
                 className={`bg-background border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${userId && !uidValid ? "border-destructive" : "border-border"}`}
               />
               {userId && !uidValid && (
-                <span className="font-mono text-[7px] md:text-[9px] text-destructive">4-24 karakter, huruf/angka/._:-</span>
+                <span className="font-mono text-[9px] md:text-[10px] text-destructive">4-24 karakter, huruf/angka/._:-</span>
               )}
             </label>
             {game.needsServer && (
               <label className="flex flex-col gap-1.5">
-                <span className="font-mono text-[8px] md:text-[10px] text-foreground/60 tracking-[0.15em] uppercase">
+                <span className="font-mono text-[10px] md:text-[11px] text-foreground/60 tracking-[0.15em] uppercase">
                   Server / Zone ID *
                 </span>
                 <input
@@ -132,12 +154,28 @@ export function TopupForm({ game }: { game: GameItem }) {
                   className={`bg-background border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${server && !serverValid ? "border-destructive" : "border-border"}`}
                 />
                 {server && !serverValid && (
-                  <span className="font-mono text-[7px] md:text-[9px] text-destructive">Angka/huruf tanpa spasi</span>
+                  <span className="font-mono text-[9px] md:text-[10px] text-destructive">Angka/huruf tanpa spasi</span>
                 )}
               </label>
             )}
             <label className="flex flex-col gap-1.5">
-              <span className="font-mono text-[8px] md:text-[10px] text-foreground/60 tracking-[0.15em] uppercase">
+              <span className="font-mono text-[10px] md:text-[11px] text-foreground/60 tracking-[0.15em] uppercase">
+                Nomor WhatsApp *
+              </span>
+              <input
+                inputMode="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="cth: 08123456789"
+                autoComplete="tel"
+                className={`bg-background border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${phone && !phoneValid ? "border-destructive" : "border-border"}`}
+              />
+              {phone && !phoneValid && (
+                <span className="font-mono text-[9px] md:text-[10px] text-destructive">Format 08xx / 62xx, 9-15 digit</span>
+              )}
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="font-mono text-[10px] md:text-[11px] text-foreground/60 tracking-[0.15em] uppercase">
                 Email Notifikasi *
               </span>
               <input
@@ -154,11 +192,11 @@ export function TopupForm({ game }: { game: GameItem }) {
 
         {/* STEP 3: pembayaran */}
         <fieldset className="border border-border bg-card p-4 md:p-6">
-          <legend className="font-mono text-[9px] md:text-xs text-accent tracking-[0.25em] uppercase px-2">
+          <legend className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase px-2">
             03 &mdash; Metode Pembayaran
           </legend>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-3 mt-2 md:mt-3">
-            {PAYMENT_METHODS.map((m) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3 mt-2 md:mt-3">
+            {payments.map((m) => (
               <button
                 type="button"
                 key={m.id}
@@ -171,7 +209,7 @@ export function TopupForm({ game }: { game: GameItem }) {
                 <span className={`block font-sans text-sm md:text-lg tracking-tight uppercase ${method === m.id ? "text-accent" : "text-foreground"}`}>
                   {m.label}
                 </span>
-                <span className="block font-mono text-[7px] md:text-[9px] text-foreground/40 mt-0.5">{m.detail}</span>
+                <span className="block font-mono text-[9px] md:text-[10px] text-foreground/40 mt-0.5">{m.detail}</span>
                 {method === m.id && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-accent" />}
               </button>
             ))}
@@ -183,7 +221,7 @@ export function TopupForm({ game }: { game: GameItem }) {
               onChange={(e) => setAgree(e.target.checked)}
               className="mt-0.5 accent-[hsl(var(--accent))] w-4 h-4 shrink-0"
             />
-            <span className="font-mono text-[8px] md:text-[10px] text-foreground/50 leading-relaxed">
+            <span className="font-mono text-[10px] md:text-[11px] text-foreground/50 leading-relaxed">
               Data akun yang saya isi benar. Item dikirim otomatis setelah pembayaran terverifikasi &mdash; salah ID bukan tanggung jawab Gas Store.
             </span>
           </label>
@@ -192,7 +230,7 @@ export function TopupForm({ game }: { game: GameItem }) {
 
       {/* ORDER SUMMARY */}
       <aside className="lg:sticky lg:top-4 border border-border bg-card p-4 md:p-6">
-        <span className="font-mono text-[9px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3 md:mb-5">
+        <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3 md:mb-5">
           [Ringkasan]
         </span>
         <div className="flex items-center gap-3 mb-4">
@@ -204,20 +242,23 @@ export function TopupForm({ game }: { game: GameItem }) {
           </div>
           <div className="min-w-0">
             <h2 className="font-sans text-lg md:text-2xl text-foreground tracking-tighter uppercase truncate">{game.short}</h2>
-            <span className="font-mono text-[7px] md:text-[9px] text-foreground/40 uppercase tracking-[0.1em] block truncate">
+            <span className="font-mono text-[9px] md:text-[10px] text-foreground/40 uppercase tracking-[0.1em] block truncate">
               {game.currency}
             </span>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 font-mono text-[9px] md:text-xs border-t border-border pt-3 md:pt-4">
+        <div className="flex flex-col gap-2 font-mono text-[10px] md:text-xs border-t border-border pt-3 md:pt-4">
           <div className="flex justify-between gap-2">
             <span className="text-foreground/50">Nominal</span>
             <span className="text-foreground text-right">{denom.label}</span>
           </div>
           <div className="flex justify-between gap-2 items-center">
             <span className="text-foreground/50">Jumlah</span>
-            <span className="flex items-center gap-1.5">
+            {stoneMode ? (
+              <span className="text-foreground tabular-nums">1</span>
+            ) : (
+              <span className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -235,21 +276,22 @@ export function TopupForm({ game }: { game: GameItem }) {
               >
                 +
               </button>
-            </span>
+              </span>
+            )}
           </div>
           <div className="flex justify-between gap-2">
             <span className="text-foreground/50">Bayar via</span>
-            <span className="text-foreground uppercase">{PAYMENT_METHODS.find((m) => m.id === method)?.label}</span>
+            <span className="text-foreground uppercase">{payments.find((m) => m.id === method)?.label}</span>
           </div>
         </div>
 
         <div className="border-t border-border mt-3 md:mt-4 pt-3 md:pt-4 flex items-baseline justify-between gap-2">
-          <span className="font-mono text-[8px] md:text-[10px] text-foreground/50 tracking-[0.2em] uppercase">Total</span>
+          <span className="font-mono text-[10px] md:text-[11px] text-foreground/50 tracking-[0.2em] uppercase">Total</span>
           <span className="font-sans text-2xl md:text-3xl text-accent tabular-nums">{formatIDR(total)}</span>
         </div>
 
         {error && (
-          <p className="mt-3 font-mono text-[8px] md:text-[10px] text-destructive border border-destructive/40 p-2 leading-relaxed">
+          <p className="mt-3 font-mono text-[10px] md:text-[11px] text-destructive border border-destructive/40 p-2 leading-relaxed">
             {error}
           </p>
         )}
@@ -257,7 +299,7 @@ export function TopupForm({ game }: { game: GameItem }) {
         <button
           type="submit"
           disabled={!canSubmit}
-          className={`w-full mt-4 inline-flex items-center justify-center font-mono text-[10px] md:text-sm tracking-[0.2em] uppercase px-5 py-3.5 md:py-4 min-h-[48px] transition-all ${
+          className={`w-full mt-4 inline-flex items-center justify-center font-mono text-[11px] md:text-sm tracking-[0.2em] uppercase px-5 py-3.5 md:py-4 min-h-[48px] transition-all ${
             canSubmit
               ? "bg-accent text-accent-foreground hover-glitch hover:scale-[1.02]"
               : "bg-foreground/10 text-foreground/30 cursor-not-allowed"
@@ -268,7 +310,7 @@ export function TopupForm({ game }: { game: GameItem }) {
 
         <Link
           href="/"
-          className="block text-center font-mono text-[8px] md:text-[10px] text-foreground/40 hover:text-accent transition-colors tracking-[0.15em] uppercase mt-3 py-1"
+          className="block text-center font-mono text-[10px] md:text-[11px] text-foreground/40 hover:text-accent transition-colors tracking-[0.15em] uppercase mt-3 py-1"
         >
           &larr; Pilih game lain
         </Link>

@@ -34,6 +34,15 @@ export type Order = {
   paymentUrl?: string;
   paymentError?: string;
   paidAt?: string;
+  /** Nomor HP/WA pembayar (wajib untuk order Gamestone). */
+  phone?: string;
+  /** Order Gamestone (payment bawaan): id order upstream untuk polling status. */
+  stoneOrderId?: string;
+  stoneTotal?: number;
+  /** Snapshot data penting dari order Gamestone. */
+  stoneSnapshot?: { price?: number; fee?: number; paymentFee?: number; total?: number };
+  /** Flag supaya sync Gamestone nggak di-poll terus kalau statusnya final. */
+  stoneSynced?: boolean;
   /** Status pengiriman item lewat APIGames */
   topupStatus?: TopupStatus;
   topupRef?: string;

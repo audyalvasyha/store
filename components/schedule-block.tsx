@@ -8,15 +8,15 @@ function StockIndicator({ index }: { index: number }) {
   const isHot = index < 2;
   return (
     <span
-      className={`font-mono text-[8px] md:text-[10px] tracking-[0.1em] md:tracking-[0.15em] ${isHot ? "text-accent" : index < 4 ? "text-accent/70" : "text-foreground/40"}`}
+      className={`font-mono text-[10px] md:text-[11px] tracking-[0.1em] md:tracking-[0.15em] ${isHot ? "text-accent" : index < 4 ? "text-accent/70" : "text-foreground/40"}`}
     >
       {isHot ? "BEST SELLER" : index < 4 ? "AVAILABLE" : "READY"}
     </span>
   );
 }
 
-export function PriceList() {
-  const [activeSlug, setActiveSlug] = useState<string>(GAMES[0].slug);
+export function PriceList({ games = GAMES }: { games?: GameItem[] }) {
+  const [activeSlug, setActiveSlug] = useState<string>(games[0]?.slug ?? GAMES[0].slug);
   const [visible, setVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -31,7 +31,7 @@ export function PriceList() {
     return () => observer.disconnect();
   }, []);
 
-  const activeGame: GameItem = GAMES.find((g) => g.slug === activeSlug) ?? GAMES[0];
+  const activeGame: GameItem = games.find((g) => g.slug === activeSlug) ?? games[0];
   const denoms = activeGame.denominations;
 
   return (
@@ -53,7 +53,7 @@ export function PriceList() {
         >
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-2 md:gap-4">
             <div>
-              <span className="font-mono text-[8px] md:text-[10px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
+              <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
                 [Harga]
               </span>
               <h2 className="font-sans text-[11vw] sm:text-5xl md:text-7xl lg:text-8xl tracking-tighter text-foreground leading-none uppercase whitespace-nowrap">
@@ -61,20 +61,20 @@ export function PriceList() {
               </h2>
             </div>
             <div className="flex flex-col items-start md:items-end gap-1 md:gap-2">
-              <p className="font-mono text-[9px] md:text-xs text-foreground/50 max-w-xs leading-relaxed text-left md:text-right">
+              <p className="font-mono text-[10px] md:text-xs text-foreground/50 max-w-xs leading-relaxed text-left md:text-right">
                 Harga final, tanpa biaya tersembunyi. Semua item dikirim lewat jalur resmi publisher.
               </p>
               <div className="flex items-center gap-2 md:gap-4">
                 <div className="flex items-center gap-1 md:gap-2">
                   <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-accent" />
-                  <span className="font-mono text-[7px] md:text-[10px] text-foreground/60 tracking-[0.1em]">
+                  <span className="font-mono text-[9px] md:text-[11px] text-foreground/60 tracking-[0.1em]">
                     {denoms.length} NOMINAL
                   </span>
                 </div>
                 <div className="w-[1px] h-2 md:h-3 bg-foreground/15" />
                 <div className="flex items-center gap-1 md:gap-2">
                   <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-foreground/30" />
-                  <span className="font-mono text-[7px] md:text-[10px] text-foreground/60 tracking-[0.1em]">
+                  <span className="font-mono text-[9px] md:text-[11px] text-foreground/60 tracking-[0.1em]">
                     {activeGame.currency.toUpperCase()}
                   </span>
                 </div>
@@ -91,11 +91,11 @@ export function PriceList() {
           className={`transition-all duration-700 delay-200 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
         >
           <div className="flex border-b border-border overflow-x-auto">
-            {GAMES.map((game) => (
+            {games.map((game) => (
               <button
                 key={game.slug}
                 onClick={() => setActiveSlug(game.slug)}
-                className={`flex-none md:flex-1 py-2 md:py-4 px-3 md:px-0 font-mono text-[8px] md:text-xs tracking-[0.08em] md:tracking-[0.2em] text-center transition-all relative min-h-[40px] ${
+                className={`flex-none md:flex-1 py-2 md:py-4 px-3 md:px-0 font-mono text-[10px] md:text-xs tracking-[0.08em] md:tracking-[0.2em] text-center transition-all relative min-h-[40px] ${
                   activeSlug === game.slug
                     ? "text-accent"
                     : "text-foreground/30 hover:text-foreground/70 active:text-foreground"
@@ -151,7 +151,7 @@ export function PriceList() {
                 <StockIndicator index={i} />
                 <span className="font-sans text-base md:text-2xl text-foreground group-hover:text-accent transition-colors tabular-nums whitespace-nowrap">
                   {formatIDR(denom.price)}
-                  <span className="font-mono text-[7px] md:text-[10px] text-foreground/35 ml-1 md:ml-2">({formatPriceShort(denom.price)})</span>
+                  <span className="font-mono text-[9px] md:text-[11px] text-foreground/35 ml-1 md:ml-2">({formatPriceShort(denom.price)})</span>
                 </span>
               </div>
             </Link>
@@ -161,10 +161,10 @@ export function PriceList() {
         <div
           className={`flex items-center justify-between pt-1.5 md:pt-4 transition-all duration-700 ${visible ? "opacity-100 delay-700" : "opacity-0"}`}
         >
-          <span className="font-mono text-[6px] md:text-[10px] text-foreground/25 tracking-[0.08em] md:tracking-[0.2em] uppercase">
+          <span className="font-mono text-[9px] md:text-[11px] text-foreground/25 tracking-[0.08em] md:tracking-[0.2em] uppercase">
             HARGA FINAL // TANPA BIAYA TERSEMBUNYI
           </span>
-          <span className="font-mono text-[6px] md:text-[10px] text-foreground/25 tracking-[0.08em] md:tracking-[0.2em] uppercase hidden md:block">
+          <span className="font-mono text-[9px] md:text-[11px] text-foreground/25 tracking-[0.08em] md:tracking-[0.2em] uppercase hidden md:block">
             STOK &amp; HARGA UPDATE 24/7
           </span>
         </div>

@@ -17,7 +17,7 @@ const _jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'GAS STORE // Top Up Game Online',
-  description: 'Top up game favorit lo: Diamond MLBB, UC PUBG, VP Valorant, Genesis Genshin. Proses kilat, harga bersahabat, layanan 24 jam.',
+  description: 'Top up game favorit lo: Diamond MLBB, Diamond FF, CP CODM, RP LoL. Proses kilat, harga bersahabat, layanan 24 jam.',
   openGraph: {
     title: 'GAS STORE // Top Up Game Online',
     description: 'Top up instant, jalur resmi publisher, layanan 24 jam. Pilih game, isi ID, gas!',
