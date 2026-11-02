@@ -143,7 +143,8 @@ export function GameGrid({
             >
               <div className={`absolute left-0 top-0 bottom-0 w-[3px] bg-accent transition-transform duration-300 origin-top ${hoveredId === game.slug ? "scale-y-100" : "scale-y-0"}`} />
 
-              <div className="flex items-center justify-between py-3 md:py-6 pl-0 md:pl-4">
+              <div className="flex items-center justify-between gap-3 md:gap-5 py-3 md:py-6 pl-0 md:pl-4">
+
                 {/* Thumbnail artwork (optimizer Next -> kecil & cepat) */}
                 <div className={`relative overflow-hidden shrink-0 mr-3 md:mr-4 w-10 aspect-[3/4] md:w-16 transition-opacity duration-300 ${hoveredId === game.slug ? "opacity-100" : "opacity-75"}`}>
                   <GameArtwork
@@ -156,11 +157,11 @@ export function GameGrid({
                   <div className="absolute inset-0 border border-border/60" />
                 </div>
 
-                {/* Left: ID + Title */}
-                <div className="flex items-center gap-2 md:gap-4 min-w-0">
-                  <span className="font-mono text-[10px] md:text-xs text-foreground/30 tabular-nums">{String(idx + 1).padStart(2, "0")}</span>
-                  <div>
-                    <h3 className={`font-sans text-xl md:text-6xl lg:text-7xl tracking-tighter leading-none uppercase transition-colors duration-300 ${hoveredId === game.slug ? "text-accent" : "text-foreground"}`}>
+                {/* Left: ID + Title — judul selalu 1 baris, nggak pernah nabrak kolom meta */}
+                <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+                  <span className="font-mono text-[10px] md:text-xs text-foreground/30 tabular-nums shrink-0">{String(idx + 1).padStart(2, "0")}</span>
+                  <div className="min-w-0">
+                    <h3 className={`font-sans text-xl md:text-6xl lg:text-7xl tracking-tighter leading-none uppercase transition-colors duration-300 truncate ${hoveredId === game.slug ? "text-accent" : "text-foreground"}`}>
                       {game.short}
                     </h3>
                     <span className="font-mono text-[9px] md:text-[11px] text-foreground/50 tracking-[0.08em] md:tracking-[0.2em] uppercase block truncate">
@@ -169,8 +170,8 @@ export function GameGrid({
                   </div>
                 </div>
 
-                {/* Description - desktop only */}
-                <p className={`font-mono text-xs max-w-xs leading-relaxed text-foreground/60 transition-all duration-300 hidden lg:block ${hoveredId === game.slug ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"}`}>
+                {/* Description - desktop only, lebar tetap biar jarak antar-baris konsisten */}
+                <p className={`font-mono text-xs w-48 lg:w-64 shrink-0 leading-relaxed text-foreground/60 transition-all duration-300 hidden lg:block ${hoveredId === game.slug ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"}`}>
                   {game.denominations.length} nominal {game.currency.toLowerCase()} siap kirim. Proses otomatis, jalur resmi.
                 </p>
 
@@ -183,9 +184,9 @@ export function GameGrid({
                       {sold[game.slug]!} terjual
                     </span>
                   )}
-                  <div className="hidden sm:block">
+                  <div className="hidden sm:block min-w-0 max-w-[92px] md:max-w-[120px]">
                     <span className="font-mono text-[9px] md:text-[11px] text-foreground/35 block tracking-[0.08em] md:tracking-[0.2em] uppercase mb-0.5">Kategori</span>
-                    <span className="font-mono text-[10px] md:text-xs text-foreground/75">{game.category.toUpperCase()}</span>
+                    <span className="font-mono text-[10px] md:text-xs text-foreground/75 truncate block">{game.category.toUpperCase()}</span>
                   </div>
                   <div className="w-[1px] h-4 md:h-8 bg-border hidden sm:block" />
                   <div className="text-right">
