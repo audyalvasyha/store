@@ -1,14 +1,17 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 /**
  * Polling status order lokal via /api/orders?code=...
  * Halaman di-refresh otomatis kalau statusnya berubah (sync Gamestone).
+ * Sekalian render indikator "STATUS LIVE" kecil biar user tahu halaman
+ * nggak stale — hilang otomatis pas status sudah final.
  */
 export function StatusPoller({ code }: { code: string }) {
   const router = useRouter()
+  const [live, setLive] = useState(true)
 
   useEffect(() => {
     let lastStatus: string | null = null
@@ -34,6 +37,7 @@ export function StatusPoller({ code }: { code: string }) {
         lastStatus = status
         if (status === "SELESAI" || status === "GAGAL") {
           stopped = true
+          setLive(false)
           if (intervalId !== undefined) clearInterval(intervalId)
         }
       } catch {
@@ -49,5 +53,14 @@ export function StatusPoller({ code }: { code: string }) {
     }
   }, [code, router])
 
-  return null
+  if (!live) return null
+  return (
+    <div className="flex items-center gap-2 mt-2 font-mono text-[9px] md:text-[10px] tracking-[0.2em] text-foreground/40 uppercase">
+      <span className="relative flex h-1.5 w-1.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
+      </span>
+      Status live &mdash; auto update
+    </div>
+  )
 }

@@ -1,14 +1,42 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+
+const RECENT_KEY = "gas-recent-orders"
+
+/** Ambil daftar kode order terakhir dari localStorage (max 5, terbaru dulu). */
+function recentCodes(): string[] {
+  try {
+    const raw = window.localStorage.getItem(RECENT_KEY)
+    const list = raw ? (JSON.parse(raw) as unknown) : null
+    return Array.isArray(list) ? list.filter((c): c is string => typeof c === "string").slice(0, 5) : []
+  } catch {
+    return []
+  }
+}
+
+function rememberCode(code: string): void {
+  try {
+    const next = [code, ...recentCodes().filter((c) => c !== code)].slice(0, 5)
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(next))
+  } catch {
+    // localStorage nggak tersedia (private mode dsb.) — skip aja, fitur minor.
+  }
+}
 
 export default function OrdersPage() {
   const router = useRouter()
   const [code, setCode] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [checking, setChecking] = useState(false)
+  // Kosong di first render, diisi setelah mount — biar SSR/CSR identik.
+  const [recent, setRecent] = useState<string[]>([])
+
+  useEffect(() => {
+    setRecent(recentCodes())
+  }, [])
 
   async function handleCheck(e: React.FormEvent) {
     e.preventDefault()
@@ -25,6 +53,8 @@ export default function OrdersPage() {
         return
       }
       router.push(`/orders/${clean}`)
+      rememberCode(clean)
+      setRecent(recentCodes())
     } catch {
       setError("Koneksi bermasalah, coba lagi.")
       setChecking(false)
@@ -88,6 +118,25 @@ export default function OrdersPage() {
             <p className="mt-4 font-mono text-[10px] md:text-xs text-destructive border border-destructive/40 p-3 leading-relaxed">
               {error}
             </p>
+          )}
+
+          {recent.length > 0 && (
+            <div className="mt-4 md:mt-6">
+              <span className="font-mono text-[9px] md:text-[10px] text-foreground/40 tracking-[0.25em] uppercase block mb-2">
+                Riwayat di perangkat ini
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {recent.map((c) => (
+                  <Link
+                    key={c}
+                    href={`/orders/${c}`}
+                    className="border border-border bg-card px-3 py-2 font-mono text-[10px] md:text-xs text-foreground/70 hover:text-accent hover:border-accent transition-colors tabular-nums uppercase"
+                  >
+                    {c}
+                  </Link>
+                ))}
+              </div>
+            </div>
           )}
 
           <div className="mt-6 md:mt-10 border border-border bg-card p-4 md:p-6">

@@ -8,6 +8,7 @@ import { FinalCta } from "@/components/cta-block"
 import { Footer } from "@/components/footer"
 import { getHeroEvent, getDynamicGames } from "@/lib/content"
 import { filterGames } from "@/lib/catalog"
+import { soldCountsByGame } from "@/lib/orders"
 
 // ISR: cache 30 detik — katalog tetap segar, tapi ga nge-hit DB tiap request.
 export const revalidate = 30
@@ -22,6 +23,8 @@ export default async function Page({
   // ?q= ngering semua section game (featured, grid, price list).
   const [allGames, heroEvent] = await Promise.all([getDynamicGames(), getHeroEvent()])
   const games = filterGames(allGames, String(q ?? ""))
+  // Social proof "terjual" bulan ini — gagal DB jangan pernah bikin landing down.
+  const sold = await soldCountsByGame().catch(() => ({}) as Record<string, number>)
 
   return (
     <main className="relative">
@@ -31,7 +34,7 @@ export default async function Page({
       <Hero event={heroEvent} />
       <FeaturedGames games={games} />
       <MarqueeStrip />
-      <GameGrid games={games} />
+      <GameGrid games={games} sold={sold} />
       <PriceList games={games} />
       <WhyUs />
       <FinalCta />

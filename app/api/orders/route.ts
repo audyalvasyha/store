@@ -6,6 +6,7 @@ import { createDokuCheckout, dokuConfigured } from "@/lib/doku"
 import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gamestoneConfigured, type StoneOrder, type StonePaymentMethod } from "@/lib/gamestone"
 import { apigamesConfigured } from "@/lib/apigames"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
+import { sendOrderStatusEmail } from "@/lib/notify"
 
 export const dynamic = "force-dynamic"
 
@@ -31,6 +32,9 @@ async function syncStoneStatus(order: Order): Promise<void> {
     patch.stoneSnapshot = { price: so.price, fee: so.fee, paymentFee: so.payment_fee, total: so.total_price }
     patch.stonePaymentCode = so.payment_code ?? order.stonePaymentCode
     await updateOrder(order.code, patch)
+    if (patch.status) {
+      sendOrderStatusEmail({ ...order, ...patch, status: patch.status })
+    }
   }
 }
 

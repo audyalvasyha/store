@@ -86,3 +86,28 @@ export async function updateOrder(code: string, patch: Partial<Order>): Promise<
     .collection<Order>("orders")
     .findOneAndUpdate({ code }, { $set: patch }, { returnDocument: "after" });
 }
+
+/**
+ * Social proof: total item terjual (quantity dijumlah) per gameSlug bulan ini.
+ * Order yang gagal/expired tidak dihitung. Return map slug -> jumlah terjual;
+ * game yang belum ada order sama sekali tidak masuk map.
+ */
+export async function soldCountsByGame(): Promise<Record<string, number>> {
+  await ensureReady();
+  const start = new Date();
+  start.setUTCDate(1);
+  start.setUTCHours(0, 0, 0, 0); // awal bulan UTC
+  const db = await getDb();
+  const rows = await db
+    .collection<Order>("orders")
+    .aggregate<{ _id: string; count: number }>([
+      { $match: { status: { $in: ["SELESAI", "DIPROSES"] }, createdAt: { $gte: start.toISOString() } } },
+      { $group: { _id: "$gameSlug", count: { $sum: "$quantity" } } },
+    ])
+    .toArray();
+  const out: Record<string, number> = {};
+  for (const r of rows) {
+    if (r._id) out[r._id] = r.count;
+  }
+  return out;
+}

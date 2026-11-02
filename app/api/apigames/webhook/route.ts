@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { verifyApigamesWebhook } from "@/lib/apigames"
 import { getOrder, updateOrder } from "@/lib/orders"
+import { sendOrderStatusEmail } from "@/lib/notify"
 
 export const dynamic = "force-dynamic"
 
@@ -32,12 +33,14 @@ export async function POST(request: Request) {
   const failed = status === "gagal" || status === "error"
 
   if (success || failed) {
+    const status: "SELESAI" | "GAGAL" = success ? "SELESAI" : "GAGAL"
     await updateOrder(order.code, {
-      status: success ? "SELESAI" : "GAGAL",
+      status,
       topupStatus: success ? "SUKSES" : "GAGAL",
       topupRef: payload.trx_id ?? order.topupRef,
       topupMessage: payload.message ?? order.topupMessage,
     })
+    sendOrderStatusEmail({ ...order, status })
   }
 
   return NextResponse.json({ ok: true })

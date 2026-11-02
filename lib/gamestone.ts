@@ -105,6 +105,9 @@ async function stoneFetch<T>(path: string, init?: RequestInit): Promise<T> {
       ...(init?.headers ?? {}),
     },
     cache: "no-store",
+    // Timeout keras 10s: provider hung nggak boleh bikin request nginx/fetch
+    // numpuk pending sampai timeout platform pas traffic tinggi.
+    signal: AbortSignal.timeout(Number(process.env.GAMESTONE_TIMEOUT_MS) || 10_000),
   })
 
   let json: StoneEnvelope<unknown>
@@ -157,35 +160,52 @@ type StoneGameCacheEntry = { game: StoneGame | null; expiresAt: number }
 
 const globalForStone = globalThis as typeof globalThis & {
   _gasStoneGameCache_?: Map<string, StoneGameCacheEntry>
+  _gasStoneGameInflight_?: Map<string, Promise<StoneGame | null>>
 }
 
 const stoneGameCache: Map<string, StoneGameCacheEntry> =
   globalForStone._gasStoneGameCache_ ?? new Map()
 globalForStone._gasStoneGameCache_ = stoneGameCache
 
-/** GET /games/{slug} (cached) */
+/** Promise fetch yang masih berjalan per slug (anti stampede). */
+const stoneGameInflight: Map<string, Promise<StoneGame | null>> =
+  globalForStone._gasStoneGameInflight_ ?? new Map()
+globalForStone._gasStoneGameInflight_ = stoneGameInflight
+
+/** GET /games/{slug} (cached, single-flight) */
 export async function getStoneGame(slug: string): Promise<StoneGame | null> {
   const cached = stoneGameCache.get(slug)
   if (cached && cached.expiresAt > Date.now()) {
     return cached.game
   }
 
-  let game: StoneGame | null = null
-  try {
-    game = await stoneFetch<StoneGame>(`/games/${encodeURIComponent(slug)}`)
-  } catch {
-    game = null
-  }
+  // Single-flight: pas cache baru expired, request bersamaan (burst) harus
+  // nunggu 1 fetch saja — bukan masing-masing nembak provider serentak.
+  const inflight = stoneGameInflight.get(slug)
+  if (inflight) return inflight
 
-  if (stoneGameCache.size >= STONE_GAME_MAX_ENTRIES) {
-    stoneGameCache.clear()
-  }
-  stoneGameCache.set(slug, {
-    game,
-    expiresAt:
-      Date.now() + (game ? STONE_GAME_TTL_MS : STONE_GAME_NEGATIVE_TTL_MS),
+  const task = (async () => {
+    let game: StoneGame | null = null
+    try {
+      game = await stoneFetch<StoneGame>(`/games/${encodeURIComponent(slug)}`)
+    } catch {
+      game = null
+    }
+
+    if (stoneGameCache.size >= STONE_GAME_MAX_ENTRIES) {
+      stoneGameCache.clear()
+    }
+    stoneGameCache.set(slug, {
+      game,
+      expiresAt:
+        Date.now() + (game ? STONE_GAME_TTL_MS : STONE_GAME_NEGATIVE_TTL_MS),
+    })
+    return game
+  })().finally(() => {
+    stoneGameInflight.delete(slug)
   })
-  return game
+  stoneGameInflight.set(slug, task)
+  return task
 }
 
 /**

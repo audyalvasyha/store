@@ -9,7 +9,14 @@ import { GamesSearchInput } from "@/components/games-search-input"
 // Landing cuma render MAX_ROWS baris awal — sisanya via /games biar web ga berat.
 const MAX_ROWS = 12
 
-export function GameGrid({ games = GAMES }: { games?: GameItem[] }) {
+export function GameGrid({
+  games = GAMES,
+  sold,
+}: {
+  games?: GameItem[]
+  /** Map slug -> total item terjual bulan ini (dari Mongo). Kosong = sembunyikan badge. */
+  sold?: Record<string, number>
+}) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
@@ -169,6 +176,13 @@ export function GameGrid({ games = GAMES }: { games?: GameItem[] }) {
 
                 {/* Meta */}
                 <div className="flex items-center gap-2 md:gap-6 shrink-0">
+                  {/* Social proof: jumlah terjual bulan ini (badge hanya kalau ada data) */}
+                  {typeof sold?.[game.slug] === "number" && sold[game.slug]! > 0 && (
+                    <span className="hidden md:inline-flex items-center gap-1.5 border border-accent/40 bg-accent/10 px-2 py-1 font-mono text-[9px] md:text-[10px] text-accent tracking-[0.1em] uppercase tabular-nums">
+                      <span className="w-1 h-1 bg-accent rounded-full animate-pulse" />
+                      {sold[game.slug]!} terjual
+                    </span>
+                  )}
                   <div className="hidden sm:block">
                     <span className="font-mono text-[9px] md:text-[11px] text-foreground/35 block tracking-[0.08em] md:tracking-[0.2em] uppercase mb-0.5">Kategori</span>
                     <span className="font-mono text-[10px] md:text-xs text-foreground/75">{game.category.toUpperCase()}</span>
