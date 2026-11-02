@@ -19,7 +19,8 @@ export default function OrdersPage() {
     try {
       const res = await fetch(`/api/orders?code=${encodeURIComponent(clean)}`)
       if (!res.ok) {
-        setError("Order tidak ditemukan. Cek lagi kode-nya.")
+        const data = (await res.json().catch(() => null)) as { error?: string } | null
+        setError(data?.error ?? "Order tidak ditemukan. Cek lagi kode-nya.")
         setChecking(false)
         return
       }
@@ -94,10 +95,10 @@ export default function OrdersPage() {
               [Info] &mdash; Flow Pembayaran MVP
             </span>
             <p className="font-mono text-[10px] md:text-xs text-muted-foreground leading-relaxed">
-              Karena integrasi payment gateway (QRIS/e-wallet otomatis) belum aktif, order yang kamu buat berstatus{" "}
-              <span className="text-foreground">MENUNGGU PEMBAYARAN</span> dengan instruksi transfer di halaman detail order.
-              Confirm via WhatsApp, dan item diproses manual oleh mekanis dalam hitungan menit &mdash; paket MVP ini tetap jalan end-to-end.
-            </p>
+              Order game terhubung provider langsung kasih QRIS/e-wallet/VA di halaman detail &mdash;
+              status pembayaran &amp; pengiriman item sinkron otomatis tanpa konfirmasi manual.
+              Game yang belum terhubung tetap pakai alur konfirmasi via WhatsApp, diproses mekanis dalam hitungan menit.
+          </p>
           </div>
         </div>
       </section>

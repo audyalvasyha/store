@@ -13,8 +13,14 @@ export function StatusPoller({ code }: { code: string }) {
   useEffect(() => {
     let lastStatus: string | null = null
     let stopped = false
+    // Dideclare di atas biar tick() pertama (yang bisa langsung “stop”, mis.
+    // order sudah SELESAI) tetap bisa clearInterval tanpa kena TDZ.
+    let intervalId: ReturnType<typeof setInterval> | undefined
 
     async function tick() {
+      // Tab di background -> user lagi nggak liat; jangan buang request/nitrogen.
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return
+      if (stopped) return
       try {
         const res = await fetch(`/api/orders?code=${encodeURIComponent(code)}`, {
           cache: "no-store",
@@ -26,17 +32,20 @@ export function StatusPoller({ code }: { code: string }) {
           router.refresh()
         }
         lastStatus = status
-        if (status === "SELESAI" || status === "GAGAL") stopped = true
+        if (status === "SELESAI" || status === "GAGAL") {
+          stopped = true
+          if (intervalId !== undefined) clearInterval(intervalId)
+        }
       } catch {
         // jaringan bermasalah — coba lagi di tick berikutnya
       }
     }
 
     tick()
-    const id = setInterval(tick, 8000)
+    intervalId = setInterval(tick, 8000)
     return () => {
       stopped = true
-      clearInterval(id)
+      if (intervalId !== undefined) clearInterval(intervalId)
     }
   }, [code, router])
 

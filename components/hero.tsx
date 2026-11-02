@@ -69,6 +69,9 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
     <section className="relative h-[100svh] flex flex-col overflow-hidden bg-background select-none">
       {/* ── Background: foto event dari admin, fallback gradient ── */}
       <div className="absolute inset-0 anim-cut-in" style={d(100)} aria-hidden="true">
+        {/* Gradient fallback selalu dirender sebagai base layer — supaya kalau
+            gambar event gagal dimuat (CDN mati / 404) background TIDAK kosong. */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,hsl(258_85%_25%_/_0.35),transparent_55%),radial-gradient(ellipse_at_30%_80%,hsl(0_100%_30%_/_0.3),transparent_55%),linear-gradient(160deg,transparent_45%,hsl(45_90%_50%_/_0.08)_46%,transparent_47%)]" />
         {event?.imageUrl && (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
@@ -76,10 +79,10 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
             alt=""
             aria-hidden="true"
             className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = "none"
+            }}
           />
-        )}
-        {!event?.imageUrl && (
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,hsl(258_85%_25%_/_0.35),transparent_55%),radial-gradient(ellipse_at_30%_80%,hsl(0_100%_30%_/_0.3),transparent_55%),linear-gradient(160deg,transparent_45%,hsl(45_90%_50%_/_0.08)_46%,transparent_47%)]" />
         )}
         <div
           className="absolute inset-0 opacity-[0.12]"

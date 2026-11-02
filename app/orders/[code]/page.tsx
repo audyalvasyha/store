@@ -71,7 +71,7 @@ export default async function OrderPage({
                   { label: "Email", value: order.email },
                   ...(order.phone ? [{ label: "Nomor WA", value: order.phone } as const] : []),
                   { label: "Pembayaran", value: METHOD_LABEL[order.method] ?? order.method },
-                  { label: "Dibuat", value: new Date(order.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) },
+                  { label: "Dibuat", value: new Date(order.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" }) + " WIB" },
                 ].map((row) => (
                   <div key={row.label} className="flex justify-between gap-4 border-b border-border/50 pb-1.5">
                     <span className="text-foreground/45 shrink-0">{row.label}</span>

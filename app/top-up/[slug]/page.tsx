@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import Link from "next/link"
 import type { Metadata } from "next"
 import { GAMES, formatIDR } from "@/lib/catalog"
 import { getDynamicGame } from "@/lib/content"
@@ -45,32 +46,32 @@ export default async function TopupPage({
       <div className="noise-overlay" aria-hidden="true" />
 
       <header className="px-4 md:px-8 lg:px-12 py-3 md:py-6 border-b border-border flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <div className="relative w-8 h-8 flex items-center justify-center">
             <div className="absolute inset-0 bg-accent" />
             <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
           </div>
           <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
-        </a>
+        </Link>
         <nav className="flex items-center gap-4 md:gap-8">
-          <a
+          <Link
             href="/#games"
             className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
           >
             Games
-          </a>
-          <a
+          </Link>
+          <Link
             href="/#harga"
             className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors hidden sm:block"
           >
             Harga
-          </a>
-          <a
+          </Link>
+          <Link
             href="/orders"
             className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
           >
             Riwayat
-          </a>
+          </Link>
         </nav>
       </header>
 

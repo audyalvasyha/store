@@ -80,7 +80,7 @@ export function StonePayBox({
 
       {expiredAt && (
         <span className="font-mono text-[9px] md:text-[10px] text-foreground/40 tracking-[0.15em] uppercase mt-2">
-          Berlaku sampai {new Date(expiredAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+          Berlaku sampai {new Date(expiredAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })} WIB
         </span>
       )}
     </div>

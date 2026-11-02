@@ -62,13 +62,14 @@ export function FeaturedGames({ games = GAMES }: { games?: GameItem[] }) {
         {/* Desktop: 4-column staggered */}
         <div className="hidden md:grid grid-cols-4 gap-3">
           {featured.map((game, i) => {
+            // Modulo: kalau featured > 4, baris kedua tetap dapat offset stagger.
             const offsets = [0, 48, 16, 64]
             return (
               <Link
                 key={game.slug}
                 href={`/top-up/${game.slug}`}
                 className="relative group"
-                style={{ marginTop: `${offsets[i]}px` }}
+                style={{ marginTop: `${offsets[i % offsets.length]}px` }}
               >
                 <div
                   className="transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
