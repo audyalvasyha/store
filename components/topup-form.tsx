@@ -1,10 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import type { GameItem } from "@/lib/catalog"
-import { PAYMENT_METHODS, STONE_PAYMENT_METHODS, formatIDR } from "@/lib/catalog"
+import { PAYMENT_METHODS, STONE_PAYMENT_METHODS, denomKind, formatIDR } from "@/lib/catalog"
 import { GameArtwork } from "@/components/game-artwork"
 
 export type StoneVariantDenom = {
@@ -16,6 +16,45 @@ export type StoneVariantDenom = {
 }
 
 const MAX_QTY = 5
+
+/**
+ * Chip kecil di tile varian: bedain item non-currency (pass/member/voucher)
+ * dari currency biasa (diamond, coins, gems). Currency = tanpa chip, biar bersih.
+ */
+function DenomChip({ label, detail }: { label: string; detail?: string }) {
+  const kind = denomKind(label, detail)
+  if (kind === "currency") return null
+  const text =
+    kind === "pass"
+      ? "★ PASS"
+      : kind === "membership"
+        ? "★ MEMBER"
+        : kind === "voucher"
+          ? "VOUCHER"
+          : "BUNDLE"
+  const tone =
+    kind === "voucher"
+      ? "border-foreground/25 text-foreground/50"
+      : "border-accent/50 text-accent"
+  return (
+    <span
+      className={`inline-flex items-center border px-1.5 py-0.5 font-mono text-[9px] md:text-[10px] leading-none tracking-[0.12em] uppercase ${tone}`}
+    >
+      {text}
+    </span>
+  )
+}
+/** Batas awal varian yang ditampilin sebelum tombol "tampilkan semua". */
+const INITIAL_VISIBLE = 12
+
+/** Label kategori buat chip filter (nilai = DenomKind). */
+const CATS = [
+  ["all", "SEMUA"],
+  ["pass", "★ PASS"],
+  ["membership", "★ MEMBER"],
+  ["voucher", "VOUCHER"],
+  ["bundle", "BUNDLE"],
+] as const
 
 export function TopupForm({
   game,
@@ -38,6 +77,10 @@ export function TopupForm({
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
   const [method, setMethod] = useState<string>(payments[0].id)
+  const [showAll, setShowAll] = useState(false)
+  const [filterQ, setFilterQ] = useState("")
+  const [sortBy, setSortBy] = useState<"default" | "cheapest" | "priciest">("default")
+  const [cat, setCat] = useState<"all" | "pass" | "membership" | "voucher" | "bundle">("all")
   const [agree, setAgree] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -46,7 +89,46 @@ export function TopupForm({
     () => depoms.find((d) => d.id === denomId) ?? depoms[0],
     [depoms, denomId]
   )
+  // Filter kategori (dari denomKind) + teks/harga, terus urutan.
+  const filteredDepoms = useMemo(() => {
+    let list = depoms
+    if (cat !== "all") list = list.filter((d) => denomKind(d.label, d.detail) === cat)
+    const raw = filterQ.trim().toLowerCase()
+    if (raw) {
+      const qNum = raw.replace(/[^0-9]/g, "")
+      list = list.filter(
+        (d) =>
+          d.label.toLowerCase().includes(raw) ||
+          (qNum && String(d.price).includes(qNum))
+      )
+    }
+    if (sortBy === "cheapest") list = [...list].sort((a, b) => a.price - b.price)
+    if (sortBy === "priciest") list = [...list].sort((a, b) => b.price - a.price)
+    return list
+  }, [depoms, filterQ, sortBy, cat])
+  // Jumlah varian per kategori non-currency, buat chip filter + sembunyiin yang 0.
+  const kindCounts = useMemo(() => {
+    const c = { pass: 0, membership: 0, voucher: 0, bundle: 0 } as Record<string, number>
+    for (const d of depoms) {
+      const k = denomKind(d.label, d.detail)
+      if (k !== "currency") c[k] = (c[k] ?? 0) + 1
+    }
+    return c
+  }, [depoms])
+  // Tetap terbuka otomatis kalau varian terpilih ada di luar list yang visible.
+  const denomIdOutsideInitial = depoms.indexOf(denom) >= INITIAL_VISIBLE
+  const visibleDepoms = showAll || denomIdOutsideInitial
+    ? filteredDepoms
+    : filteredDepoms.slice(0, INITIAL_VISIBLE)
   const total = denom.price * (stoneMode ? 1 : quantity)
+
+  // Kalau pilihan saat ini ga ada di hasil filter, auto-pilih hasil pertama
+  // biar yang ke-order pasti varian yang lagi tampil di list.
+  useEffect(() => {
+    if ((filterQ || cat !== "all") && filteredDepoms.length && !filteredDepoms.some((d) => d.id === denomId)) {
+      setDenomId(filteredDepoms[0].id)
+    }
+  }, [filterQ, filteredDepoms, denomId, cat])
 
   const uidValid = /^[A-Za-z0-9._:\-]{4,24}$/.test(userId.trim())
   const serverValid = !game.needsServer || /^[A-Za-z0-9]{1,16}$/.test(server.trim())
@@ -95,8 +177,66 @@ export function TopupForm({
           <legend className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase px-2">
             01 &mdash; Pilih Nominal ({game.currency})
           </legend>
+          {(depoms.length > INITIAL_VISIBLE || filterQ || cat !== "all") && (
+            <div className="flex flex-col gap-2 mt-2 md:mt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 md:gap-3">
+              <input
+                type="search"
+                value={filterQ}
+                onChange={(e) => setFilterQ(e.target.value)}
+                placeholder="Cari nominal atau harga..."
+                className="bg-background border border-border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors"
+              />
+              <div className="flex gap-0 border border-border">
+                {([
+                  ["default", "Urutan asli"],
+                  ["cheapest", "Termurah"],
+                  ["priciest", "Termahal"],
+                ] as const).map(([key, label]) => (
+                  <button
+                    type="button"
+                    key={key}
+                    onClick={() => setSortBy(key)}
+                    aria-pressed={sortBy === key}
+                    className={`px-3 md:px-4 py-2 font-mono text-xs md:text-sm tracking-[0.05em] uppercase whitespace-nowrap transition-colors ${
+                      sortBy === key
+                        ? "bg-accent text-accent-foreground"
+                        : "text-foreground/50 hover:text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {kindCounts.pass + kindCounts.membership + kindCounts.voucher + kindCounts.bundle > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {CATS.filter(([key]) => key === "all" || kindCounts[key] > 0).map(([key, label]) => (
+                    <button
+                      type="button"
+                      key={key}
+                      onClick={() => setCat((prev) => (prev === key ? "all" : key))}
+                      aria-pressed={cat === key}
+                      className={`border px-2.5 py-1.5 font-mono text-[10px] md:text-[11px] tracking-[0.08em] uppercase whitespace-nowrap transition-colors ${
+                        cat === key
+                          ? "border-accent bg-accent text-accent-foreground"
+                          : "border-border text-foreground/60 hover:text-foreground hover:border-foreground/50"
+                      }`}
+                    >
+                      {label} ({key === "all" ? depoms.length : kindCounts[key]})
+                    </button>
+                  ))}
+                </div>
+              )}
+              </div>
+            </div>
+          )}
+          {(filterQ || cat !== "all") && filteredDepoms.length === 0 && (
+            <p className="font-mono text-[9px] md:text-[10px] text-destructive mt-2">
+              Ga ada varian yang cocok buat filter ini.
+            </p>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3 mt-2 md:mt-3">
-            {depoms.map((d) => (
+            {visibleDepoms.map((d) => (
               <button
                 type="button"
                 key={d.id}
@@ -108,6 +248,7 @@ export function TopupForm({
                     : "border-border hover:border-foreground/50"
                 }`}
               >
+                <DenomChip label={d.label} detail={d.detail} />
                 <span className={`block font-sans text-sm md:text-xl tracking-tighter uppercase leading-tight ${denomId === d.id ? "text-accent" : "text-foreground"}`}>
                   {d.label}
                 </span>
@@ -119,6 +260,24 @@ export function TopupForm({
               </button>
             ))}
           </div>
+          {filteredDepoms.length > INITIAL_VISIBLE && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => {
+                // Pas collapse: kalau varian terpilih di luar 12 teratas hasil
+                // filter, reset ke hasil filter pertama biar list ga kebuka lagi.
+                if (v && filteredDepoms.indexOf(denom) >= INITIAL_VISIBLE) {
+                  setDenomId((filteredDepoms[0] ?? depoms[0]).id)
+                }
+                return !v
+              })}
+              className="w-full mt-2 md:mt-3 py-2.5 border border-border font-mono text-[10px] md:text-[11px] tracking-[0.15em] uppercase text-foreground/60 hover:text-accent hover:border-accent/50 transition-colors"
+            >
+              {showAll
+                ? "Tampilkan lebih sedikit"
+                : `Tampilkan semua (${filteredDepoms.length} varian)`}
+            </button>
+          )}
         </fieldset>
 
         {/* STEP 2: akun */}
