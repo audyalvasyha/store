@@ -68,13 +68,31 @@ export async function POST(request: Request) {
     const stoneMode = Boolean(game.stoneSlug && gamestoneConfigured())
     const stoneGame = stoneMode && game.stoneSlug ? await getStoneGame(game.stoneSlug) : null
     const stoneVariants = stoneGame ? activeStoneVariants(stoneGame) : []
-    const stoneVariant =
+    let stoneVariant =
       stoneVariants.find((v) => String(v.id) === String(denomId ?? "")) ?? null
 
     // Di mode Gamestone, form menampilkan variant provider sehingga denomId-nya
     // numeric id variant. Katalog lokal (id "ml-86" dsb.) tetap dipakai untuk
     // game non-Gamestone / waktu provider nggak bisa diakses pas render.
     const localDenom = getDenomination(game, String(denomId ?? ""))
+
+    // Fallback resolver: kalau variant id yang dipilih user sudah nggak ada di
+    // provider (render memakai cache 60s lalu list berubah), cari variant
+    // berdasarkan harga terdekat (toleransi 30%), lalu variant aktif pertama.
+    // Hanya untuk denomId numeric (id variant provider) supaya id katalog
+    // lokal nggak ikut ke-sapu fallback ini.
+    if (!stoneVariant && stoneMode && localDenom && /^\d+$/.test(String(denomId ?? "").trim())) {
+      let bestDiff = Number.POSITIVE_INFINITY
+      let best: (typeof stoneVariants)[0] | undefined = undefined
+      for (const v of stoneVariants) {
+        const diff = Math.abs(v.price - localDenom.price)
+        if (diff <= localDenom.price * 0.3 && diff < bestDiff) {
+          best = v
+          bestDiff = diff
+        }
+      }
+      stoneVariant = best ?? stoneVariants[0] ?? null
+    }
     const denom = stoneVariant
       ? { id: String(stoneVariant.id), label: stoneVariant.name, price: stoneVariant.price }
       : localDenom
