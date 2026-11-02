@@ -2,8 +2,8 @@
 
 import { Suspense, useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { GAMES, lowestPrice, formatIDR, formatPriceShort, type GameItem } from "@/lib/catalog"
+import { GameArtwork } from "@/components/game-artwork"
 import { GamesSearchInput } from "@/components/games-search-input"
 
 // Landing cuma render MAX_ROWS baris awal — sisanya via /games biar web ga berat.
@@ -139,16 +139,13 @@ export function GameGrid({ games = GAMES }: { games?: GameItem[] }) {
               <div className="flex items-center justify-between py-3 md:py-6 pl-0 md:pl-4">
                 {/* Thumbnail artwork (optimizer Next -> kecil & cepat) */}
                 <div className={`relative overflow-hidden shrink-0 mr-3 md:mr-4 w-10 aspect-[3/4] md:w-16 transition-opacity duration-300 ${hoveredId === game.slug ? "opacity-100" : "opacity-75"}`}>
-                  {game.image ? (
-                    <Image src={game.image} alt={game.name} fill sizes="64px" className={`object-cover transition-transform duration-300 ${hoveredId === game.slug ? "scale-105" : ""}`} />
-                  ) : (
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background: `radial-gradient(ellipse at 30% 25%, hsl(${game.hue} / 0.55), transparent 60%), radial-gradient(ellipse at 75% 85%, hsl(${game.hue} / 0.35), transparent 55%), linear-gradient(180deg, hsl(0 0% 8%), hsl(0 0% 4%))`,
-                      }}
-                    />
-                  )}
+                  <GameArtwork
+                    game={game}
+                    sizes="64px"
+                    className={`object-cover transition-transform duration-300 ${hoveredId === game.slug ? "scale-105" : ""}`}
+                    fallbackClassName={`transition-transform duration-300 ${hoveredId === game.slug ? "scale-105" : ""}`}
+                    initialsClassName="text-[11px] md:text-lg"
+                  />
                   <div className="absolute inset-0 border border-border/60" />
                 </div>
 
