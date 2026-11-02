@@ -23,7 +23,8 @@ export function StonePayBox({
   expiredAt?: string
 }) {
   const [copied, setCopied] = useState(false)
-  const isQris = method === "qris"
+  const [qrFailed, setQrFailed] = useState(false)
+  const isQris = method === "qris" && !qrFailed
 
   async function copyCode() {
     try {
@@ -55,6 +56,7 @@ export function StonePayBox({
           width={320}
           height={320}
           className="mt-4 bg-white p-2 w-[240px] md:w-[280px] h-auto"
+          onError={() => setQrFailed(true)}
         />
       ) : (
         <p className="mt-4 font-mono text-xl md:text-3xl text-foreground tabular-nums break-all">
