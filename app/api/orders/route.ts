@@ -5,6 +5,7 @@ import { generateOrderCode, getOrder, saveOrder, updateOrder, type Order } from 
 import { createDokuCheckout, dokuConfigured } from "@/lib/doku"
 import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gamestoneConfigured, type StoneOrder, type StonePaymentMethod } from "@/lib/gamestone"
 import { apigamesConfigured } from "@/lib/apigames"
+import { clientIp, rateLimit } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -41,6 +42,17 @@ function appBaseUrl(request: Request): string {
 }
 
 export async function POST(request: Request) {
+  // Bikin order = bikin session pembayaran di provider (courtesy limit ke
+  // provider): tiap IP dibatas 15 order/menit.
+  const fingerprint = clientIp(request)
+  const postLimit = rateLimit("orders-post", fingerprint, 15, 60_000)
+  if (!postLimit.ok) {
+    return NextResponse.json(
+      { error: `Terlalu banyak order. Coba lagi dalam ${postLimit.retryAfter} detik.` },
+      { status: 429, headers: { "Retry-After": String(postLimit.retryAfter) } }
+    )
+  }
+
   try {
     const body = await request.json()
     const { gameSlug, denomId, quantity, userId, server, phone, email, method } = body ?? {}
@@ -50,9 +62,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Game tidak ditemukan" }, { status: 400 })
     }
 
-    const denom = getDenomination(game, String(denomId ?? ""))
+    // Ambil variant Gamestone sekali di awal. Dipakai dua kali di bawah:
+    // buat resolve denomId (client kirim variant id, bukan id katalog lokal)
+    // dan buat bikin order di provider.
+    const stoneMode = Boolean(game.stoneSlug && gamestoneConfigured())
+    const stoneGame = stoneMode && game.stoneSlug ? await getStoneGame(game.stoneSlug) : null
+    const stoneVariants = stoneGame ? activeStoneVariants(stoneGame) : []
+    const stoneVariant =
+      stoneVariants.find((v) => String(v.id) === String(denomId ?? "")) ?? null
+
+    // Di mode Gamestone, form menampilkan variant provider sehingga denomId-nya
+    // numeric id variant. Katalog lokal (id "ml-86" dsb.) tetap dipakai untuk
+    // game non-Gamestone / waktu provider nggak bisa diakses pas render.
+    const localDenom = getDenomination(game, String(denomId ?? ""))
+    const denom = stoneVariant
+      ? { id: String(stoneVariant.id), label: stoneVariant.name, price: stoneVariant.price }
+      : localDenom
     if (!denom) {
-      return NextResponse.json({ error: "Nominal tidak valid" }, { status: 400 })
+      return NextResponse.json(
+        {
+          error: stoneMode
+            ? "Nominal nggak ketemu di provider. Refresh halaman lalu coba lagi."
+            : "Nominal tidak valid",
+        },
+        { status: 400 }
+      )
     }
 
     const qtyRaw = Number(quantity)
@@ -81,9 +115,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Nomor WhatsApp tidak valid" }, { status: 400 })
     }
 
-    const stoneMode = Boolean(game.stoneSlug && gamestoneConfigured())
+    // Client pakai metode Gamestone waktu variant provider tampil, tapi pakai
+    // metode lokal (qris/ewallet/bank) kalau variant nggak bisa diambil. Dua-duanya
+    // valid di mode Gamestone; yang pakai metode lokal jatuh ke fallback DOKU.
     const methodValid = stoneMode
-      ? STONE_METHOD_IDS.includes(String(method))
+      ? STONE_METHOD_IDS.includes(String(method)) ||
+        PAYMENT_METHODS.some((m) => m.id === method)
       : PAYMENT_METHODS.some((m) => m.id === method)
     if (!methodValid) {
       return NextResponse.json({ error: "Metode pembayaran tidak valid" }, { status: 400 })
@@ -113,25 +150,24 @@ export async function POST(request: Request) {
     // (down / Internal server error), otomatis fallback ke APIGames:
     // bayar via DOKU hosted checkout, item dikirim oleh APIGames.
     if (stoneMode) {
-      let variantId: number | null = null
-      let stoneError: string | null = null
-      try {
-        const stoneGame = await getStoneGame(game.stoneSlug as string)
-        const variant = stoneGame
-          ? activeStoneVariants(stoneGame).find((v) => String(v.id) === denom.id)
-          : null
-        if (variant) variantId = variant.id
-      } catch (err) {
-        stoneError = err instanceof Error ? err.message : "Provider Gamestone bermasalah"
-        variantId = null
+      let stoneError: string | null = stoneVariant
+        ? null
+        : stoneGame
+          ? "Nominal nggak tersedia di provider Gamestone"
+          : "Provider Gamestone tidak bisa diakses"
+      const stoneMethod = STONE_METHOD_IDS.includes(String(method))
+        ? (String(method) as StonePaymentMethod)
+        : null
+      if (!stoneMethod) {
+        stoneError = `Metode ${method} nggak didukung provider Gamestone`
       }
 
       let stoneOrder: StoneOrder | null = null
-      if (variantId) {
+      if (stoneVariant && stoneMethod) {
         try {
           stoneOrder = await createStoneOrder({
-            variant_id: variantId,
-            payment_method_code: String(method) as unknown as StonePaymentMethod,
+            variant_id: stoneVariant.id,
+            payment_method_code: stoneMethod,
             phone_number: phoneRaw,
             data: {
               user_id: uid,
@@ -210,6 +246,16 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
+  // Info order isinya PII (email/no. WA) — code cuma 32^6, jadi nge-GET
+  // dibatis biar bruteforce enumerasi code jadi nggak praktis.
+  const readLimit = rateLimit("orders-get", clientIp(request), 30, 60_000)
+  if (!readLimit.ok) {
+    return NextResponse.json(
+      { error: "Terlalu banyak permintaan. Coba lagi sebentar." },
+      { status: 429, headers: { "Retry-After": String(readLimit.retryAfter) } }
+    )
+  }
+
   const { searchParams } = new URL(request.url)
   const code = String(searchParams.get("code") ?? "")
   const order = await getOrder(code)

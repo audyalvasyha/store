@@ -104,6 +104,13 @@ export function verifyDokuNotification({ headers, rawBody, targetPath }: Notific
   if (!clientId || !requestId || !timestamp || !incoming) return false
   if (clientId !== CLIENT_ID) return false
 
+  // Anti-replay: Request-Timestamp (epoch ms) harus dekat waktu sekarang.
+  // Signature lama yang di-capture nggak bisa diputar ulang kapan saja.
+  const ts = Number(timestamp)
+  if (!Number.isFinite(ts) || Math.abs(Date.now() - ts) > 5 * 60 * 1000) {
+    return false
+  }
+
   const rawSignature = [
     `Client-Id:${clientId}`,
     `Request-Id:${requestId}`,

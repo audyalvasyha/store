@@ -9,8 +9,11 @@ function makeClient(): MongoClient {
   return new MongoClient(uri, { maxPoolSize: 10 });
 }
 
+// Client di-cache di global juga di production: di serverless scope modul
+// bisa hilang antar-invocation, dan bikin ulang MongoClient tiap kali
+// itu artinya cold-start + pool baru untuk tiap instance.
 export const mongoClient = globalForMongo._mongoClient_ ?? makeClient();
-if (process.env.NODE_ENV !== "production") globalForMongo._mongoClient_ = mongoClient;
+globalForMongo._mongoClient_ = mongoClient;
 
 export const DB_NAME = process.env.MONGODB_DB ?? "topup-store";
 

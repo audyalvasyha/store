@@ -19,8 +19,18 @@ export type HeroEvent = {
 
 type HeroDoc = Omit<HeroEvent, "key"> & { key: string };
 
+// Memoized per-process: createIndexes (idempotent) cukup sekali per
+// instance, bukan di setiap request publik.
+let readyPromise: Promise<void> | null = null;
+
 async function ready(): Promise<void> {
-  await ensureIndexes();
+  if (!readyPromise) {
+    readyPromise = ensureIndexes().catch((err) => {
+      readyPromise = null;
+      throw err;
+    });
+  }
+  await readyPromise;
 }
 
 // ── Hero event ──────────────────────────────────────────────────────────────

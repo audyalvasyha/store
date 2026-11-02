@@ -141,13 +141,51 @@ export async function listStoneGames(options?: {
   return wrapped?.data ?? []
 }
 
-/** GET /games/{slug} */
+/**
+ * Cache in-memory game Gamestone (TTL 60s) — halaman top-up merender
+ * variant provider, dan POST /api/orders resolve denomId dari variant
+ * provider pula. Tanpa cache, setiap render halaman = 1 HTTP outbound
+ * ke Gamestone (expensive + rawan throttle pas traffic tinggi).
+ * Response gagal di-cache pendek (15s) supaya provider yang lagi down
+ * nggak di-sapu peluru oleh tiap request.
+ */
+const STONE_GAME_TTL_MS = 60_000
+const STONE_GAME_NEGATIVE_TTL_MS = 15_000
+const STONE_GAME_MAX_ENTRIES = 100
+
+type StoneGameCacheEntry = { game: StoneGame | null; expiresAt: number }
+
+const globalForStone = globalThis as typeof globalThis & {
+  _gasStoneGameCache_?: Map<string, StoneGameCacheEntry>
+}
+
+const stoneGameCache: Map<string, StoneGameCacheEntry> =
+  globalForStone._gasStoneGameCache_ ?? new Map()
+globalForStone._gasStoneGameCache_ = stoneGameCache
+
+/** GET /games/{slug} (cached) */
 export async function getStoneGame(slug: string): Promise<StoneGame | null> {
-  try {
-    return await stoneFetch<StoneGame>(`/games/${encodeURIComponent(slug)}`)
-  } catch {
-    return null
+  const cached = stoneGameCache.get(slug)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.game
   }
+
+  let game: StoneGame | null = null
+  try {
+    game = await stoneFetch<StoneGame>(`/games/${encodeURIComponent(slug)}`)
+  } catch {
+    game = null
+  }
+
+  if (stoneGameCache.size >= STONE_GAME_MAX_ENTRIES) {
+    stoneGameCache.clear()
+  }
+  stoneGameCache.set(slug, {
+    game,
+    expiresAt:
+      Date.now() + (game ? STONE_GAME_TTL_MS : STONE_GAME_NEGATIVE_TTL_MS),
+  })
+  return game
 }
 
 /**

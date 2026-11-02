@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import {
   COOKIE_MAX_AGE,
   SESSION_COOKIE,
@@ -13,6 +14,15 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  // Brute force login admin: 10 percobaan/menit per IP (login & register).
+  const limit = rateLimit("admin-auth", clientIp(request), 10, 60_000)
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: `Terlalu banyak percobaan. Coba lagi dalam ${limit.retryAfter} detik.` },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } }
+    )
+  }
+
   try {
     const body = await request.json();
     const email = String(body?.email ?? "").trim();

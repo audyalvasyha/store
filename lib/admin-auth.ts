@@ -41,8 +41,17 @@ export function verifyPassword(password: string, stored: string): boolean {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+// Memoized per-process — sama seperti lib/content.ts.
+let readyPromise: Promise<void> | null = null;
+
 async function ready(): Promise<void> {
-  await ensureIndexes();
+  if (!readyPromise) {
+    readyPromise = ensureIndexes().catch((err) => {
+      readyPromise = null;
+      throw err;
+    });
+  }
+  await readyPromise;
 }
 
 export async function countAdmins(): Promise<number> {
