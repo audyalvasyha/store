@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { GAMES, lowestPrice, formatIDR, type GameItem } from "@/lib/catalog"
+import { GameArtwork } from "@/components/game-artwork"
 
 /**
  * Halaman katalog lengkap: SEMUA game beserta artwork-nya.
@@ -128,22 +128,13 @@ function GameCard({ game }: { game: GameItem }) {
     <Link href={`/top-up/${game.slug}`} className="relative group block">
       {/* Artwork: gambar asli (Gamestone/admin), fallback gradient pakai hue game */}
       <div className="relative overflow-hidden aspect-[3/4]">
-        {game.image ? (
-          <Image
-            src={game.image}
-            alt={game.name}
-            fill
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
-          />
-        ) : (
-          <div
-            className="absolute inset-0 transition-transform duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
-            style={{
-              background: `radial-gradient(ellipse at 30% 25%, hsl(${game.hue} / 0.55), transparent 60%), radial-gradient(ellipse at 75% 85%, hsl(${game.hue} / 0.35), transparent 55%), linear-gradient(180deg, hsl(0 0% 8%), hsl(0 0% 4%))`,
-            }}
-          />
-        )}
+        <GameArtwork
+          game={game}
+          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          className="object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
+          fallbackClassName="transition-transform duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
+          initialsClassName="text-3xl md:text-5xl"
+        />
 
         {/* Overlay & aksen hover (tema brutalist) */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />

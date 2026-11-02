@@ -2,12 +2,39 @@ export type Denomination = {
   id: string
   label: string
   detail?: string
-  price: number  /**
+  price: number
+  /**
    * Kode produk di APIGames (lihat "Lihat Produk" di dashboard merchant).
    * Isi hanya dengan kode yang benar-benar ada di akun APIGames kamu.
    * Selama kosong, order tetap dibuat tapi pengiriman item ditandai MANUAL.
    */
   providerCode?: string
+}
+
+/**
+ * Jenis item varian — badge pembeda antara currency (diamond, dll)
+ * dan item non-currency kayak level pass / member bulanan / voucher.
+ */
+export type DenomKind = "pass" | "membership" | "voucher" | "bundle" | "currency"
+
+/**
+ * Heuristik dari label + detail (gratis, ga kena network):
+ * - pass: Battle Pass, Level Up Pass, Twilight Pass, Ads Pass, dst.
+ * - membership: member/kartu bulanan-mingguan-harian, Weekly/Monthly.
+ * - voucher: voucher/gift card/cd key.
+ * - bundle: paket bundle.
+ * - currency: sisanya (diamond, coins, gems, tickets, dll).
+ */
+export function denomKind(label: string, detail?: string): DenomKind {
+  const t = `${label} ${detail ?? ""}`.toLowerCase()
+  if (/\bvouchers?\b|\bgift card\b|\bcd ?key\b/.test(t)) return "voucher"
+  if (/\bpass\b|\bbp card\b/.test(t) && !/ticket/.test(t)) return "pass"
+  if (
+    /member|kartu bulanan|kartu mingguan|kartu harian|bulanan|mingguan|harian|\bweekly\b|\bmonthly\b|\bdaily\b/.test(t)
+  )
+    return "membership"
+  if (/\bbundle\b/.test(t)) return "bundle"
+  return "currency"
 }
 
 export type GameItem = {

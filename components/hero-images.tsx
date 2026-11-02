@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { GAMES, lowestPrice, formatIDR, type GameItem } from "@/lib/catalog"
+import { GameArtwork } from "@/components/game-artwork"
 
 export function FeaturedGames({ games = GAMES }: { games?: GameItem[] }) {
   const sectionRef = useRef<HTMLDivElement>(null)
@@ -83,23 +83,13 @@ export function FeaturedGames({ games = GAMES }: { games?: GameItem[] }) {
                 >
                   <div className={`relative overflow-hidden ${i % 2 === 0 ? "aspect-[3/4]" : "aspect-[4/5]"}`}>
                     {/* Artwork asli dari Gamestone API, fallback gradient kalau kosong */}
-                    {game.image ? (
-                      <Image
-                        src={game.image}
-                        alt={game.name}
-                        fill
-                        sizes="(max-width: 768px) 50vw, 25vw"
-                        className="object-cover"
-                        priority={i < 2}
-                      />
-                    ) : (
-                      <div
-                        className="absolute inset-0"
-                        style={{
-                          background: `radial-gradient(ellipse at 30% 25%, hsl(${game.hue} / 0.55), transparent 60%), radial-gradient(ellipse at 75% 85%, hsl(${game.hue} / 0.35), transparent 55%), linear-gradient(180deg, hsl(0 0% 8%), hsl(0 0% 4%))`,
-                        }}
-                      />
-                    )}
+                    <GameArtwork
+                      game={game}
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      className="object-cover"
+                      initialsClassName="text-3xl lg:text-5xl"
+                      priority={i < 2}
+                    />
                     <div className="absolute bottom-0 left-0 w-full h-[3px] bg-accent scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-left" />
                     <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-accent/0 group-hover:border-accent transition-colors duration-300" />
                     <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-accent/0 group-hover:border-accent transition-colors duration-300" />
@@ -141,22 +131,12 @@ export function FeaturedGames({ games = GAMES }: { games?: GameItem[] }) {
                 }}
               >
                 <div className="relative overflow-hidden aspect-[3/4]">
-                  {game.image ? (
-                    <Image
-                      src={game.image}
-                      alt={game.name}
-                      fill
-                      sizes="50vw"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background: `radial-gradient(ellipse at 30% 25%, hsl(${game.hue} / 0.55), transparent 60%), radial-gradient(ellipse at 75% 85%, hsl(${game.hue} / 0.35), transparent 55%), linear-gradient(180deg, hsl(0 0% 8%), hsl(0 0% 4%))`,
-                      }}
-                    />
-                  )}
+                  <GameArtwork
+                    game={game}
+                    sizes="50vw"
+                    className="object-cover"
+                    initialsClassName="text-2xl"
+                  />
                   <div className="absolute bottom-0 left-0 w-full h-[2px] bg-accent" />
                 </div>
                 <span className="mt-1.5 block font-sans text-base font-medium text-foreground/90 tracking-tight uppercase">
