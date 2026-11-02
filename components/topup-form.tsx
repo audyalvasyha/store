@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import type { GameItem } from "@/lib/catalog"
 import { PAYMENT_METHODS, STONE_PAYMENT_METHODS, formatIDR } from "@/lib/catalog"
+import { GameArtwork } from "@/components/game-artwork"
 
 export type StoneVariantDenom = {
   /** Gamestone variant id (string form untuk key/button). */
@@ -234,11 +235,13 @@ export function TopupForm({
           [Ringkasan]
         </span>
         <div className="flex items-center gap-3 mb-4">
-          <div
-            className="w-12 h-12 md:w-14 md:h-14 shrink-0 flex items-center justify-center font-sans text-xl md:text-2xl text-foreground/80 tracking-tighter border border-border"
-            style={{ background: `radial-gradient(ellipse at 30% 25%, hsl(${game.hue} / 0.55), transparent 65%), hsl(0 0% 6%)` }}
-          >
-            {game.glyph}
+          <div className="relative w-12 h-12 md:w-14 md:h-14 shrink-0 overflow-hidden border border-border">
+            <GameArtwork
+              game={game}
+              sizes="56px"
+              className="object-cover"
+              initialsClassName="text-base md:text-xl"
+            />
           </div>
           <div className="min-w-0">
             <h2 className="font-sans text-lg md:text-2xl text-foreground tracking-tighter uppercase truncate">{game.short}</h2>
