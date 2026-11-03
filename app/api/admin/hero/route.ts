@@ -22,6 +22,14 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+
+    // Clear harus dicek dulu — tanpa ini, tombol clear butuh imageUrl valid
+    // juga (bug UX) padahal clear tidak butuh URL sama sekali.
+    if (body?.clear === true) {
+      await clearHeroEvent();
+      return NextResponse.json({ ok: true, cleared: true });
+    }
+
     const imageUrl = String(body?.imageUrl ?? "").trim();
     if (!/^https:\/\/\S+$/.test(imageUrl)) {
       return NextResponse.json(
@@ -30,16 +38,22 @@ export async function POST(request: Request) {
       );
     }
 
-    if (body?.clear === true) {
-      await clearHeroEvent();
-      return NextResponse.json({ ok: true, cleared: true });
+    // href dirender sebagai <a href> di hero — tanpa validasi ini, admin
+    // session yang dicuri (atau salah input) bisa nyelip "javascript:..."
+    // = XSS tersimpan. Hanya boleh path internal atau https absolut.
+    const href = String(body?.href ?? "").trim().slice(0, 200);
+    if (href && !/^(\/|https:\/\/)/.test(href)) {
+      return NextResponse.json(
+        { error: "Link event harus path internal (/...) atau https://..." },
+        { status: 400 }
+      );
     }
 
     await saveHeroEvent({
       imageUrl,
-      label: String(body?.label ?? ""),
-      note: String(body?.note ?? ""),
-      href: String(body?.href ?? ""),
+      label: String(body?.label ?? "").slice(0, 120),
+      note: String(body?.note ?? "").slice(0, 200),
+      href,
     });
     return NextResponse.json({ ok: true });
   } catch {

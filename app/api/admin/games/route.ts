@@ -7,6 +7,9 @@ import type { GameItem } from "@/lib/catalog";
 export const dynamic = "force-dynamic";
 
 const SLUG_EXP = /^[a-z0-9-]{2,48}$/;
+/** Hue HSL "258 85% 55%" — dipakai mentah di inline style (hsl(...)), jadi
+ * wajib benar-benar angka/percen biar gak bisa nyelip CSS lain. */
+const HUE_EXP = /^(?:\d{1,3} \d{1,3}% \d{1,3}%|)$/;
 
 /** Validasi & normalisasi payload game dari form admin (JSON). */
 function sanitizeGame(input: unknown): GameItem | null {
@@ -25,7 +28,7 @@ function sanitizeGame(input: unknown): GameItem | null {
     category: str(raw.category, "-"),
     currency: str(raw.currency, "-"),
     glyph: str(raw.glyph, "?").slice(0, 4),
-    hue: str(raw.hue, "0 100% 45%"),
+    hue: HUE_EXP.test(str(raw.hue, "0 100% 45%")) ? str(raw.hue, "0 100% 45%") : "0 100% 45%",
     needsServer: Boolean(raw.needsServer),
     featured: Boolean(raw.featured),
     denominations: sanitizeDenominations(raw.denominations),

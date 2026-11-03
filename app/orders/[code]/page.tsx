@@ -1,9 +1,19 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { BackButton } from "@/components/back-button"
 import { getOrder } from "@/lib/orders"
 import { PAYMENT_METHODS, STONE_PAYMENT_METHODS, formatIDR, WA_NUMBER } from "@/lib/catalog"
 import { StatusPoller } from "@/app/orders/[code]/status-poller"
 import { StonePayBox } from "@/app/orders/[code]/stone-pay-box"
+import { CopyOrderCode } from "@/app/orders/[code]/copy-code"
+
+/** Warna semantik badge status — biar user langsung nangkep kondisi order tanpa baca teks. */
+const STATUS_TONE: Record<string, string> = {
+  MENUNGGU_PEMBAYARAN: "border-amber-400/50 text-amber-300",
+  DIPROSES: "border-sky-400/50 text-sky-300",
+  SELESAI: "border-emerald-400/50 text-emerald-300",
+  GAGAL: "border-destructive/60 text-destructive",
+}
 
 export const dynamic = "force-dynamic"
 
@@ -39,21 +49,37 @@ export default async function OrderPage({
           </div>
           <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
         </Link>
-        <Link
-          href="/orders"
-          className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
-        >
-          Riwayat &rarr;
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/orders"
+            className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+          >
+            Riwayat &rarr;
+          </Link>
+        </div>
       </header>
 
-      <section className="px-4 md:px-8 lg:px-12 pt-5 md:pt-12 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
+      <section className="px-4 md:px-8 lg:px-12 pt-5 md:pt-10 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
+        <div className="flex items-center gap-3 mb-4 md:mb-6">
+          <BackButton fallbackHref="/orders" />
+        </div>
+
         <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
           [Order Dibuat]
         </span>
-        <h1 className="font-sans text-[12vw] sm:text-6xl md:text-8xl tracking-tighter text-foreground leading-[0.85] uppercase">
-          {order.code}
-        </h1>
+        <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+          <h1 className="font-sans text-[12vw] sm:text-6xl md:text-8xl tracking-tighter text-foreground leading-[0.85] uppercase">
+            {order.code}
+          </h1>
+          <CopyOrderCode code={order.code} />
+          <span
+            className={`inline-flex items-center gap-1.5 border px-2 py-1 font-mono text-[9px] md:text-[10px] tracking-[0.2em] uppercase ${
+              STATUS_TONE[order.status] ?? "border-border text-foreground/60"
+            }`}
+          >
+            ● {order.status.replace(/_/g, " ")}
+          </span>
+        </div>
         <StatusPoller code={order.code} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4 md:gap-8 mt-6 md:mt-12 items-start">
@@ -140,22 +166,10 @@ export default async function OrderPage({
                   <p className="text-foreground">2. Setelah pembayaran lunas, status order ini otomatis diperbarui (polling tiap ±8 detik) &mdash; item dikirim otomatis ke akun.</p>
                 </>
               )}
-              {!order.stoneOrderId && order.method === "qris" && (
+              {!order.stoneOrderId && (
                 <>
-                  <p className="text-foreground">1. Scan QRIS &mdash; semua e-wallet/m-banking didukung.</p>
-                  <p className="text-foreground">2. Transfer PERSIS <span className="text-accent">{formatIDR(order.amount)}</span>.</p>
-                </>
-              )}
-              {!order.stoneOrderId && order.method === "ewallet" && (
-                <>
-                  <p className="text-foreground">1. Transfer ke DANA / OVO / GoPay / ShopeePay: <span className="text-accent">0812-3456-7890</span> (Gas Store).</p>
-                  <p className="text-foreground">2. Nominal PERSIS <span className="text-accent">{formatIDR(order.amount)}</span>.</p>
-                </>
-              )}
-              {!order.stoneOrderId && order.method === "bank" && (
-                <>
-                  <p className="text-foreground">1. Transfer bank (BCA / BNI / BRI / Mandiri): <span className="text-accent">1234567890</span> a.n. GAS STORE.</p>
-                  <p className="text-foreground">2. Nominal PERSIS <span className="text-accent">{formatIDR(order.amount)}</span> (jangan bulatkan).</p>
+                  <p className="text-foreground">1. Minta rekening / QRIS tujuan ke CS via tombol WhatsApp di bawah.</p>
+                  <p className="text-foreground">2. Transfer PERSIS <span className="text-accent">{formatIDR(order.amount)}</span> (jangan bulatkan).</p>
                 </>
               )}
               <p className="text-foreground">3. Klik tombol WhatsApp di bawah, sertakan bukti transfer.</p>

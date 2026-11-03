@@ -2,6 +2,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import type { Metadata } from "next"
 import { GAMES, formatIDR } from "@/lib/catalog"
+import { BackButton } from "@/components/back-button"
 import { getDynamicGame } from "@/lib/content"
 import { getStoneGame, activeStoneVariants } from "@/lib/gamestone"
 import { TopupForm } from "@/components/topup-form"
@@ -76,6 +77,10 @@ export default async function TopupPage({
       </header>
 
       <section className="px-4 md:px-8 lg:px-12 pt-5 md:pt-10 pb-6 md:pb-10 max-w-[1400px] mx-auto w-full">
+        <div className="flex items-center gap-3 mb-4 md:mb-6">
+          <BackButton />
+        </div>
+
         <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
           [Top Up] {game.category.toUpperCase()} // {game.publisher.toUpperCase()}
         </span>

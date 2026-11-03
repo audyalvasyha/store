@@ -96,36 +96,85 @@ function apiKey(): string {
   return key
 }
 
+/**
+ * Meta error fetch Gamestone terakhir (null = fetch terakhir sukses).
+ * Dipakai route order buat nyompan pesan error yang jelas ke user —
+ * tanpa ini, sebab sebenarnya (timeout / HTTP berapa) ketelan di catch.
+ */
+const globalForStoneMeta = globalThis as typeof globalThis & {
+  _gasStoneFetchError_?: string | null
+}
+
+export function stoneFetchLastError(): string | null {
+  return globalForStoneMeta._gasStoneFetchError_ ?? null
+}
+
+function recordStoneFetchError(msg: string | null): void {
+  globalForStoneMeta._gasStoneFetchError_ = msg
+}
+
+/** Error HTTP dari provider (bukan network) — HTTP emang jawaban provider,
+ * nggak layak di-retry. Network/timeout error yang layak. */
+class StoneHttpError extends Error {}
+
 async function stoneFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      "x-api-key": apiKey(),
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-    cache: "no-store",
-    // Timeout keras 10s: provider hung nggak boleh bikin request nginx/fetch
-    // numpuk pending sampai timeout platform pas traffic tinggi.
-    signal: AbortSignal.timeout(Number(process.env.GAMESTONE_TIMEOUT_MS) || 10_000),
-  })
+  const timeoutMs = Number(process.env.GAMESTONE_TIMEOUT_MS) || 20_000
+  // Retry maks 2 percobaan, cuma buat GET (idempotent): glitch jaringan/timeout
+  // sesekali itu hal normal. HTTP error & POST nggak di-retry (rawan dobel order).
+  const isGet = !init?.method || init.method === "GET"
+  const attempts = isGet ? 2 : 1
+  let lastErr: unknown
 
-  let json: StoneEnvelope<unknown>
-  try {
-    json = (await res.json()) as StoneEnvelope<unknown>
-  } catch {
-    throw new Error(`Gamestone: response bukan JSON (HTTP ${res.status})`)
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      const res = await fetch(`${BASE_URL}${path}`, {
+        ...init,
+        headers: {
+          "x-api-key": apiKey(),
+          "Content-Type": "application/json",
+          ...(init?.headers ?? {}),
+        },
+        cache: "no-store",
+        // Timeout keras: provider hung nggak boleh bikin request nginx/fetch
+        // numpuk pending sampai timeout platform pas traffic tinggi.
+        signal: AbortSignal.timeout(timeoutMs),
+      })
+
+      let json: StoneEnvelope<unknown>
+      try {
+        json = (await res.json()) as StoneEnvelope<unknown>
+      } catch {
+        const msg = `Gamestone: response bukan JSON (HTTP ${res.status})`
+        recordStoneFetchError(msg)
+        throw new StoneHttpError(msg)
+      }
+
+      if (!res.ok || json.data === null) {
+        const message =
+          json && typeof json.message === "string"
+            ? `Gamestone: ${json.message}`
+            : `Gamestone: request gagal (HTTP ${res.status})`
+        recordStoneFetchError(message)
+        throw new StoneHttpError(message)
+      }
+
+      recordStoneFetchError(null)
+      return json.data as T
+    } catch (err) {
+      lastErr = err
+      // HTTP error jangan di-retry — provider emang nanggepin error.
+      if (err instanceof StoneHttpError) throw err
+      // Network/timeout error: kasih jeda kecil sebelum coba lagi.
+      if (attempt < attempts - 1) {
+        await new Promise((r) => setTimeout(r, 800))
+        continue
+      }
+    }
   }
 
-  if (!res.ok || json.data === null) {
-    const message =
-      json && typeof json.message === "string"
-        ? `Gamestone: ${json.message}`
-        : `Gamestone: request gagal (HTTP ${res.status})`
-    throw new Error(message)
-  }
-
-  return json.data as T
+  const message = lastErr instanceof Error ? `Gamestone: ${lastErr.message}` : "Gamestone: network error"
+  recordStoneFetchError(message)
+  throw new Error(message)
 }
 
 /** GET /games?type=topup|voucher&limit&page */

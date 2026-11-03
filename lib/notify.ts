@@ -12,6 +12,8 @@
 type OrderEmailData = {
   code: string
   email?: string
+  /** Nomor HP/WA pembayar (normalisasi otomatis ke format 62xx buat WA). */
+  phone?: string
   gameName: string
   denomLabel: string
   quantity: number
@@ -20,6 +22,7 @@ type OrderEmailData = {
 }
 
 const RESEND_API_URL = "https://api.resend.com/emails"
+const FONNTE_API_URL = "https://api.fonnte.com/send"
 
 function orderBaseUrl(): string {
   return process.env.APP_BASE_URL?.replace(/\/$/, "") ?? "https://audysignin.freebuff.app"
@@ -29,11 +32,67 @@ export function notifyConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY)
 }
 
+export function notifyWhatsAppConfigured(): boolean {
+  return Boolean(process.env.FONNTE_TOKEN)
+}
+
+/**
+ * Satu pintu notifikasi order: email + WhatsApp.
+ * Dua-duanya fire-and-forget & no-op kalau key belum di-set — kegagalan
+ * notif TIDAK pernah bikin flow order gagal.
+ *
+ * Email SEMENTARA dimatikan sampai domain sendiri terverifikasi di Resend
+ * (sender sandbox onboarding@resend.dev cuma boleh kirim ke email akun sendiri).
+ * Set NOTIFY_EMAIL_ENABLED=true di env kalau mau nyalain lagi.
+ */
+export function sendOrderStatusNotifications(order: OrderEmailData): void {
+  if (process.env.NOTIFY_EMAIL_ENABLED === "true") {
+    sendOrderStatusEmail(order)
+  }
+  sendOrderStatusWhatsApp(order)
+}
+
 const STATUS_LABEL: Record<string, string> = {
   MENUNGGU_PEMBAYARAN: "Menunggu Pembayaran",
   DIPROSES: "Diproses — Item dikirim",
   SELESAI: "Selesai — Item sudah masuk",
   GAGAL: "Gagal — hubungi CS Gas Store",
+}
+
+/**
+ * WhatsApp notifikasi status order via Fonnte.
+ * - Pakai FONNTE_TOKEN (device EA recan sendiri di dashboard fonnte.com).
+ * - Nomor tujuan dari order.phone, dinormalisasi 08xx/62xx -> 62xx.
+ * - Fire-and-forget; nggak pernah throw ke flow order.
+ */
+export function sendOrderStatusWhatsApp(order: OrderEmailData): void {
+  if (!notifyWhatsAppConfigured() || !order.phone) return
+
+  const token = process.env.FONNTE_TOKEN as string
+  const digits = String(order.phone).replace(/\D/g, "")
+  const target = digits.startsWith("0") ? `62${digits.slice(1)}` : digits.startsWith("62") ? digits : `62${digits}`
+  if (target.length < 10) return
+
+  const statusLabel = STATUS_LABEL[order.status] ?? order.status
+  const message = [
+    `GAS STORE — Order ${order.code}`,
+    `Status: ${statusLabel}`,
+    `${order.gameName} — ${order.denomLabel}` + (order.quantity > 1 ? ` ×${order.quantity}` : ""),
+    `Total: Rp ${order.amount.toLocaleString("id-ID")}`,
+    `Detail: ${orderBaseUrl()}/orders/${order.code}`,
+  ].join("\n")
+
+  fetch(FONNTE_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: token,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ target, message }),
+    signal: AbortSignal.timeout(8_000),
+  }).catch(() => {
+    // WA gagal (token invalid / device offline) — jangan ganggu flow order.
+  })
 }
 
 export function sendOrderStatusEmail(order: OrderEmailData): void {

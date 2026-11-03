@@ -4,7 +4,7 @@ import { getOrder, updateOrder } from "@/lib/orders"
 import { createApigamesTransaction, apigamesConfigured } from "@/lib/apigames"
 import { getDenomination } from "@/lib/catalog"
 import { getDynamicGame } from "@/lib/content"
-import { sendOrderStatusEmail } from "@/lib/notify"
+import { sendOrderStatusNotifications } from "@/lib/notify"
 
 export const dynamic = "force-dynamic"
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     status: "DIPROSES",
     paidAt: payload.transaction?.date ?? new Date().toISOString(),
   })
-  sendOrderStatusEmail({ ...order, status: "DIPROSES" })
+  sendOrderStatusNotifications({ ...order, status: "DIPROSES" })
 
   // Katalog dinamis dari DB (biar providerCode yang di-edit admin kebaca),
   // fallback otomatis ke katalog statis kalau game nggak ada di DB.
@@ -56,13 +56,13 @@ export async function POST(request: Request) {
   const productCode = denom?.providerCode
 
   if (!productCode || !apigamesConfigured()) {
+    // Status notif "DIPROSES" udah dikirim di atas — jangan kirim dobel.
     await updateOrder(order.code, {
       topupStatus: "MANUAL",
       topupMessage: productCode
         ? "APIGames belum dikonfigurasi — item dikirim manual"
         : "Kode produk APIGames belum diisi di katalog — item dikirim manual",
     })
-    sendOrderStatusEmail({ ...order, status: "DIPROSES" })
     return NextResponse.json({ ok: true, fulfillment: "manual" })
   }
 
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
 
   if (!result.ok) {
     await updateOrder(order.code, { topupStatus: "GAGAL", topupMessage: result.error })
-    sendOrderStatusEmail({ ...order, status: "GAGAL" })
+    sendOrderStatusNotifications({ ...order, status: "GAGAL" })
     return NextResponse.json({ ok: true, fulfillment: "failed" })
   }
 
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     topupRef: result.trxId,
     topupMessage: result.message,
   })
-  sendOrderStatusEmail({ ...order, status: done ? "SELESAI" : "DIPROSES" })
+  sendOrderStatusNotifications({ ...order, status: done ? "SELESAI" : "DIPROSES" })
 
   return NextResponse.json({ ok: true, fulfillment: done ? "success" : "pending" })
 }

@@ -1,5 +1,6 @@
 import Link from "next/link"
 import type { Metadata } from "next"
+import { BackButton } from "@/components/back-button"
 import { GAMES } from "@/lib/catalog"
 import { getDynamicGames } from "@/lib/content"
 import { GamesCatalog } from "@/components/games-catalog"
@@ -59,6 +60,10 @@ export default async function GamesPage({
           </Link>
         </nav>
       </header>
+
+      <div className="flex items-center gap-3 pt-5 md:pt-10 mb-4 md:mb-6 max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12">
+        <BackButton />
+      </div>
 
       <GamesCatalog games={safeGames} />
       <Footer />

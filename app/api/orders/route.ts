@@ -3,10 +3,10 @@ import { getDenomination, PAYMENT_METHODS, STONE_METHOD_IDS } from "@/lib/catalo
 import { getDynamicGame } from "@/lib/content"
 import { generateOrderCode, getOrder, saveOrder, updateOrder, type Order } from "@/lib/orders"
 import { createDokuCheckout, dokuConfigured } from "@/lib/doku"
-import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gamestoneConfigured, type StoneOrder, type StonePaymentMethod } from "@/lib/gamestone"
+import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gamestoneConfigured, stoneFetchLastError, type StoneOrder, type StonePaymentMethod } from "@/lib/gamestone"
 import { apigamesConfigured } from "@/lib/apigames"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
-import { sendOrderStatusEmail } from "@/lib/notify"
+import { sendOrderStatusNotifications } from "@/lib/notify"
 
 export const dynamic = "force-dynamic"
 
@@ -33,7 +33,7 @@ async function syncStoneStatus(order: Order): Promise<void> {
     patch.stonePaymentCode = so.payment_code ?? order.stonePaymentCode
     await updateOrder(order.code, patch)
     if (patch.status) {
-      sendOrderStatusEmail({ ...order, ...patch, status: patch.status })
+      sendOrderStatusNotifications({ ...order, ...patch, status: patch.status })
     }
   }
 }
@@ -172,11 +172,16 @@ export async function POST(request: Request) {
     // (down / Internal server error), otomatis fallback ke APIGames:
     // bayar via DOKU hosted checkout, item dikirim oleh APIGames.
     if (stoneMode) {
+      // Detail kenapa GET provider gagal disimpan oleh stoneFetch —
+      // diompo ke pesan error biar user/admin tahu sebabnya pas lihat 502.
+      const fetchProblem = stoneGame ? null : stoneFetchLastError()
       let stoneError: string | null = stoneVariant
         ? null
         : stoneGame
           ? "Nominal nggak tersedia di provider Gamestone"
-          : "Provider Gamestone tidak bisa diakses"
+          : fetchProblem
+            ? `Provider Gamestone tidak bisa diakses (${fetchProblem})`
+            : "Provider Gamestone tidak bisa diakses"
       const stoneMethod = STONE_METHOD_IDS.includes(String(method))
         ? (String(method) as StonePaymentMethod)
         : null
@@ -215,6 +220,11 @@ export async function POST(request: Request) {
           stoneExpiredAt: stoneOrder.expired_at ?? undefined,
         }
         await saveOrder(orderWithStone)
+        // Notif awal ke user (email + WA): order dibuat, menunggu pembayaran.
+        sendOrderStatusNotifications({
+          ...(await getOrder(order.code)) ?? orderWithStone,
+          status: "MENUNGGU_PEMBAYARAN",
+        })
         return NextResponse.json({ order: await getOrder(order.code) }, { status: 201 })
       }
 
@@ -236,14 +246,22 @@ export async function POST(request: Request) {
         updated = checkout.ok
           ? await updateOrder(order.code, { paymentUrl: checkout.paymentUrl })
           : await updateOrder(order.code, { paymentError: checkout.error })
+        sendOrderStatusNotifications({ ...updated ?? order, status: "MENUNGGU_PEMBAYARAN" })
         return NextResponse.json({ order: updated ?? order }, { status: 201 })
       }
 
-      // Gamestone gagal & fallback nggak bisa: kasih error yang jelas ke user.
-      return NextResponse.json(
-        { error: `${stoneError ?? "Gamestone bermasalah"}. Coba lagi / ganti metode bayar.` },
-        { status: 502 }
-      )
+      // ── Gamestone gagal & DOKU belum dikonfigurasi: order TETAP disimpan
+      // sebagai order manual (bayar & konfirmasi via CS WhatsApp). Kasus ini
+      // dulu balikin 502 — user nggak pernah dapat kode order, dan halaman
+      // order (instruksi manual + tombol WA) jadi nggak pernah keburu tampil.
+      // paymentError nyatet sebab teknisnya; kebaca juga di halaman order.
+      await saveOrder(order)
+      const manual = await updateOrder(order.code, {
+        fallbackReason: `Gamestone gagal (${stoneError ?? "unknown"}) & DOKU belum dikonfigurasi — order manual via CS`,
+        paymentError: stoneError ?? "Gateway pembayaran otomatis tidak tersedia",
+      })
+      sendOrderStatusNotifications({ ...(manual ?? order), status: "MENUNGGU_PEMBAYARAN" })
+      return NextResponse.json({ order: manual ?? order }, { status: 201 })
     }
 
     await saveOrder(order)
@@ -258,9 +276,11 @@ export async function POST(request: Request) {
       const updated = checkout.ok
         ? await updateOrder(order.code, { paymentUrl: checkout.paymentUrl })
         : await updateOrder(order.code, { paymentError: checkout.error })
+      sendOrderStatusNotifications({ ...(updated ?? order), status: "MENUNGGU_PEMBAYARAN" })
       return NextResponse.json({ order: updated ?? order }, { status: 201 })
     }
 
+    sendOrderStatusNotifications({ ...order, status: "MENUNGGU_PEMBAYARAN" })
     return NextResponse.json({ order }, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Gagal membuat order" }, { status: 500 })
