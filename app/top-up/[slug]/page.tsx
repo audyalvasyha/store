@@ -76,7 +76,7 @@ export default async function TopupPage({
         </nav>
       </header>
 
-      <section className="px-4 md:px-8 lg:px-12 pt-5 md:pt-10 pb-6 md:pb-10 max-w-[1400px] mx-auto w-full">
+      <section className="px-4 pt-5 md:pt-10 pb-6 md:pb-10 max-w-[1400px] mx-auto w-full">
         <div className="flex items-center gap-3 mb-4 md:mb-6">
           <BackButton />
         </div>
@@ -89,7 +89,7 @@ export default async function TopupPage({
         </h1>
       </section>
 
-      <section className="px-4 md:px-8 lg:px-12 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
+      <section className="px-4 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
         <TopupForm game={game} stoneVariants={stoneVariants} />
       </section>
     </main>
