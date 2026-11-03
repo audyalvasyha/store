@@ -6,7 +6,7 @@ import { createDokuCheckout, dokuConfigured } from "@/lib/doku"
 import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gamestoneConfigured, stoneFetchLastError, type StoneOrder, type StonePaymentMethod } from "@/lib/gamestone"
 import { apigamesConfigured } from "@/lib/apigames"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
-import { sendOrderStatusEmail } from "@/lib/notify"
+import { sendOrderStatusNotifications } from "@/lib/notify"
 
 export const dynamic = "force-dynamic"
 
@@ -33,7 +33,7 @@ async function syncStoneStatus(order: Order): Promise<void> {
     patch.stonePaymentCode = so.payment_code ?? order.stonePaymentCode
     await updateOrder(order.code, patch)
     if (patch.status) {
-      sendOrderStatusEmail({ ...order, ...patch, status: patch.status })
+      sendOrderStatusNotifications({ ...order, ...patch, status: patch.status })
     }
   }
 }
@@ -220,6 +220,11 @@ export async function POST(request: Request) {
           stoneExpiredAt: stoneOrder.expired_at ?? undefined,
         }
         await saveOrder(orderWithStone)
+        // Notif awal ke user (email + WA): order dibuat, menunggu pembayaran.
+        sendOrderStatusNotifications({
+          ...(await getOrder(order.code)) ?? orderWithStone,
+          status: "MENUNGGU_PEMBAYARAN",
+        })
         return NextResponse.json({ order: await getOrder(order.code) }, { status: 201 })
       }
 
@@ -241,6 +246,7 @@ export async function POST(request: Request) {
         updated = checkout.ok
           ? await updateOrder(order.code, { paymentUrl: checkout.paymentUrl })
           : await updateOrder(order.code, { paymentError: checkout.error })
+        sendOrderStatusNotifications({ ...updated ?? order, status: "MENUNGGU_PEMBAYARAN" })
         return NextResponse.json({ order: updated ?? order }, { status: 201 })
       }
 
@@ -263,9 +269,11 @@ export async function POST(request: Request) {
       const updated = checkout.ok
         ? await updateOrder(order.code, { paymentUrl: checkout.paymentUrl })
         : await updateOrder(order.code, { paymentError: checkout.error })
+      sendOrderStatusNotifications({ ...(updated ?? order), status: "MENUNGGU_PEMBAYARAN" })
       return NextResponse.json({ order: updated ?? order }, { status: 201 })
     }
 
+    sendOrderStatusNotifications({ ...order, status: "MENUNGGU_PEMBAYARAN" })
     return NextResponse.json({ order }, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Gagal membuat order" }, { status: 500 })

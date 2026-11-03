@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { verifyApigamesWebhook } from "@/lib/apigames"
 import { getOrder, updateOrder } from "@/lib/orders"
-import { sendOrderStatusEmail } from "@/lib/notify"
+import { sendOrderStatusNotifications } from "@/lib/notify"
 
 export const dynamic = "force-dynamic"
 
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       topupRef: payload.trx_id ?? order.topupRef,
       topupMessage: payload.message ?? order.topupMessage,
     })
-    sendOrderStatusEmail({ ...order, status })
+    sendOrderStatusNotifications({ ...order, status })
   }
 
   return NextResponse.json({ ok: true })
