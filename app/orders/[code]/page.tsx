@@ -166,22 +166,10 @@ export default async function OrderPage({
                   <p className="text-foreground">2. Setelah pembayaran lunas, status order ini otomatis diperbarui (polling tiap ±8 detik) &mdash; item dikirim otomatis ke akun.</p>
                 </>
               )}
-              {!order.stoneOrderId && order.method === "qris" && (
+              {!order.stoneOrderId && (
                 <>
-                  <p className="text-foreground">1. Scan QRIS &mdash; semua e-wallet/m-banking didukung.</p>
-                  <p className="text-foreground">2. Transfer PERSIS <span className="text-accent">{formatIDR(order.amount)}</span>.</p>
-                </>
-              )}
-              {!order.stoneOrderId && order.method === "ewallet" && (
-                <>
-                  <p className="text-foreground">1. Transfer ke DANA / OVO / GoPay / ShopeePay: <span className="text-accent">0812-3456-7890</span> (Gas Store).</p>
-                  <p className="text-foreground">2. Nominal PERSIS <span className="text-accent">{formatIDR(order.amount)}</span>.</p>
-                </>
-              )}
-              {!order.stoneOrderId && order.method === "bank" && (
-                <>
-                  <p className="text-foreground">1. Transfer bank (BCA / BNI / BRI / Mandiri): <span className="text-accent">1234567890</span> a.n. GAS STORE.</p>
-                  <p className="text-foreground">2. Nominal PERSIS <span className="text-accent">{formatIDR(order.amount)}</span> (jangan bulatkan).</p>
+                  <p className="text-foreground">1. Minta rekening / QRIS tujuan ke CS via tombol WhatsApp di bawah.</p>
+                  <p className="text-foreground">2. Transfer PERSIS <span className="text-accent">{formatIDR(order.amount)}</span> (jangan bulatkan).</p>
                 </>
               )}
               <p className="text-foreground">3. Klik tombol WhatsApp di bawah, sertakan bukti transfer.</p>

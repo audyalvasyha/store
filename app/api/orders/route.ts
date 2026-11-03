@@ -250,11 +250,18 @@ export async function POST(request: Request) {
         return NextResponse.json({ order: updated ?? order }, { status: 201 })
       }
 
-      // Gamestone gagal & fallback nggak bisa: kasih error yang jelas ke user.
-      return NextResponse.json(
-        { error: `${stoneError ?? "Gamestone bermasalah"}. Coba lagi / ganti metode bayar.` },
-        { status: 502 }
-      )
+      // ── Gamestone gagal & DOKU belum dikonfigurasi: order TETAP disimpan
+      // sebagai order manual (bayar & konfirmasi via CS WhatsApp). Kasus ini
+      // dulu balikin 502 — user nggak pernah dapat kode order, dan halaman
+      // order (instruksi manual + tombol WA) jadi nggak pernah keburu tampil.
+      // paymentError nyatet sebab teknisnya; kebaca juga di halaman order.
+      await saveOrder(order)
+      const manual = await updateOrder(order.code, {
+        fallbackReason: `Gamestone gagal (${stoneError ?? "unknown"}) & DOKU belum dikonfigurasi — order manual via CS`,
+        paymentError: stoneError ?? "Gateway pembayaran otomatis tidak tersedia",
+      })
+      sendOrderStatusNotifications({ ...(manual ?? order), status: "MENUNGGU_PEMBAYARAN" })
+      return NextResponse.json({ order: manual ?? order }, { status: 201 })
     }
 
     await saveOrder(order)
