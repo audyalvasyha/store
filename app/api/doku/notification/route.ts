@@ -56,13 +56,13 @@ export async function POST(request: Request) {
   const productCode = denom?.providerCode
 
   if (!productCode || !apigamesConfigured()) {
+    // Status notif "DIPROSES" udah dikirim di atas — jangan kirim dobel.
     await updateOrder(order.code, {
       topupStatus: "MANUAL",
       topupMessage: productCode
         ? "APIGames belum dikonfigurasi — item dikirim manual"
         : "Kode produk APIGames belum diisi di katalog — item dikirim manual",
     })
-    sendOrderStatusNotifications({ ...order, status: "DIPROSES" })
     return NextResponse.json({ ok: true, fulfillment: "manual" })
   }
 

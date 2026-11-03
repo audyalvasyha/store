@@ -34,6 +34,12 @@ export async function POST(request: Request) {
 
   if (success || failed) {
     const status: "SELESAI" | "GAGAL" = success ? "SELESAI" : "GAGAL"
+    // Idempoten: webhook bisa dikirim ulang oleh APIGames (retry) — kalau
+    // status lokal udah final, jangan update/notif lagi (hemat kuota WA
+    // & cegah duplikat pesan ke user).
+    if (order.status === "SELESAI" || order.status === "GAGAL") {
+      return NextResponse.json({ ok: true, ignored: true })
+    }
     await updateOrder(order.code, {
       status,
       topupStatus: success ? "SUKSES" : "GAGAL",
