@@ -1,5 +1,6 @@
 import Link from "next/link"
 import type { Metadata } from "next"
+import { BackButton } from "@/components/back-button"
 import { GAMES } from "@/lib/catalog"
 import { getDynamicGames } from "@/lib/content"
 import { GamesCatalog } from "@/components/games-catalog"
@@ -42,6 +43,7 @@ export default async function GamesPage({
           <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
         </Link>
         <nav className="flex items-center gap-4 md:gap-8 flex-1 justify-end">
+          <BackButton />
           <Suspense fallback={null}>
             <GamesSearchInput />
           </Suspense>

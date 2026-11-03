@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { BackButton } from "@/components/back-button"
 import { getOrder } from "@/lib/orders"
 import { PAYMENT_METHODS, STONE_PAYMENT_METHODS, formatIDR, WA_NUMBER } from "@/lib/catalog"
 import { StatusPoller } from "@/app/orders/[code]/status-poller"
@@ -39,12 +40,15 @@ export default async function OrderPage({
           </div>
           <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
         </Link>
-        <Link
-          href="/orders"
-          className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
-        >
-          Riwayat &rarr;
-        </Link>
+        <div className="flex items-center gap-3">
+          <BackButton fallbackHref="/orders" />
+          <Link
+            href="/orders"
+            className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+          >
+            Riwayat &rarr;
+          </Link>
+        </div>
       </header>
 
       <section className="px-4 md:px-8 lg:px-12 pt-5 md:pt-12 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import type { Metadata } from "next"
 import { GAMES, formatIDR } from "@/lib/catalog"
+import { BackButton } from "@/components/back-button"
 import { getDynamicGame } from "@/lib/content"
 import { getStoneGame, activeStoneVariants } from "@/lib/gamestone"
 import { TopupForm } from "@/components/topup-form"
@@ -54,6 +55,7 @@ export default async function TopupPage({
           <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
         </Link>
         <nav className="flex items-center gap-4 md:gap-8">
+          <BackButton />
           <Link
             href="/#games"
             className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"

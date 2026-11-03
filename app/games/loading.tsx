@@ -1,28 +1,77 @@
 /**
  * Skeleton halaman /games (segment loading Next.js).
- * Muncul instan saat navigasi RSC — layout brutalist mirip halaman aslinya.
+ * Mirror layout halaman asli: header nav, kicker + judul besar,
+ * grid kartu game, dan info strip bawah — biar transipsi ke konten mulus.
  */
 export default function GamesLoading() {
   return (
     <main className="relative min-h-screen">
-      <div className="px-4 md:px-8 lg:px-12 pt-8 md:pt-20 pb-6 md:pb-10 max-w-[1400px] mx-auto w-full">
-        <div className="h-3 w-40 bg-foreground/10 animate-pulse" />
-        <div className="h-[13vw] max-h-28 w-[min(60%,560px)] mt-3 bg-foreground/10 animate-pulse" />
-        <div className="h-10 w-full max-w-md mt-6 md:mt-10 bg-card border border-border animate-pulse" />
-      </div>
-      <div className="px-4 md:px-8 lg:px-12 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
-        <div className="border border-border divide-y divide-border">
+      <div className="noise-overlay" aria-hidden="true" />
+
+      {/* Header nav */}
+      <header className="px-4 md:px-8 lg:px-12 py-3 md:py-6 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="relative w-8 h-8">
+            <div className="absolute inset-0 bg-accent opacity-60" />
+          </div>
+          <div className="h-3 w-24 bg-foreground/10 animate-pulse" />
+        </div>
+        <div className="flex items-center gap-3 md:gap-6">
+          <div className="hidden sm:block h-8 w-48 bg-card border border-border animate-pulse" />
+          <div className="h-7 w-16 border border-border bg-foreground/[0.06] animate-pulse" />
+          <div className="hidden md:block h-3 w-12 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.15s" }} />
+          <div className="h-3 w-14 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.25s" }} />
+        </div>
+      </header>
+
+      {/* Section katalog */}
+      <section className="relative px-4 md:px-8 lg:px-12 py-6 md:py-14 overflow-hidden">
+        {/* Header katalog */}
+        <div className="max-w-[1400px] mx-auto mb-4 md:mb-10">
+          <div className="h-3 w-64 bg-accent/30 animate-pulse" />
+          <div className="mt-2 md:mt-3 h-[13vw] max-h-24 lg:max-h-32 w-[min(70%,640px)] bg-foreground/10 animate-pulse" />
+          <div className="mt-2 md:mt-4 h-3 w-full max-w-md bg-foreground/10 animate-pulse" />
+          <div className="mt-1.5 h-3 w-64 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.2s" }} />
+        </div>
+
+        {/* Grid kartu game (mirror grid asli 2/3/4 kolom) */}
+        <div className="max-w-[1400px] mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 md:gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 md:gap-4 px-2 md:px-4 py-3">
-              <div className={`shrink-0 bg-foreground/10 animate-pulse ${i % 3 === 0 ? "w-14" : i % 3 === 1 ? "w-24" : "w-16"}`} />
-              <div className="shrink-0 w-10 aspect-[3/4] md:w-16 bg-foreground/10 animate-pulse" />
-              <div className="hidden md:flex-1 bg-foreground/5 h-4 animate-pulse" />
-              <div className="ml-auto w-20 h-6 bg-foreground/10 animate-pulse" />
-              <div className="w-16 h-8 bg-foreground/10 animate-pulse" />
+            <div
+              key={i}
+              className="relative overflow-hidden aspect-[3/4] border border-border bg-foreground/[0.06] animate-pulse"
+              style={{ animationDelay: `${(i % 4) * 0.12}s` }}
+            >
+              {/* gradient overlay biar kayak kartu asli */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+              {/* badge kategori kiri */}
+              <div className="absolute top-2 md:top-3 left-2 md:left-3 h-3 w-14 bg-foreground/20" />
+              {/* badge jumlah item kanan */}
+              <div className="absolute top-2 md:top-3 right-2 md:right-3 h-3 w-10 bg-foreground/20" style={{ animationDelay: "0.3s" }} />
+              {/* inisial tengah */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-6 md:h-10 w-10 md:w-16 bg-foreground/10" />
+              </div>
+              {/* label publisher bawah */}
+              <div className="hidden md:block absolute bottom-2 left-3 right-3 h-3 bg-foreground/20" />
+              {/* garis aksen bawah */}
+              <div className="absolute bottom-0 left-0 w-1/3 h-[3px] bg-accent/70" />
             </div>
           ))}
         </div>
-      </div>
+
+        {/* Tombol lihat lainnya */}
+        <div className="max-w-[1400px] mx-auto mt-6 md:mt-10 flex flex-col items-center gap-2">
+          <div className="h-11 md:h-12 w-56 bg-foreground/10 animate-pulse" />
+          <div className="h-2.5 w-40 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.3s" }} />
+        </div>
+
+        {/* Info strip bawah */}
+        <div className="max-w-[1400px] mx-auto mt-6 md:mt-12 border-y border-border py-2 md:py-3 flex items-center justify-between gap-4 flex-wrap">
+          <div className="h-2.5 w-72 bg-foreground/10 animate-pulse" />
+          <div className="h-2.5 w-44 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.2s" }} />
+        </div>
+      </section>
     </main>
   )
 }
