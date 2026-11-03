@@ -18,7 +18,6 @@ export default function TopupLoading() {
           <div className="h-3 w-24 bg-foreground/10 animate-pulse" />
         </div>
         <div className="flex items-center gap-3 md:gap-6">
-          <div className="h-7 w-16 border border-border bg-foreground/[0.06] animate-pulse" />
           <div className="h-3 w-12 bg-foreground/10 animate-pulse" />
           <div className="h-3 w-12 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.15s" }} />
           <div className="h-3 w-14 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.25s" }} />
@@ -27,6 +26,10 @@ export default function TopupLoading() {
 
       {/* Kicker + judul */}
       <section className="px-4 md:px-8 lg:px-12 pt-5 md:pt-10 pb-6 md:pb-10 max-w-[1400px] mx-auto w-full">
+        <div className="flex items-center gap-3 mb-3 md:mb-4">
+          <div className="h-7 w-16 border border-border bg-foreground/[0.06] animate-pulse" />
+        </div>
+
         <div className="h-3 w-56 bg-accent/30 animate-pulse" />
         <div className="mt-2 h-[11vw] max-h-24 w-[min(55%,520px)] bg-foreground/10 animate-pulse" />
       </section>

@@ -370,6 +370,19 @@ export function TopupForm({
                   {m.label}
                 </span>
                 <span className="block font-mono text-[9px] md:text-[10px] text-foreground/40 mt-0.5">{m.detail}</span>
+                {/* Logo pembayaran asli dari brand-nya (SVG di /public/pay). */}
+                <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  {m.logos.map((lg) => (
+                    <img
+                      key={lg}
+                      src={`/pay/${lg}.svg`}
+                      alt={""}
+                      aria-hidden="true"
+                      loading="lazy"
+                      className="h-3.5 md:h-4 w-auto max-w-12 object-contain"
+                    />
+                  ))}
+                </span>
                 {method === m.id && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-accent" />}
               </button>
             ))}

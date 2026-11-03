@@ -75,7 +75,6 @@ export default function OrdersPage() {
           <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
         </Link>
         <div className="flex items-center gap-3">
-          <BackButton fallbackHref="/" />
           <Link
             href="/"
             className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
@@ -86,10 +85,14 @@ export default function OrdersPage() {
       </header>
 
       <section className="px-4 md:px-8 lg:px-12 pt-8 md:pt-20 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
+        <div className="flex items-center gap-3 mb-3 md:mb-4">
+          <BackButton fallbackHref="/" />
+        </div>
+
         <div className="max-w-2xl">
-          <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
-            [Riwayat] &mdash; Cek Status Order
-          </span>
+        <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
+          [Riwayat] &mdash; Cek Status Order
+        </span>
           <h1 className="font-sans text-[13vw] sm:text-6xl md:text-8xl tracking-tighter text-foreground leading-[0.85] uppercase mb-4 md:mb-8">
             Riwayat<br />Order<span className="text-accent">.</span>
           </h1>

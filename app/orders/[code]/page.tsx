@@ -41,7 +41,6 @@ export default async function OrderPage({
           <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
         </Link>
         <div className="flex items-center gap-3">
-          <BackButton fallbackHref="/orders" />
           <Link
             href="/orders"
             className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
@@ -52,6 +51,10 @@ export default async function OrderPage({
       </header>
 
       <section className="px-4 md:px-8 lg:px-12 pt-5 md:pt-12 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
+        <div className="flex items-center gap-3 mb-3 md:mb-4">
+          <BackButton fallbackHref="/orders" />
+        </div>
+
         <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
           [Order Dibuat]
         </span>

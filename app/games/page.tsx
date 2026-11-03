@@ -43,7 +43,6 @@ export default async function GamesPage({
           <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
         </Link>
         <nav className="flex items-center gap-4 md:gap-8 flex-1 justify-end">
-          <BackButton />
           <Suspense fallback={null}>
             <GamesSearchInput />
           </Suspense>
@@ -61,6 +60,10 @@ export default async function GamesPage({
           </Link>
         </nav>
       </header>
+
+      <div className="flex items-center gap-3 pt-5 md:pt-10 mb-4 max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12">
+        <BackButton />
+      </div>
 
       <GamesCatalog games={safeGames} />
       <Footer />

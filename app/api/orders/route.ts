@@ -3,7 +3,7 @@ import { getDenomination, PAYMENT_METHODS, STONE_METHOD_IDS } from "@/lib/catalo
 import { getDynamicGame } from "@/lib/content"
 import { generateOrderCode, getOrder, saveOrder, updateOrder, type Order } from "@/lib/orders"
 import { createDokuCheckout, dokuConfigured } from "@/lib/doku"
-import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gamestoneConfigured, type StoneOrder, type StonePaymentMethod } from "@/lib/gamestone"
+import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gamestoneConfigured, stoneFetchLastError, type StoneOrder, type StonePaymentMethod } from "@/lib/gamestone"
 import { apigamesConfigured } from "@/lib/apigames"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
 import { sendOrderStatusEmail } from "@/lib/notify"
@@ -172,11 +172,16 @@ export async function POST(request: Request) {
     // (down / Internal server error), otomatis fallback ke APIGames:
     // bayar via DOKU hosted checkout, item dikirim oleh APIGames.
     if (stoneMode) {
+      // Detail kenapa GET provider gagal disimpan oleh stoneFetch —
+      // diompo ke pesan error biar user/admin tahu sebabnya pas lihat 502.
+      const fetchProblem = stoneGame ? null : stoneFetchLastError()
       let stoneError: string | null = stoneVariant
         ? null
         : stoneGame
           ? "Nominal nggak tersedia di provider Gamestone"
-          : "Provider Gamestone tidak bisa diakses"
+          : fetchProblem
+            ? `Provider Gamestone tidak bisa diakses (${fetchProblem})`
+            : "Provider Gamestone tidak bisa diakses"
       const stoneMethod = STONE_METHOD_IDS.includes(String(method))
         ? (String(method) as StonePaymentMethod)
         : null

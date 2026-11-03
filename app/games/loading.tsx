@@ -18,7 +18,6 @@ export default function GamesLoading() {
         </div>
         <div className="flex items-center gap-3 md:gap-6">
           <div className="hidden sm:block h-8 w-48 bg-card border border-border animate-pulse" />
-          <div className="h-7 w-16 border border-border bg-foreground/[0.06] animate-pulse" />
           <div className="hidden md:block h-3 w-12 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.15s" }} />
           <div className="h-3 w-14 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.25s" }} />
         </div>
@@ -26,6 +25,9 @@ export default function GamesLoading() {
 
       {/* Section katalog */}
       <section className="relative px-4 md:px-8 lg:px-12 py-6 md:py-14 overflow-hidden">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-7 w-16 border border-border bg-foreground/[0.06] animate-pulse" />
+        </div>
         {/* Header katalog */}
         <div className="max-w-[1400px] mx-auto mb-4 md:mb-10">
           <div className="h-3 w-64 bg-accent/30 animate-pulse" />

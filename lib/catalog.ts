@@ -55,30 +55,32 @@ export type GameItem = {
   denominations: Denomination[]
 }
 
+// logos = nama file SVG di /public/pay/ yang dirender sebagai row logo
+// di kartu metode bayar (aset asli dari idn-finlogos, kredit di NOTICE).
 export const PAYMENT_METHODS = [
-  { id: "qris", label: "QRIS", detail: "Semua e-wallet & m-banking" },
-  { id: "ewallet", label: "E-Wallet", detail: "DANA / OVO / GoPay / ShopeePay" },
-  { id: "bank", label: "Transfer Bank", detail: "BCA / BNI / BRI / Mandiri" },
+  { id: "qris", label: "QRIS", detail: "Semua e-wallet & m-banking", logos: ["qris"] },
+  { id: "ewallet", label: "E-Wallet", detail: "DANA / OVO / GoPay / ShopeePay", logos: ["dana", "ovo", "gopay", "shopeepay"] },
+  { id: "bank", label: "Transfer Bank", detail: "BCA / BNI / BRI / Mandiri", logos: ["bca", "bni", "bri", "mandiri"] },
 ] as const
 
 /** Metode pembayaran via payment bawaan Gamestone (code = payment_method_code API). */
 export const STONE_PAYMENT_METHODS = [
-  { id: "qris", label: "QRIS", detail: "Semua e-wallet & m-banking" },
-  { id: "ovo", label: "OVO", detail: "OVO balance" },
-  { id: "linkaja", label: "LinkAja", detail: "LinkAja balance" },
-  { id: "mandiri", label: "Mandiri VA", detail: "Virtual account" },
-  { id: "bni", label: "BNI VA", detail: "Virtual account" },
-  { id: "bri", label: "BRI VA", detail: "Virtual account" },
-  { id: "permata", label: "Permata VA", detail: "Virtual account" },
-  { id: "bjb", label: "BJB VA", detail: "Virtual account" },
-  { id: "cimb", label: "CIMB VA", detail: "Virtual account" },
-  { id: "indomaret", label: "Indomaret", detail: "Bayar di kasir" },
-  { id: "alfamart", label: "Alfamart", detail: "Bayar di kasir" },
+  { id: "qris", label: "QRIS", detail: "Semua e-wallet & m-banking", logos: ["qris"] },
+  { id: "ovo", label: "OVO", detail: "OVO balance", logos: ["ovo"] },
+  { id: "linkaja", label: "LinkAja", detail: "LinkAja balance", logos: ["linkaja"] },
+  { id: "mandiri", label: "Mandiri VA", detail: "Virtual account", logos: ["mandiri"] },
+  { id: "bni", label: "BNI VA", detail: "Virtual account", logos: ["bni"] },
+  { id: "bri", label: "BRI VA", detail: "Virtual account", logos: ["bri"] },
+  { id: "permata", label: "Permata VA", detail: "Virtual account", logos: ["permata"] },
+  { id: "bjb", label: "BJB VA", detail: "Virtual account", logos: ["bank-bjb"] },
+  { id: "cimb", label: "CIMB VA", detail: "Virtual account", logos: ["bank-cimb-niaga"] },
+  { id: "indomaret", label: "Indomaret", detail: "Bayar di kasir", logos: ["indomaret"] },
+  { id: "alfamart", label: "Alfamart", detail: "Bayar di kasir", logos: ["alfamart"] },
 ] as const
 
 export const STONE_METHOD_IDS: string[] = STONE_PAYMENT_METHODS.map((m) => m.id)
 
-export const WA_NUMBER = "6281234567890"
+export const WA_NUMBER = "6281373634190"
 
 export function formatIDR(amount: number): string {
   return "Rp " + new Intl.NumberFormat("id-ID").format(amount)
@@ -95,7 +97,8 @@ export const GAMES: GameItem[] = [
     glyph: "ML",
     hue: "258 85% 55%",
     image: "https://static-src.vocagame.com/BisnisVocagame/mlbbmy-12f6-original-50ca-original.webp",
-    stoneSlug: "mobile-legends-bang-bang-my-partner",
+    // Slug varian global di provider Gamestone (bukan varian Malaysia/My).
+    stoneSlug: "mobile-legends-bang-bang",
     needsServer: true,
     featured: true,
     denominations: [
@@ -119,7 +122,8 @@ export const GAMES: GameItem[] = [
     glyph: "FF",
     hue: "12 95% 50%",
     image: "https://static-src.vocagame.com/BisnisVocagame/THUMBNAILSfree_fire%20my-ab9c-original.webp",
-    stoneSlug: "free-fire-malaysia",
+    // Satu-satunya slug Free Fire non-MY di provider Gamestone.
+    stoneSlug: "free-fire-partner",
     needsServer: false,
     featured: true,
     denominations: [
@@ -156,14 +160,15 @@ export const GAMES: GameItem[] = [
   {
     slug: "league-of-legends-pc",
     short: "LoL PC",
-    name: "League of Legends - PC MY",
+    name: "League of Legends",
     publisher: "Riot Games",
     category: "MOBA",
     currency: "Blue Essence",
     glyph: "LoL",
     hue: "205 85% 48%",
     image: "https://static-src.vocagame.com/BisnisVocagame/league_of_legends%20my-4a6c-original.webp",
-    stoneSlug: "league-of-legends-pc-my",
+    // Slug varian global di provider Gamestone (bukan varian Malaysia/My).
+    stoneSlug: "league-of-legends-pc",
     needsServer: true,
     featured: true,
     denominations: [
