@@ -61,7 +61,7 @@ export default async function GamesPage({
         </nav>
       </header>
 
-      <div className="flex items-center gap-3 pt-5 md:pt-10 mb-4 max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12">
+      <div className="flex items-center gap-3 pt-5 md:pt-10 mb-4 md:mb-6 max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12">
         <BackButton />
       </div>
 

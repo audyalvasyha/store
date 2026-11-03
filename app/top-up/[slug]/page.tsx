@@ -77,7 +77,7 @@ export default async function TopupPage({
       </header>
 
       <section className="px-4 md:px-8 lg:px-12 pt-5 md:pt-10 pb-6 md:pb-10 max-w-[1400px] mx-auto w-full">
-        <div className="flex items-center gap-3 mb-3 md:mb-4">
+        <div className="flex items-center gap-3 mb-4 md:mb-6">
           <BackButton />
         </div>
 

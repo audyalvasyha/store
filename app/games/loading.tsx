@@ -24,8 +24,8 @@ export default function GamesLoading() {
       </header>
 
       {/* Section katalog */}
-      <section className="relative px-4 md:px-8 lg:px-12 py-6 md:py-14 overflow-hidden">
-        <div className="flex items-center gap-3 mb-4">
+      <section className="relative px-4 md:px-8 lg:px-12 pt-5 md:pt-10 pb-6 md:pb-14 overflow-hidden">
+        <div className="flex items-center gap-3 mb-4 md:mb-6">
           <div className="h-7 w-16 border border-border bg-foreground/[0.06] animate-pulse" />
         </div>
         {/* Header katalog */}
