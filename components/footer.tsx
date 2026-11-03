@@ -1,6 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { WA_NUMBER } from "@/lib/catalog"
+
+/** 62xxx -> 0xxx terformat biar gak dobel sumber data (satu pintu dari katalog). */
+const WA_DISPLAY = `0${WA_NUMBER.slice(2).replace(/(\d{4})(\d{4})(\d{4})/, "$1-$2-$3")}`
 
 export function Footer() {
   const marqueeRef = useRef<HTMLDivElement>(null)
@@ -85,7 +89,14 @@ export function Footer() {
             </span>
             <div className="flex flex-col gap-1.5 md:gap-3 font-mono text-[10px] md:text-xs text-muted-foreground">
               <span>CS Telegram: @gasstore</span>
-              <span>WhatsApp: 0812-3456-7890</span>
+              <a
+                href={`https://wa.me/${WA_NUMBER}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-accent transition-colors"
+              >
+                WhatsApp: {WA_DISPLAY}
+              </a>
               <a href="mailto:cs@gasstore.id" className="hover:text-accent transition-colors mt-1 break-all">
                 cs@gasstore.id
               </a>

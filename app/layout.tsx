@@ -15,7 +15,10 @@ const _jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains',
 })
 
+const SITE_URL = process.env.APP_BASE_URL?.replace(/\/$/, "") ?? 'https://audysignin.freebuff.app'
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'GAS STORE // Top Up Game Online',
   description: 'Top up game favorit lo: Diamond MLBB, Diamond FF, CP CODM, RP LoL. Proses kilat, harga bersahabat, layanan 24 jam.',
   openGraph: {
@@ -35,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${_bebasNeue.variable} ${_jetbrainsMono.variable}`}>
+    <html lang="id" className={`${_bebasNeue.variable} ${_jetbrainsMono.variable}`}>
       <body className="font-mono antialiased overflow-x-hidden">{children}</body>
     </html>
   )

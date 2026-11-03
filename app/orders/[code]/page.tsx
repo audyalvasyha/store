@@ -5,6 +5,15 @@ import { getOrder } from "@/lib/orders"
 import { PAYMENT_METHODS, STONE_PAYMENT_METHODS, formatIDR, WA_NUMBER } from "@/lib/catalog"
 import { StatusPoller } from "@/app/orders/[code]/status-poller"
 import { StonePayBox } from "@/app/orders/[code]/stone-pay-box"
+import { CopyOrderCode } from "@/app/orders/[code]/copy-code"
+
+/** Warna semantik badge status — biar user langsung nangkep kondisi order tanpa baca teks. */
+const STATUS_TONE: Record<string, string> = {
+  MENUNGGU_PEMBAYARAN: "border-amber-400/50 text-amber-300",
+  DIPROSES: "border-sky-400/50 text-sky-300",
+  SELESAI: "border-emerald-400/50 text-emerald-300",
+  GAGAL: "border-destructive/60 text-destructive",
+}
 
 export const dynamic = "force-dynamic"
 
@@ -58,9 +67,19 @@ export default async function OrderPage({
         <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
           [Order Dibuat]
         </span>
-        <h1 className="font-sans text-[12vw] sm:text-6xl md:text-8xl tracking-tighter text-foreground leading-[0.85] uppercase">
-          {order.code}
-        </h1>
+        <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+          <h1 className="font-sans text-[12vw] sm:text-6xl md:text-8xl tracking-tighter text-foreground leading-[0.85] uppercase">
+            {order.code}
+          </h1>
+          <CopyOrderCode code={order.code} />
+          <span
+            className={`inline-flex items-center gap-1.5 border px-2 py-1 font-mono text-[9px] md:text-[10px] tracking-[0.2em] uppercase ${
+              STATUS_TONE[order.status] ?? "border-border text-foreground/60"
+            }`}
+          >
+            ● {order.status.replace(/_/g, " ")}
+          </span>
+        </div>
         <StatusPoller code={order.code} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4 md:gap-8 mt-6 md:mt-12 items-start">
