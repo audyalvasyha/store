@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { BackButton } from "@/components/back-button"
 
 const RECENT_KEY = "gas-recent-orders"
 
@@ -73,12 +74,15 @@ export default function OrdersPage() {
           </div>
           <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
         </Link>
-        <Link
-          href="/"
-          className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
-        >
-          &larr; Beranda
-        </Link>
+        <div className="flex items-center gap-3">
+          <BackButton fallbackHref="/" />
+          <Link
+            href="/"
+            className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+          >
+            &larr; Beranda
+          </Link>
+        </div>
       </header>
 
       <section className="px-4 md:px-8 lg:px-12 pt-8 md:pt-20 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
