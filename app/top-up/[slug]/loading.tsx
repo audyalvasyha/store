@@ -10,17 +10,19 @@ export default function TopupLoading() {
       <div className="noise-overlay" aria-hidden="true" />
 
       {/* Header nav */}
-      <header className="px-4 md:px-8 lg:px-12 py-3 md:py-6 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="relative w-8 h-8">
-            <div className="absolute inset-0 bg-accent opacity-60" />
+      <header className="border-b border-border">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-3 md:py-6 flex items-center justify-between w-full">
+          <div className="flex items-center gap-2">
+            <div className="relative w-8 h-8">
+              <div className="absolute inset-0 bg-accent opacity-60" />
+            </div>
+            <div className="h-3 w-24 bg-foreground/10 animate-pulse" />
           </div>
-          <div className="h-3 w-24 bg-foreground/10 animate-pulse" />
-        </div>
-        <div className="flex items-center gap-3 md:gap-6">
-          <div className="h-3 w-12 bg-foreground/10 animate-pulse" />
-          <div className="h-3 w-12 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.15s" }} />
-          <div className="h-3 w-14 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.25s" }} />
+          <div className="flex items-center gap-3 md:gap-6">
+            <div className="h-3 w-12 bg-foreground/10 animate-pulse" />
+            <div className="h-3 w-12 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.15s" }} />
+            <div className="h-3 w-14 bg-foreground/10 animate-pulse" style={{ animationDelay: "0.25s" }} />
+          </div>
         </div>
       </header>
 

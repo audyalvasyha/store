@@ -42,7 +42,7 @@ export function GamesCatalog({ games = GAMES }: { games?: GameItem[] }) {
   const totalItems = games.reduce((sum, g) => sum + g.denominations.length, 0)
 
   return (
-    <section ref={sectionRef} className="relative px-4 md:px-8 lg:px-12 py-6 md:py-14 overflow-hidden">
+    <section ref={sectionRef} className="relative max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-6 md:py-14 overflow-hidden">
       {/* Header */}
       <div className="max-w-[1400px] mx-auto mb-4 md:mb-10">
         <span

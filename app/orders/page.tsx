@@ -66,21 +66,23 @@ export default function OrdersPage() {
     <main className="relative min-h-screen">
       <div className="noise-overlay" aria-hidden="true" />
 
-      <header className="px-4 md:px-8 lg:px-12 py-3 md:py-6 border-b border-border flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="relative w-8 h-8 flex items-center justify-center">
-            <div className="absolute inset-0 bg-accent" />
-            <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
-          </div>
-          <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
-        </Link>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
-          >
-            &larr; Beranda
+      <header className="border-b border-border">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-3 md:py-6 flex items-center justify-between w-full">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="relative w-8 h-8 flex items-center justify-center">
+              <div className="absolute inset-0 bg-accent" />
+              <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
+            </div>
+            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
           </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+            >
+              &larr; Beranda
+            </Link>
+          </div>
         </div>
       </header>
 

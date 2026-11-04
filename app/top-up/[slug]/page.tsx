@@ -46,34 +46,36 @@ export default async function TopupPage({
     <main className="relative min-h-screen">
       <div className="noise-overlay" aria-hidden="true" />
 
-      <header className="px-4 md:px-8 lg:px-12 py-3 md:py-6 border-b border-border flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="relative w-8 h-8 flex items-center justify-center">
-            <div className="absolute inset-0 bg-accent" />
-            <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
-          </div>
-          <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
-        </Link>
-        <nav className="flex items-center gap-4 md:gap-8">
-          <Link
-            href="/#games"
-            className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
-          >
-            Games
+      <header className="border-b border-border">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-3 md:py-6 flex items-center justify-between w-full">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="relative w-8 h-8 flex items-center justify-center">
+              <div className="absolute inset-0 bg-accent" />
+              <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
+            </div>
+            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
           </Link>
-          <Link
-            href="/#harga"
-            className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors hidden sm:block"
-          >
-            Harga
-          </Link>
-          <Link
-            href="/orders"
-            className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
-          >
-            Riwayat
-          </Link>
-        </nav>
+          <nav className="flex items-center gap-4 md:gap-8">
+            <Link
+              href="/#games"
+              className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+            >
+              Games
+            </Link>
+            <Link
+              href="/#harga"
+              className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors hidden sm:block"
+            >
+              Harga
+            </Link>
+            <Link
+              href="/orders"
+              className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+            >
+              Riwayat
+            </Link>
+          </nav>
+        </div>
       </header>
 
       <section className="px-4 md:px-8 lg:px-12 pt-5 md:pt-10 pb-6 md:pb-10 max-w-[1400px] mx-auto w-full">

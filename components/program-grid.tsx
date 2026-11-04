@@ -38,9 +38,9 @@ export function GameGrid({
     <section
       id="games"
       ref={sectionRef}
-      className="relative px-4 md:px-8 lg:px-12 py-5 md:py-20 overflow-hidden"
+      className="relative py-5 md:py-20 overflow-hidden"
     >
-      <div className="max-w-[1400px] mx-auto">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12">
         {/* Search bar — filter game via ?q= (server-side) */}
         <div className="flex items-center justify-between gap-4 mb-2 md:mb-6">
           <div className="w-full sm:max-w-md md:max-w-xl">

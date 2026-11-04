@@ -43,8 +43,8 @@ export function PriceList({ games = GAMES }: { games?: GameItem[] }) {
   // Guard: hasil search ga ketemu — jangan crash, kasih note aja.
   if (!activeGame) {
     return (
-      <section id="harga" className="px-4 md:px-8 lg:px-12 py-5 md:py-20 bg-card">
-        <div className="max-w-[1400px] mx-auto border border-border bg-background p-6 md:p-10 text-center">
+      <section id="harga" className="py-5 md:py-20 bg-card">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 border border-border bg-background p-6 md:p-10 text-center">
           <p className="font-mono text-[10px] md:text-xs text-foreground/50 tracking-[0.15em] uppercase">
             [Harga] Ga ada game yang cocok buat carian itu.
           </p>
@@ -59,7 +59,7 @@ export function PriceList({ games = GAMES }: { games?: GameItem[] }) {
     <section
       ref={sectionRef}
       id="harga"
-      className="relative px-4 md:px-8 lg:px-12 py-5 md:py-20 bg-card overflow-hidden"
+      className="relative py-5 md:py-20 bg-card overflow-hidden"
     >
       <div
         className="absolute top-6 md:top-8 right-2 md:right-12 font-sans text-[25vw] md:text-[18vw] leading-none text-foreground/[0.02] tracking-tighter select-none pointer-events-none"
@@ -68,7 +68,7 @@ export function PriceList({ games = GAMES }: { games?: GameItem[] }) {
         {String(denoms.length).padStart(2, "0")}
       </div>
 
-      <div className="max-w-[1400px] mx-auto relative">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 relative">
         <div
           className={`mb-3 md:mb-8 transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
         >

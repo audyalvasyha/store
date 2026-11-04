@@ -17,12 +17,12 @@ export function FinalCta() {
   }, [])
 
   return (
-    <section id="contact" ref={ref} className="relative px-4 md:px-8 py-8 md:py-32 overflow-hidden">
+    <section id="contact" ref={ref} className="relative py-8 md:py-32 overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none" aria-hidden="true">
         <span className="font-sans text-[40vw] md:text-[35vw] text-foreground/[0.02] leading-none">G$</span>
       </div>
 
-      <div className="max-w-[1400px] mx-auto relative z-10 text-center">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 relative z-10 text-center">
         <div className={visible ? "brutal-reveal" : "opacity-0"}>
           <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.25em] md:tracking-[0.3em] uppercase block mb-4 md:mb-8">
             [Gas Sekarang]

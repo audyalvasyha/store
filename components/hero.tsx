@@ -221,8 +221,8 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
       </div>
 
       {/* ── CONTENT ── */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center px-4 md:px-8 lg:px-12 md:justify-end md:pb-8">
-        <div className="max-w-[1400px] mx-auto w-full text-center md:text-left">
+      <div className="relative z-10 flex-1 flex flex-col justify-center md:justify-end md:pb-8">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 w-full text-center md:text-left">
           {/* Tagline */}
           <div className="flex items-center justify-center md:justify-start gap-2 md:gap-4 mb-2 md:mb-5 anim-wipe-right" style={d(300)}>
             <div className="h-[1.5px] w-5 md:w-16 bg-accent" />
@@ -294,8 +294,8 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
       </div>
 
       {/* Bottom bar desktop only */}
-      <div className="relative z-10 px-4 md:px-8 lg:px-12 pb-4 md:pb-6 hidden md:block">
-        <div className="flex items-center justify-between max-w-[1400px] mx-auto w-full anim-cut-in" style={d(1000)}>
+      <div className="relative z-10 pb-4 md:pb-6 hidden md:block">
+        <div className="flex items-center justify-between max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 w-full anim-cut-in" style={d(1000)}>
           <div className="flex items-center gap-3">
             <div className="w-[1px] h-10 bg-accent" />
             <span className="font-mono text-[10px] text-foreground/40 tracking-[0.3em] uppercase">Scroll</span>

@@ -43,7 +43,7 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-5 md:py-16">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-5 md:py-16">
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
