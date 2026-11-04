@@ -117,6 +117,33 @@ export async function getAdminEmail(sessionToken: string | undefined): Promise<s
   return session?.email ?? null;
 }
 
+/**
+ * Ganti password admin sendiri (harus login): verifikasi password lama,
+ * lalu tulis hash baru. Password lama salah = ditolak. Sesudah ganti,
+ * session yang sedang jalan TIDAK dibatalkan — user tinggal login pakai
+ * password baru di next session kalau mau.
+ */
+export async function changePassword(
+  email: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  await ready();
+  const db = await getDb();
+  const admin = await db
+    .collection<AdminDoc>("admins")
+    .findOne({ email: email.toLowerCase() });
+  if (!admin || !verifyPassword(currentPassword, admin.passwordHash)) {
+    throw new Error("Password lama salah");
+  }
+  await db
+    .collection<AdminDoc>("admins")
+    .updateOne(
+      { email: email.toLowerCase() },
+      { $set: { passwordHash: hashPassword(newPassword) } }
+    );
+}
+
 /** Validasi kredensial form register/login. */
 export function validateCredentials(email: string, password: string): string | null {
   if (!ADMIN_EXPRESS.test(email)) return "Email tidak valid";

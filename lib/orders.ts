@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { getDb, ensureIndexes } from "./mongodb";
 
 let initPromise: Promise<void> | null = null;
@@ -52,14 +53,21 @@ export type Order = {
   /** Status pengiriman item lewat APIGames */
   topupStatus?: TopupStatus;
   topupRef?: string;
+  /** Potongan kupon (Rupiah). Order manual = diskon (amount sdh dikurangi);
+   * order Gamestone = cashback yang di-transfer CS setelah SELESAI. */
+  discount?: number;
+  /** Kode kupon yang dipakai, biar bisa diperiksa admin & anti double-apply. */
+  couponCode?: string;
   topupMessage?: string;
 };
 
 export function generateOrderCode(): string {
+  // Kode order = satu-satunya "kunci" akses detail order (berisi PII email/HP),
+  // jadi harus RNG kriptografis — Math.random() itu prediktabel.
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let suffix = "";
   for (let i = 0; i < 6; i++) {
-    suffix += alphabet[Math.floor(Math.random() * alphabet.length)];
+    suffix += alphabet[crypto.randomInt(alphabet.length)];
   }
   return `GAS-${suffix}`;
 }
@@ -67,8 +75,22 @@ export function generateOrderCode(): string {
 export async function saveOrder(order: Order): Promise<Order> {
   await ensureReady();
   const db = await getDb();
-  await db.collection<Order>("orders").insertOne(order);
-  return order;
+  // Kode order punya unique index. Tabrakan itu super jarang (dari 32^6 kode
+  // kripto), tapi kalau kejadian dan gak di-handle, user kena 500 tanpa order.
+  // Solusi: regenerate code di objek yang sama (route membaca order.code setelah
+  // saveOrder, jadi mutasi objek yang diteruskan itu memang disengaja).
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await db.collection<Order>("orders").insertOne(order);
+      return order;
+    } catch (err) {
+      if ((err as { code?: number }).code === 11000 && attempt < 5) {
+        order.code = generateOrderCode();
+        continue;
+      }
+      throw err;
+    }
+  }
 }
 
 export async function getOrder(code: string): Promise<Order | null> {

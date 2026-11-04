@@ -48,4 +48,9 @@ export async function ensureIndexes(): Promise<void> {
   ]);
   await db.collection("site_content").createIndexes([{ key: { key: 1 }, unique: true }]);
   await db.collection("games").createIndexes([{ key: { slug: 1 }, unique: true }]);
+  // Kupon promo: kode unik + bantu cari by game.
+  await db.collection("coupons").createIndexes([
+    { key: { code: 1 }, unique: true },
+    { key: { gameSlug: 1 } },
+  ]);
 }

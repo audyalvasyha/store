@@ -131,7 +131,7 @@ export function AdminPanel({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <div>
           <span className="font-mono text-[10px] text-accent tracking-[0.3em] uppercase block">
-            [Gas Store Admin]
+            [Gastros Admin]
           </span>
           <h1 className="font-sans text-3xl md:text-5xl text-foreground tracking-tighter uppercase leading-none">
             Maintenance

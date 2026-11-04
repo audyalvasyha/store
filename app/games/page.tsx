@@ -13,9 +13,19 @@ import { Footer } from "@/components/footer"
 export const revalidate = 30
 
 export const metadata: Metadata = {
-  title: "Semua Game // GAS STORE",
+  title: "Semua Game",
   description:
-    "Katalog lengkap top up game: MLBB, Free Fire, CODM, LoL, Valorant dan lainnya. Diamond & currency masuk akun lewat jalur resmi publisher, proses kilat 24 jam.",
+    "Katalog lengkap top up game di GASTROS: MLBB, Free Fire, CODM, LoL, Valorant dan lainnya. Diamond & currency masuk akun lewat jalur resmi publisher, proses kilat 24 jam.",
+  alternates: {
+    canonical: "/games",
+  },
+  openGraph: {
+    title: "Katalog Semua Game // GASTROS",
+    description:
+      "Ratusan pilihan top up game: Diamond MLBB, Free Fire, CODM, LoL, Valorant, dan lainnya — harga bersahabat, proses kilat.",
+    url: "/games",
+    type: "website",
+  },
 }
 
 export default async function GamesPage({
@@ -41,7 +51,7 @@ export default async function GamesPage({
               <div className="absolute inset-0 bg-accent" />
               <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
             </div>
-            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
+            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
           </Link>
           <nav className="flex items-center gap-4 md:gap-8 flex-1 justify-end">
             <Suspense fallback={null}>

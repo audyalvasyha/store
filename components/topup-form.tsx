@@ -85,6 +85,14 @@ export function TopupForm({
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  // ── Kupon promo: cek kode → preview potongan → ikut di-POST ke /api/orders.
+  // Nimppuk di order jadi cashback (Gamestone) atau diskon (manual).
+  const [couponInput, setCouponInput] = useState("")
+  const [couponCode, setCouponCode] = useState<string | null>(null)
+  const [couponDiscount, setCouponDiscount] = useState<number>(0)
+  const [couponMsg, setCouponMsg] = useState<string | null>(null)
+  const [couponBusy, setCouponBusy] = useState(false)
+
   const denom = useMemo(
     () => depoms.find((d) => d.id === denomId) ?? depoms[0],
     [depoms, denomId]
@@ -122,6 +130,54 @@ export function TopupForm({
     : filteredDepoms.slice(0, INITIAL_VISIBLE)
   const total = denom.price * (stoneMode ? 1 : quantity)
 
+  // Potongan kupon dihitung dari subtotal pilihan saat ini.
+  const couponNet = Math.min(couponDiscount, total)
+
+  async function applyCoupon() {
+    const code = couponInput.trim().toUpperCase()
+    if (!code || couponBusy) return
+    setCouponBusy(true)
+    setCouponMsg(null)
+    try {
+      const res = await fetch(
+        `/api/coupons/quote?code=${encodeURIComponent(code)}&gameSlug=${encodeURIComponent(game.slug)}&amount=${total}`,
+        { cache: "no-store" }
+      )
+      const data = await res.json()
+      if (!res.ok) {
+        setCouponCode(null)
+        setCouponDiscount(0)
+        setCouponMsg(data.error ?? "Kupon nggak bisa dipakai")
+        return
+      }
+      setCouponCode(data.code)
+      setCouponDiscount(data.discount ?? 0)
+      setCouponMsg(
+        stoneMode
+          ? `Kupon ${data.code} OK — cashback Rp ${(data.discount ?? 0).toLocaleString("id-ID")} di-transfer CS setelah order selesai.`
+          : `Kupon ${data.code} OK — potongan Rp ${(data.discount ?? 0).toLocaleString("id-ID")}.`
+      )
+    } catch {
+      setCouponMsg("Koneksi bermasalah, coba lagi.")
+    } finally {
+      setCouponBusy(false)
+    }
+  }
+
+  // Ganti game / nominal / qty → preview kupon basi, auto cek ulang.
+  useEffect(() => {
+    if (!couponCode) return
+    void applyCoupon()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [denomId, quantity])
+
+  function clearCoupon() {
+    setCouponCode(null)
+    setCouponDiscount(0)
+    setCouponMsg(null)
+    setCouponInput("")
+  }
+
   // Kalau pilihan saat ini ga ada di hasil filter, auto-pilih hasil pertama
   // biar yang ke-order pasti varian yang lagi tampil di list.
   useEffect(() => {
@@ -154,6 +210,7 @@ export function TopupForm({
           phone: phone.trim(),
           email: email.trim(),
           method,
+          couponCode: couponCode ?? undefined,
         }),
       })
       const data = await res.json()
@@ -391,7 +448,7 @@ export function TopupForm({
               className="mt-0.5 accent-[hsl(var(--accent))] w-4 h-4 shrink-0"
             />
             <span className="font-mono text-[10px] md:text-[11px] text-foreground/50 leading-relaxed">
-              Data akun yang saya isi benar. Item dikirim otomatis setelah pembayaran terverifikasi &mdash; salah ID bukan tanggung jawab Gas Store.
+              Data akun yang saya isi benar. Item dikirim otomatis setelah pembayaran terverifikasi &mdash; salah ID bukan tanggung jawab Gastros.
             </span>
           </label>
         </fieldset>
@@ -456,10 +513,64 @@ export function TopupForm({
           </div>
         </div>
 
+        {/* Kupon promo */}
+        <div className="border-t border-border mt-3 md:mt-4 pt-3 md:pt-4">
+          {couponCode ? (
+            <div className="flex items-center justify-between gap-2 border border-accent/40 bg-accent/5 px-2.5 py-2">
+              <div className="min-w-0">
+                <span className="font-mono text-[10px] md:text-xs text-accent uppercase block truncate">Kupon {couponCode}</span>
+                <span className="font-mono text-[9px] md:text-[10px] text-foreground/50 block">
+                  {stoneMode ? "Cashback setelah selesai" : "Diskon langsung"} — {formatIDR(couponNet)}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={clearCoupon}
+                className="font-mono text-[9px] md:text-[10px] text-foreground/40 hover:text-destructive transition-colors shrink-0"
+              >
+                Hapus
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-1.5">
+              <input
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    void applyCoupon()
+                  }
+                }}
+                placeholder="KODE KUPON"
+                className="min-w-0 flex-1 bg-background border border-border px-2.5 py-2 font-mono text-[10px] md:text-xs text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent"
+              />
+              <button
+                type="button"
+                onClick={() => void applyCoupon()}
+                disabled={couponBusy || !couponInput.trim()}
+                className="border border-border px-3 font-mono text-[10px] md:text-xs tracking-[0.15em] uppercase text-foreground hover:border-accent hover:text-accent transition-colors disabled:opacity-40 shrink-0"
+              >
+                {couponBusy ? "..." : "Cek"}
+              </button>
+            </div>
+          )}
+          {couponMsg && (
+            <p className={`mt-2 font-mono text-[9px] md:text-[10px] leading-relaxed ${couponCode ? "text-accent" : "text-destructive"}`}>
+              {couponMsg}
+            </p>
+          )}
+        </div>
+
         <div className="border-t border-border mt-3 md:mt-4 pt-3 md:pt-4 flex items-baseline justify-between gap-2">
           <span className="font-mono text-[10px] md:text-[11px] text-foreground/50 tracking-[0.2em] uppercase">Total</span>
-          <span className="font-sans text-2xl md:text-3xl text-accent tabular-nums">{formatIDR(total)}</span>
+          <span className="font-sans text-2xl md:text-3xl text-accent tabular-nums">{formatIDR(stoneMode ? total : total - couponNet)}</span>
         </div>
+        {couponCode && stoneMode && (
+          <p className="font-mono text-[9px] md:text-[10px] text-foreground/45 mt-1.5 leading-relaxed">
+            Bayar full {formatIDR(total)} ke provider — cashback {formatIDR(couponNet)} dari Gastros setelah order selesai.
+          </p>
+        )}
 
         {error && (
           <p className="mt-3 font-mono text-[10px] md:text-[11px] text-destructive border border-destructive/40 p-2 leading-relaxed">

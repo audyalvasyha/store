@@ -1,4 +1,4 @@
-# GAS STORE — Gamestone Proxy (Cloudflare Worker)
+# GASTROS — Gamestone Proxy (Cloudflare Worker)
 
 Jembatan request ke Gamestone biar gak ketangkap WAF-nya (yang cukup kritis terhadap IP datacenter Vercel). Request dari Cloudflare (network-nya sama dengan Gamestone sendiri) kemungkinan besar lolos.
 

@@ -4,10 +4,11 @@ import { cookies } from "next/headers"
 import { getAdminEmail, SESSION_COOKIE } from "@/lib/admin-auth"
 import { getHeroEvent, getDynamicGames } from "@/lib/content"
 import { AdminPanel } from "@/components/admin-panel"
+import { AdminCoupons } from "@/components/admin-coupons"
 
 export const dynamic = "force-dynamic"
 
-export const metadata = { title: "Admin // GAS STORE" }
+export const metadata = { title: "Admin // GASTROS" }
 
 export default async function AdminPage() {
   const jar = await cookies()
@@ -26,7 +27,7 @@ export default async function AdminPage() {
               <div className="absolute inset-0 bg-accent" />
               <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
             </div>
-            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
+            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
           </Link>
           <Link
             href="/"
@@ -37,6 +38,10 @@ export default async function AdminPage() {
         </div>
 
         <AdminPanel email={email} hero={hero} games={games} />
+
+        <div className="mt-6 md:mt-8">
+          <AdminCoupons />
+        </div>
       </div>
     </main>
   )

@@ -146,7 +146,7 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
           </div>
           <div className="flex flex-col anim-slide-left" style={d(200)}>
             <span className="font-mono text-[10px] md:text-[10px] tracking-[0.25em] md:tracking-[0.4em] text-foreground uppercase leading-none">
-              Gas Store
+              Gastros
             </span>
             <span className="font-mono text-[10px] md:text-[10px] tracking-[0.15em] text-foreground/40 uppercase">
               Game Top Up Center
@@ -232,25 +232,30 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
             <div className="h-[1.5px] w-5 bg-accent md:hidden" />
           </div>
 
-          {/* Headline -- compact leading, tight vertical stack */}
+          {/* Headline -- compact leading, tight vertical stack. SATU h1 saja
+              (dua-dual-an h1 sekaligus itu anti-pattern buat Google) — sisanya
+              <span> eksplisit, plus sr-only keyword "game online murah". */}
           <div className="relative mb-2 md:mb-0">
-            {["Top Up", "Gas", "Nonstop."].map((word, i) => (
-              <div key={word} className="overflow-hidden">
-                <h1
-                  className={`font-sans leading-[0.85] tracking-[-0.04em] uppercase anim-shutter-up ${
-                    word === "Gas" ? "text-accent" : "text-foreground"
-                  } text-[15vw] sm:text-[14vw] md:text-[13vw] lg:text-[10vw]`}
-                  style={d(400 + i * 120)}
-                >
-                  {word}
-                </h1>
-              </div>
-            ))}
+            <h1>
+              {["Top Up", "Gas", "Nonstop."].map((word, i) => (
+                <span key={word} className="block overflow-hidden">
+                  <span
+                    className={`block font-sans leading-[0.85] tracking-[-0.04em] uppercase anim-shutter-up ${
+                      word === "Gas" ? "text-accent" : "text-foreground"
+                    } text-[15vw] sm:text-[14vw] md:text-[13vw] lg:text-[10vw]`}
+                    style={d(400 + i * 120)}
+                  >
+                    {word}
+                  </span>
+                </span>
+              ))}
+              <span className="sr-only">Game online murah proses kilat di gastros.id</span>
+            </h1>
           </div>
 
           {/* Copy */}
           <p className="font-mono text-[10px] sm:text-[10px] md:text-[13px] text-foreground/60 max-w-[260px] sm:max-w-xs md:max-w-md mx-auto md:mx-0 leading-relaxed anim-cut-in" style={d(800)}>
-            Diamond, UC, VP, Genesis Crystals &mdash; masuk akun lo dalam hitungan menit. Harga bersahabat, layanan 24 jam.
+            Top up game murah: Diamond MLBB, FF, UC PUBG, VP Valorant &mdash; masuk akun dalam hitungan menit. Jalur resmi publisher, bayar QRIS/e-wallet, layanan 24 jam.
           </p>
 
           {/* CTAs */}

@@ -38,7 +38,7 @@ export function WhyUs() {
 
           <div className={visible ? "brutal-reveal" : "opacity-0"}>
             <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-2 md:mb-8">
-              [Kenapa Gas Store]
+              [Kenapa Gastros]
             </span>
             {/* Single line on mobile */}
             <h2 className="font-sans text-[9vw] sm:text-4xl md:text-7xl lg:text-8xl tracking-tighter text-foreground leading-[0.85] uppercase whitespace-nowrap mb-2 md:mb-8">

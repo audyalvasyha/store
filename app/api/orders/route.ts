@@ -4,6 +4,7 @@ import { getDynamicGame } from "@/lib/content"
 import { generateOrderCode, getOrder, saveOrder, updateOrder, type Order } from "@/lib/orders"
 import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gamestoneConfigured, stoneFetchLastError, type StoneOrder, type StonePaymentMethod } from "@/lib/gamestone"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
+import { checkCoupon, consumeCoupon, normalizeCouponCode } from "@/lib/coupons"
 import { sendOrderStatusNotifications } from "@/lib/notify"
 
 export const dynamic = "force-dynamic"
@@ -158,6 +159,28 @@ export async function POST(request: Request) {
       topupStatus: "BELUM",
     }
 
+    // ── Kupon promo: validasi server-side (client gak dipercaya untuk harga).
+    // Kuota dikonsumsi atomik DI AWAL — kalau gagal (kuota habis barengan
+    // user lain), order tetap jalan tanpa kupon biar gak bikin checkout
+    // gagal gara-gara race.
+    const rawCoupon = normalizeCouponCode(body?.couponCode)
+    if (rawCoupon) {
+      const check = await checkCoupon(rawCoupon, { gameSlug: game.slug, amount: order.amount })
+      if ("error" in check) {
+        return NextResponse.json({ error: `Kupon: ${check.error}` }, { status: 400 })
+      }
+      const consumed = await consumeCoupon(check.coupon.code)
+      if (!consumed) {
+        return NextResponse.json({ error: "Kupon: kuota baru saja habis, order tanpa kupon silakan ulang." }, { status: 409 })
+      }
+      order.discount = check.discount
+      order.couponCode = check.coupon.code
+      if (!stoneMode) {
+        // Order manual: diskon beneran mengurangi nominal yang dibayar ke CS.
+        order.amount = order.amount - check.discount
+      }
+    }
+
     // Flow Gamestone: nominal harus variant aktif di Gamestone, lalu order
     // dibikin langsung di Gamestone (payment bawaan). Kalau Gamestone gagal
     // (down / diblok WAF), order tetap disimpan sebagai order manual.
@@ -202,7 +225,10 @@ export async function POST(request: Request) {
         const orderWithStone: Order = {
           ...order,
           quantity: 1,
-          amount: stoneOrder.total_price ?? order.amount,
+          // Nominal QRIS fix dari provider — potongan kupon TIDAK bisa
+          // merubah jumlah bayar. order.discount disimpan sebagai cashback
+          // yang CS transfer setelah order selesai (tampil di halaman order).
+          amount: stoneOrder.total_price ?? order.amount - (order.discount ?? 0),
           provider: "gamestone",
           stoneOrderId: stoneOrder.id,
           stoneTotal: stoneOrder.total_price,
@@ -223,6 +249,11 @@ export async function POST(request: Request) {
       // dulu balikin 502 — user nggak pernah dapat kode order, dan halaman
       // order (instruksi manual + tombol WA) jadi nggak pernah keburu tampil.
       // paymentError nyatet sebab teknisnya; kebaca juga di halaman order.
+      // Order jadi manual: potongan kupon kembali makna "diskon beneran"
+      // (kurangi nominal yang dibayar ke CS), bukan cashback.
+      if (order.discount && order.couponCode) {
+        order.amount = order.amount - order.discount
+      }
       await saveOrder(order)
       const manual = await updateOrder(order.code, {
         fallbackReason: `Gamestone gagal (${stoneError ?? "unknown"}) — order manual via CS`,
