@@ -180,53 +180,51 @@ export function TopupForm({
           {(depoms.length > INITIAL_VISIBLE || filterQ || cat !== "all") && (
             <div className="flex flex-col gap-2 mt-2 md:mt-3">
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 md:gap-3">
-              <input
-                type="search"
-                value={filterQ}
-                onChange={(e) => setFilterQ(e.target.value)}
-                placeholder="Cari nominal atau harga..."
-                className="bg-background border border-border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors"
-              />
-              <div className="flex gap-0 border border-border">
-                {([
-                  ["default", "Urutan asli"],
-                  ["cheapest", "Termurah"],
-                  ["priciest", "Termahal"],
-                ] as const).map(([key, label]) => (
-                  <button
-                    type="button"
-                    key={key}
-                    onClick={() => setSortBy(key)}
-                    aria-pressed={sortBy === key}
-                    className={`px-3 md:px-4 py-2 font-mono text-xs md:text-sm tracking-[0.05em] uppercase whitespace-nowrap transition-colors ${
-                      sortBy === key
-                        ? "bg-accent text-accent-foreground"
-                        : "text-foreground/50 hover:text-foreground"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              {kindCounts.pass + kindCounts.membership + kindCounts.voucher + kindCounts.bundle > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {CATS.filter(([key]) => key === "all" || kindCounts[key] > 0).map(([key, label]) => (
+                <input
+                  type="search"
+                  value={filterQ}
+                  onChange={(e) => setFilterQ(e.target.value)}
+                  placeholder="Cari nominal atau harga..."
+                  className="bg-background border border-border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors"
+                />
+                <div className="flex gap-0 border border-border">
+                  {([
+                    ["default", "Urutan asli"],
+                    ["cheapest", "Termurah"],
+                    ["priciest", "Termahal"],
+                  ] as const).map(([key, label]) => (
                     <button
                       type="button"
                       key={key}
-                      onClick={() => setCat((prev) => (prev === key ? "all" : key))}
-                      aria-pressed={cat === key}
-                      className={`border px-2.5 py-1.5 font-mono text-[10px] md:text-[11px] tracking-[0.08em] uppercase whitespace-nowrap transition-colors ${
-                        cat === key
-                          ? "border-accent bg-accent text-accent-foreground"
-                          : "border-border text-foreground/60 hover:text-foreground hover:border-foreground/50"
-                      }`}
+                      onClick={() => setSortBy(key)}
+                      aria-pressed={sortBy === key}
+                      className={`px-3 md:px-4 py-2 font-mono text-xs md:text-sm tracking-[0.05em] uppercase whitespace-nowrap transition-colors ${sortBy === key
+                          ? "bg-accent text-accent-foreground"
+                          : "text-foreground/50 hover:text-foreground"
+                        }`}
                     >
-                      {label} ({key === "all" ? depoms.length : kindCounts[key]})
+                      {label}
                     </button>
                   ))}
                 </div>
-              )}
+                {kindCounts.pass + kindCounts.membership + kindCounts.voucher + kindCounts.bundle > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {CATS.filter(([key]) => key === "all" || kindCounts[key] > 0).map(([key, label]) => (
+                      <button
+                        type="button"
+                        key={key}
+                        onClick={() => setCat((prev) => (prev === key ? "all" : key))}
+                        aria-pressed={cat === key}
+                        className={`border px-2.5 py-1.5 font-mono text-[10px] md:text-[11px] tracking-[0.08em] uppercase whitespace-nowrap transition-colors ${cat === key
+                            ? "border-accent bg-accent text-accent-foreground"
+                            : "border-border text-foreground/60 hover:text-foreground hover:border-foreground/50"
+                          }`}
+                      >
+                        {label} ({key === "all" ? depoms.length : kindCounts[key]})
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -242,11 +240,10 @@ export function TopupForm({
                 key={d.id}
                 onClick={() => setDenomId(d.id)}
                 aria-pressed={denomId === d.id}
-                className={`relative text-left border p-2.5 md:p-4 transition-colors duration-200 min-h-[64px] md:min-h-[96px] ${
-                  denomId === d.id
+                className={`relative text-left border p-2.5 md:p-4 transition-colors duration-200 min-h-[64px] md:min-h-[96px] ${denomId === d.id
                     ? "border-accent bg-accent/10"
                     : "border-border hover:border-foreground/50"
-                }`}
+                  }`}
               >
                 <DenomChip label={d.label} detail={d.detail} />
                 <span className={`block font-sans text-sm md:text-xl tracking-tighter uppercase leading-tight ${denomId === d.id ? "text-accent" : "text-foreground"}`}>
@@ -362,9 +359,8 @@ export function TopupForm({
                 key={m.id}
                 onClick={() => setMethod(m.id)}
                 aria-pressed={method === m.id}
-                className={`relative border p-2.5 md:p-4 text-left transition-colors duration-200 min-h-[56px] ${
-                  method === m.id ? "border-accent bg-accent/10" : "border-border hover:border-foreground/50"
-                }`}
+                className={`relative border p-2.5 md:p-4 text-left transition-colors duration-200 min-h-[56px] ${method === m.id ? "border-accent bg-accent/10" : "border-border hover:border-foreground/50"
+                  }`}
               >
                 <span className={`block font-sans text-sm md:text-lg tracking-tight uppercase ${method === m.id ? "text-accent" : "text-foreground"}`}>
                   {m.label}
@@ -434,23 +430,23 @@ export function TopupForm({
               <span className="text-foreground tabular-nums">1</span>
             ) : (
               <span className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="border border-border w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-foreground hover:border-accent hover:text-accent transition-colors"
-                aria-label="Kurangi jumlah"
-              >
-                -
-              </button>
-              <span className="text-foreground tabular-nums w-5 text-center">{quantity}</span>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.min(MAX_QTY, q + 1))}
-                className="border border-border w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-foreground hover:border-accent hover:text-accent transition-colors"
-                aria-label="Tambah jumlah"
-              >
-                +
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="border border-border w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-foreground hover:border-accent hover:text-accent transition-colors"
+                  aria-label="Kurangi jumlah"
+                >
+                  -
+                </button>
+                <span className="text-foreground tabular-nums w-5 text-center">{quantity}</span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => Math.min(MAX_QTY, q + 1))}
+                  className="border border-border w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-foreground hover:border-accent hover:text-accent transition-colors"
+                  aria-label="Tambah jumlah"
+                >
+                  +
+                </button>
               </span>
             )}
           </div>
@@ -474,11 +470,10 @@ export function TopupForm({
         <button
           type="submit"
           disabled={!canSubmit}
-          className={`w-full mt-4 inline-flex items-center justify-center font-mono text-[11px] md:text-sm tracking-[0.2em] uppercase px-5 py-3.5 md:py-4 min-h-[48px] transition-all ${
-            canSubmit
+          className={`w-full mt-4 inline-flex items-center justify-center font-mono text-[11px] md:text-sm tracking-[0.2em] uppercase px-5 py-3.5 md:py-4 min-h-[48px] transition-all ${canSubmit
               ? "bg-accent text-accent-foreground hover-glitch hover:scale-[1.02]"
               : "bg-foreground/10 text-foreground/30 cursor-not-allowed"
-          }`}
+            }`}
         >
           {submitting ? "MEMPROSES..." : "Buat Order"}
         </button>

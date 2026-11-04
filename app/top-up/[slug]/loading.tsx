@@ -27,7 +27,7 @@ export default function TopupLoading() {
       </header>
 
       {/* Kicker + judul */}
-      <section className="px-4 md:px-8 lg:px-12 pt-5 md:pt-10 pb-6 md:pb-10 max-w-[1400px] mx-auto w-full">
+      <section className="px-4 pt-5 md:pt-10 pb-6 md:pb-10 max-w-[1400px] mx-auto w-full">
         <div className="flex items-center gap-3 mb-3 md:mb-4">
           <div className="h-7 w-16 border border-border bg-foreground/[0.06] animate-pulse" />
         </div>
@@ -37,7 +37,7 @@ export default function TopupLoading() {
       </section>
 
       {/* Form checkout */}
-      <section className="px-4 md:px-8 lg:px-12 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
+      <section className="px-4 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 md:gap-8 items-start">
           <div className="flex flex-col gap-4 md:gap-6">
             {/* STEP 01 — pilih nominal */}
