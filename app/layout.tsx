@@ -4,13 +4,13 @@ import { Bebas_Neue, JetBrains_Mono } from 'next/font/google'
 
 import './globals.css'
 
-const _bebasNeue = Bebas_Neue({ 
+const _bebasNeue = Bebas_Neue({
   weight: '400',
   subsets: ['latin'],
   variable: '--font-bebas',
 })
 
-const _jetbrainsMono = JetBrains_Mono({ 
+const _jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-jetbrains',
 })
@@ -68,6 +68,9 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+  },
+  verification: {
+    google: 'PQJzBS9c22AmTxaG6JCT40dDqEAIeYlxJbjh_JBwyUg',
   },
 }
 
