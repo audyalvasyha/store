@@ -148,7 +148,7 @@ export default async function OrderPage({
             )}
             {order.paymentError && (
               <p className="mb-3 font-mono text-[10px] md:text-[11px] text-destructive border border-destructive/40 p-2 leading-relaxed">
-                Gateway otomatis: {order.paymentError}. Pakai instruksi manual di bawah.
+                Pembayaran otomatis lagi gangguan untuk order ini. Ikuti instruksi manual di bawah &mdash; tim kami proses begitu pembayaran terkonfirmasi.
               </p>
             )}
             {!order.stonePaymentCode ? (
