@@ -30,8 +30,6 @@ export type Order = {
   userId: string;
   server?: string;
   email: string;
-  /** DOKU hosted checkout URL */
-  paymentUrl?: string;
   paymentError?: string;
   paidAt?: string;
   /** Nomor HP/WA pembayar (wajib untuk order Gamestone). */
@@ -47,9 +45,9 @@ export type Order = {
   stoneSnapshot?: { price?: number; fee?: number; paymentFee?: number; total?: number };
   /** Flag supaya sync Gamestone nggak di-poll terus kalau statusnya final. */
   stoneSynced?: boolean;
-  /** Provider yang nge-handle order ini: Gamestone (payment bawaan) atau APIGames (fallback). */
+  /** Provider yang nge-handle order ini: Gamestone (payment bawaan). */
   provider?: "gamestone" | "apigames";
-  /** Kalau Gamestone gagal dan order dilanjutkan via APIGames, alasan fallbacknya dicatat di sini. */
+  /** Kalau Gamestone gagal dan order jalan manual via CS, alasannya dicatat di sini. */
   fallbackReason?: string;
   /** Status pengiriman item lewat APIGames */
   topupStatus?: TopupStatus;

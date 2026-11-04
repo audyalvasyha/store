@@ -2,9 +2,7 @@ import { NextResponse } from "next/server"
 import { getDenomination, PAYMENT_METHODS, STONE_METHOD_IDS } from "@/lib/catalog"
 import { getDynamicGame } from "@/lib/content"
 import { generateOrderCode, getOrder, saveOrder, updateOrder, type Order } from "@/lib/orders"
-import { createDokuCheckout, dokuConfigured } from "@/lib/doku"
 import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gamestoneConfigured, stoneFetchLastError, type StoneOrder, type StonePaymentMethod } from "@/lib/gamestone"
-import { apigamesConfigured } from "@/lib/apigames"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
 import { sendOrderStatusNotifications } from "@/lib/notify"
 
@@ -36,13 +34,6 @@ async function syncStoneStatus(order: Order): Promise<void> {
       sendOrderStatusNotifications({ ...order, ...patch, status: patch.status })
     }
   }
-}
-
-function appBaseUrl(request: Request): string {
-  const configured = process.env.APP_BASE_URL
-  if (configured) return configured.replace(/\/$/, "")
-  const url = new URL(request.url)
-  return `${url.protocol}//${url.host}`
 }
 
 export async function POST(request: Request) {
@@ -138,8 +129,8 @@ export async function POST(request: Request) {
     }
 
     // Client pakai metode Gamestone waktu variant provider tampil, tapi pakai
-    // metode lokal (qris/ewallet/bank) kalau variant nggak bisa diambil. Dua-duanya
-    // valid di mode Gamestone; yang pakai metode lokal jatuh ke fallback DOKU.
+    // metode lokal (qris/ewallet/bank) kalau variant nggak bisa diambil.
+    // Dua-duanya valid di mode Gamestone.
     const methodValid = stoneMode
       ? STONE_METHOD_IDS.includes(String(method)) ||
         PAYMENT_METHODS.some((m) => m.id === method)
@@ -169,8 +160,7 @@ export async function POST(request: Request) {
 
     // Flow Gamestone: nominal harus variant aktif di Gamestone, lalu order
     // dibikin langsung di Gamestone (payment bawaan). Kalau Gamestone gagal
-    // (down / Internal server error), otomatis fallback ke APIGames:
-    // bayar via DOKU hosted checkout, item dikirim oleh APIGames.
+    // (down / diblok WAF), order tetap disimpan sebagai order manual.
     if (stoneMode) {
       // Detail kenapa GET provider gagal disimpan oleh stoneFetch —
       // diompo ke pesan error biar user/admin tahu sebabnya pas lihat 502.
@@ -228,58 +218,23 @@ export async function POST(request: Request) {
         return NextResponse.json({ order: await getOrder(order.code) }, { status: 201 })
       }
 
-      // ── Fallback ke APIGames (via DOKU): Gamestone gagal/down →
-      // order disimpan dengan harga lokal, user bayar via DOKU hosted checkout,
-      // item dikirim APIGames pas webhook DOKU masuk (lihat /api/doku/notification).
-      if (apigamesConfigured() && dokuConfigured()) {
-        await saveOrder(order)
-        const fallbackError = stoneError ?? "Provider Gamestone gagal"
-        let updated = await updateOrder(order.code, {
-          provider: "apigames",
-          fallbackReason: `Gamestone gagal (${fallbackError}) — dilanjutkan via APIGames + DOKU`,
-        })
-        const checkout = await createDokuCheckout({
-          invoiceNumber: order.code,
-          amount: order.amount,
-          callbackUrl: `${appBaseUrl(request)}/orders/${order.code}`,
-        })
-        updated = checkout.ok
-          ? await updateOrder(order.code, { paymentUrl: checkout.paymentUrl })
-          : await updateOrder(order.code, { paymentError: checkout.error })
-        sendOrderStatusNotifications({ ...updated ?? order, status: "MENUNGGU_PEMBAYARAN" })
-        return NextResponse.json({ order: updated ?? order }, { status: 201 })
-      }
-
-      // ── Gamestone gagal & DOKU belum dikonfigurasi: order TETAP disimpan
+      // ── Gamestone gagal (down / diblok WAF): order TETAP disimpan
       // sebagai order manual (bayar & konfirmasi via CS WhatsApp). Kasus ini
       // dulu balikin 502 — user nggak pernah dapat kode order, dan halaman
       // order (instruksi manual + tombol WA) jadi nggak pernah keburu tampil.
       // paymentError nyatet sebab teknisnya; kebaca juga di halaman order.
       await saveOrder(order)
       const manual = await updateOrder(order.code, {
-        fallbackReason: `Gamestone gagal (${stoneError ?? "unknown"}) & DOKU belum dikonfigurasi — order manual via CS`,
+        fallbackReason: `Gamestone gagal (${stoneError ?? "unknown"}) — order manual via CS`,
         paymentError: stoneError ?? "Gateway pembayaran otomatis tidak tersedia",
       })
       sendOrderStatusNotifications({ ...(manual ?? order), status: "MENUNGGU_PEMBAYARAN" })
       return NextResponse.json({ order: manual ?? order }, { status: 201 })
     }
 
+    // Mode non-Gamestone (katalog lokal): order disimpan, bayar manual
+    // via instruksi rekening/QRIS dari CS di halaman order.
     await saveOrder(order)
-
-    // Kalau kredensial DOKU tersedia, buat sesi pembayaran hosted checkout.
-    if (dokuConfigured()) {
-      const checkout = await createDokuCheckout({
-        invoiceNumber: order.code,
-        amount: order.amount,
-        callbackUrl: `${appBaseUrl(request)}/orders/${order.code}`,
-      })
-      const updated = checkout.ok
-        ? await updateOrder(order.code, { paymentUrl: checkout.paymentUrl })
-        : await updateOrder(order.code, { paymentError: checkout.error })
-      sendOrderStatusNotifications({ ...(updated ?? order), status: "MENUNGGU_PEMBAYARAN" })
-      return NextResponse.json({ order: updated ?? order }, { status: 201 })
-    }
-
     sendOrderStatusNotifications({ ...order, status: "MENUNGGU_PEMBAYARAN" })
     return NextResponse.json({ order }, { status: 201 })
   } catch {

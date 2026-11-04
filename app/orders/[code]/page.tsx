@@ -134,15 +134,6 @@ export default async function OrderPage({
             <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3 md:mb-4">
               [Bayar] &mdash; {METHOD_LABEL[order.method] ?? order.method}
             </span>
-            {order.paymentUrl && order.status === "MENUNGGU_PEMBAYARAN" && (
-              <a
-                href={order.paymentUrl}
-                className="w-full mb-3 inline-flex items-center justify-center bg-accent text-accent-foreground font-mono text-[10px] md:text-sm tracking-[0.2em] uppercase px-5 py-3.5 md:py-4 min-h-[48px] hover-glitch hover:scale-[1.02] transition-transform"
-              >
-                Bayar Sekarang (DOKU)
-              </a>
-            )}
-
             {/* Pembayaran bawaan Gamestone: QR (qris) / kode bayar (VA, retail, dll). */}
             {order.stonePaymentCode && order.status === "MENUNGGU_PEMBAYARAN" && (
               <StonePayBox

@@ -5,7 +5,13 @@
  */
 
 const BASE_URL =
-  process.env.GAMESTONE_BASE_URL ?? "https://www.transportbaganbatu.web.id/api/merchant/v1"
+  // Bisa dipinggul via Cloudflare Worker proxy: kalau Gamestone/WAF memblokir
+  // IP datcentersar hosting (mis. Vercel), app bisa memanggil worker
+  // (STION_PROXY_URL) yang meneruskan request — IP asal jadi network
+  // Cloudflare, bukan Vercel. Tanpa env ini, panggil bebas tak hops tunggu.
+  process.env.STONE_PROXY_URL?.replace(/\/$/, "") ??
+  process.env.GAMESTONE_BASE_URL ??
+  "https://www.transportbaganbatu.web.id/api/merchant/v1"
 
 export type StoneInputField = {
   tag: string
@@ -132,6 +138,7 @@ async function stoneFetch<T>(path: string, init?: RequestInit): Promise<T> {
         headers: {
           "x-api-key": apiKey(),
           "Content-Type": "application/json",
+          ...(process.env.STONE_PROXY_SECRET ? { "x-proxy-secret": process.env.STONE_PROXY_SECRET } : {}),
           ...(init?.headers ?? {}),
         },
         cache: "no-store",
@@ -142,11 +149,33 @@ async function stoneFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
       let json: StoneEnvelope<unknown>
       try {
-        json = (await res.json()) as StoneEnvelope<unknown>
-      } catch {
-        const msg = `Gamestone: response bukan JSON (HTTP ${res.status})`
-        recordStoneFetchError(msg)
-        throw new StoneHttpError(msg)
+        const raw = await res.text() // dibaca SEKALI — body stream nggak bisa dibaca ulang
+        let parsed: unknown
+        try {
+          parsed = JSON.parse(raw)
+        } catch {
+          // Respons bukan JSON — nyaris pasti halaman HTML dari WAF/Cloudflare
+          // (mis. Access Denied / challenge). Simpan diagnosik lengka biar
+          // error-nya reportable ke provider: status, content-type, header
+          // Cloudflare (cf-ray = kunci log di sisi mereka), dan potongan body.
+          const bits: string[] = [`content-type:${res.headers.get("content-type") ?? "tidak ada"}`]
+          for (const h of ["server", "cf-ray", "cf-mitigated", "cf-chl-bypass", "x-request-id"]) {
+            const v = res.headers.get(h)
+            if (v) bits.push(`${h}:${v}`)
+          }
+          const snippet = raw.replace(/\s+/g, " ").slice(0, 220)
+          if (snippet) bits.push(`body:"${snippet}"`)
+          const msg = `Gamestone: response bukan JSON (HTTP ${res.status}) | ${bits.join(" ")}`
+          recordStoneFetchError(msg)
+          throw new StoneHttpError(msg)
+        }
+        json = parsed as StoneEnvelope<unknown>
+      } catch (err) {
+        // StoneHttpError (bukan JSON) tetap diangkat keluar; kalau ini error
+        // network saat membaca body, lempar ulang biar masuk catch luar
+        // dan di-retry sesuai aturan GET.
+        if (err instanceof StoneHttpError) throw err
+        throw err
       }
 
       if (!res.ok || json.data === null) {
