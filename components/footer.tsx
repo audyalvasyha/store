@@ -19,10 +19,54 @@ export function Footer() {
     return () => observer.disconnect()
   }, [])
 
-  const marqueeText = "GAS STORE / TOP UP GAME / "
+  const marqueeText = "GASTROS / TOP UP GAME / "
+
+  // Logo metode pembayaran — self-hosted di /public/images/payments
+  // (sumber logo: github.com/hafidznoor/idn-finlogos, MIT).
+  const payments = [
+    { src: "/images/payments/qris.svg", label: "QRIS" },
+    { src: "/images/payments/dana.svg", label: "DANA" },
+    { src: "/images/payments/gopay.svg", label: "GoPay" },
+    { src: "/images/payments/ovo.svg", label: "OVO" },
+    { src: "/images/payments/shopee-pay.svg", label: "ShopeePay" },
+    { src: "/images/payments/bca.svg", label: "Transfer BCA" },
+    { src: "/images/payments/mandiri.svg", label: "Transfer Mandiri" },
+  ]
 
   return (
     <footer className="relative bg-card border-t border-border">
+      {/* Strip logo pembayaran — paling bawah semua page, tepat di atas footer
+          marquee. Bujuk user yang ragu: "cara bayarnya apa aja" langsung keliatan. */}
+      <div className="border-b border-border bg-background">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-3 md:py-4 flex flex-wrap items-center gap-x-3 gap-y-2 md:gap-x-6">
+          <span className="font-mono text-[9px] md:text-[10px] text-accent tracking-[0.25em] md:tracking-[0.3em] uppercase shrink-0">
+            Pembayaran
+          </span>
+          {/* Logo ditaruh dalam chip putih masing-masing, biar brand berwarna
+              gelap (BCA, Mandiri, dst.) tetap kebaca di tema hitam aplikasi dan
+              strip-nya rapi (tinggi chip seragam, logo centered). */}
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+            {payments.map((pay) => (
+              <div
+                key={pay.label}
+                className="flex items-center justify-center h-8 md:h-9 w-16 md:w-20 rounded-lg bg-[hsl(0_0%_100%)] shadow-inner"
+              >
+                <img
+                  src={pay.src}
+                  alt={`Pembayaran via ${pay.label}`}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-3.5 md:h-4 w-auto"
+                />
+              </div>
+            ))}
+          </div>
+          <span className="ml-auto font-mono text-[9px] md:text-[10px] text-muted-foreground tracking-[0.15em] uppercase hidden lg:block">
+            Tanpa login akun game 🔒
+          </span>
+        </div>
+      </div>
+
       {/* Marquee */}
       <div ref={marqueeRef} className="overflow-hidden border-b border-border py-3 md:py-8">
         <div className={`flex whitespace-nowrap transition-opacity duration-700 ${visible ? "opacity-100" : "opacity-0"}`}>
@@ -50,7 +94,7 @@ export function Footer() {
             <div className="flex items-center gap-2 mb-3 md:mb-6">
               <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-accent" />
               <span className="font-mono text-[10px] md:text-xs tracking-[0.25em] md:tracking-[0.3em] text-foreground uppercase">
-                Gas Store
+                Gastros
               </span>
             </div>
             <p className="font-mono text-[10px] text-muted-foreground leading-relaxed">
@@ -88,7 +132,7 @@ export function Footer() {
               Bantuan
             </span>
             <div className="flex flex-col gap-1.5 md:gap-3 font-mono text-[10px] md:text-xs text-muted-foreground">
-              <span>CS Telegram: @gasstore</span>
+              <span>CS Telegram: @gastros</span>
               <a
                 href={`https://wa.me/${WA_NUMBER}`}
                 target="_blank"
@@ -97,8 +141,8 @@ export function Footer() {
               >
                 WhatsApp: {WA_DISPLAY}
               </a>
-              <a href="mailto:cs@gasstore.id" className="hover:text-accent transition-colors mt-1 break-all">
-                cs@gasstore.id
+              <a href="mailto:cs@gastros.id" className="hover:text-accent transition-colors mt-1 break-all">
+                cs@gastros.id
               </a>
               <span className="text-foreground/40 mt-1">Balasan &lt; 5 menit</span>
             </div>
@@ -129,7 +173,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-5 md:mt-16 pt-4 md:pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 md:gap-4">
           <span className="font-mono text-[10px] md:text-[11px] text-muted-foreground">
-            &copy; 2026 GAS STORE // SEMUA GAME ADALAH MILIK PUBLISHER MASING-MASING
+            &copy; 2026 GASTROS // SEMUA GAME ADALAH MILIK PUBLISHER MASING-MASING
           </span>
           <div className="flex items-center gap-4 md:gap-6">
             {["Instagram", "TikTok", "Discord"].map((social) => (

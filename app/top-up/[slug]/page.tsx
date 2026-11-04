@@ -20,10 +20,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const game = await getDynamicGame(slug)
-  if (!game) return { title: "Game tidak ditemukan // GAS STORE" }
+  if (!game) return { title: "Game tidak ditemukan" }
+  const minPrice = Math.min(...game.denominations.map((d) => d.price))
   return {
-    title: `Top Up ${game.name} // GAS STORE`,
-    description: `Top up ${game.currency} ${game.name} murah, proses kilat, jalur resmi publisher. Mulai ${formatIDR(Math.min(...game.denominations.map((d) => d.price)))}.`,
+    title: `Top Up ${game.name}`,
+    description: `Top up ${game.currency} ${game.name} murah, proses kilat, jalur resmi publisher. Mulai ${formatIDR(minPrice)}. Layanan 24 jam di gastros.id.`,
+    alternates: {
+      canonical: `/top-up/${slug}`,
+    },
+    openGraph: {
+      title: `Top Up ${game.name} — Mulai ${formatIDR(minPrice)}`,
+      description: `${game.currency} ${game.name} masuk akun lewat jalur resmi publisher. Proses kilat, layanan 24 jam.`,
+      url: `/top-up/${slug}`,
+      type: "website",
+    },
   }
 }
 
@@ -42,8 +52,48 @@ export default async function TopupPage({
     ? activeStoneVariants(stoneGame).map((v) => ({ id: String(v.id), label: v.name, price: v.price }))
     : undefined
 
+  // JSON-LD: Product + AggregateOffer — bantu Google paham kalau ini halaman
+  // jualan top up (bisa muncul rich result harga di SERP).
+  const prices = stoneVariants?.length
+    ? stoneVariants.map((v) => v.price)
+    : game.denominations.map((d) => d.price)
+  const SITE_URL =
+    process.env.APP_BASE_URL?.replace(/\/$/, "") ?? "https://gastros.id"
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Product",
+        name: `Top Up ${game.name}`,
+        description: `Top up ${game.currency} ${game.name} lewat jalur resmi publisher, proses kilat, layanan 24 jam.`,
+        category: game.currency,
+        brand: { "@type": "Brand", name: "GASTROS" },
+        offers: {
+          "@type": "AggregateOffer",
+          lowPrice: Math.min(...prices),
+          highPrice: Math.max(...prices),
+          priceCurrency: "IDR",
+          availability: "https://schema.org/InStock",
+          url: `${SITE_URL}/top-up/${slug}`,
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: "Games", item: `${SITE_URL}/games` },
+          { "@type": "ListItem", position: 3, name: `Top Up ${game.name}` },
+        ],
+      },
+    ],
+  }
+
   return (
     <main className="relative min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="noise-overlay" aria-hidden="true" />
 
       <header className="border-b border-border">
@@ -53,7 +103,7 @@ export default async function TopupPage({
               <div className="absolute inset-0 bg-accent" />
               <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
             </div>
-            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
+            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
           </Link>
           <nav className="flex items-center gap-4 md:gap-8">
             <Link

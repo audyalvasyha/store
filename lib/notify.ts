@@ -19,13 +19,18 @@ type OrderEmailData = {
   quantity: number
   amount: number
   status: string
+  /** Kupon: potongan/cashback (Rupiah) + kodenya, opsional. */
+  discount?: number
+  couponCode?: string
 }
 
 const RESEND_API_URL = "https://api.resend.com/emails"
 const FONNTE_API_URL = "https://api.fonnte.com/send"
 
 function orderBaseUrl(): string {
-  return process.env.APP_BASE_URL?.replace(/\/$/, "") ?? "https://audysignin.freebuff.app"
+  // Rebrand: lagka default saat ini harus domain baru; APP_BASE_URL harus
+  // diset sama di env production biar link notif WA/email selalu konsisten.
+  return process.env.APP_BASE_URL?.replace(/\/$/, "") ?? "https://www.gastros.id"
 }
 
 export function notifyConfigured(): boolean {
@@ -56,7 +61,7 @@ const STATUS_LABEL: Record<string, string> = {
   MENUNGGU_PEMBAYARAN: "Menunggu Pembayaran",
   DIPROSES: "Diproses — Item dikirim",
   SELESAI: "Selesai — Item sudah masuk",
-  GAGAL: "Gagal — hubungi CS Gas Store",
+  GAGAL: "Gagal — hubungi CS Gastros",
 }
 
 /**
@@ -75,9 +80,12 @@ export function sendOrderStatusWhatsApp(order: OrderEmailData): void {
 
   const statusLabel = STATUS_LABEL[order.status] ?? order.status
   const message = [
-    `GAS STORE — Order ${order.code}`,
+    `GASTROS — Order ${order.code}`,
     `Status: ${statusLabel}`,
     `${order.gameName} — ${order.denomLabel}` + (order.quantity > 1 ? ` ×${order.quantity}` : ""),
+    ...(order.discount && order.couponCode
+      ? [`Kupon ${order.couponCode}: cashback Rp ${order.discount.toLocaleString("id-ID")} (CS transfer setelah order selesai)`]
+      : []),
     `Total: Rp ${order.amount.toLocaleString("id-ID")}`,
     `Detail: ${orderBaseUrl()}/orders/${order.code}`,
   ].join("\n")
@@ -99,12 +107,12 @@ export function sendOrderStatusEmail(order: OrderEmailData): void {
   if (!notifyConfigured() || !order.email) return
 
   const apiKey = process.env.RESEND_API_KEY as string
-  const from = process.env.NOTIFY_FROM_EMAIL ?? "Gas Store <onboarding@resend.dev>"
+  const from = process.env.NOTIFY_FROM_EMAIL ?? "Gastros <onboarding@resend.dev>"
   const statusLabel = STATUS_LABEL[order.status] ?? order.status
 
   const html = `
 <div style="font-family:monospace;max-width:560px;margin:0 auto;border:2px solid #c9a227;padding:24px;color:#e8e6e1;background:#0a0a0a;">
-  <p style="letter-spacing:.25em;font-size:11px;color:#c9a227;margin:0 0 16px;">GAS STORE — ${statusLabel.toUpperCase()}</p>
+  <p style="letter-spacing:.25em;font-size:11px;color:#c9a227;margin:0 0 16px;">GASTROS — ${statusLabel.toUpperCase()}</p>
   <h2 style="letter-spacing:-0.02em;font-size:22px;margin:0 0 12px;">Order ${order.code}</h2>
   <table style="font-size:13px;width:100%;border-collapse:collapse;">
     <tr><td style="color:#9a958c;padding:4px 0;">Game</td><td style="text-align:right;">${order.gameName}</td></tr>
@@ -126,7 +134,7 @@ export function sendOrderStatusEmail(order: OrderEmailData): void {
     body: JSON.stringify({
       from,
       to: [order.email],
-      subject: `GAS STORE — Order ${order.code}: ${statusLabel}`,
+      subject: `GASTROS — Order ${order.code}: ${statusLabel}`,
       html,
     }),
     signal: AbortSignal.timeout(8_000),

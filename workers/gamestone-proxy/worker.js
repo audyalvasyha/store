@@ -1,5 +1,5 @@
 /**
- * GAS STORE — Gamestone Proxy (Cloudflare Worker)
+ * GASTROS (gastros.id) — Gamestone Proxy (Cloudflare Worker)
  * ================================================
  * Jembatan request: app (Vercel/Freebuff) → Worker ini → Gamestone API.
  * Tujuan: WAF Gamestone memblokir IP datacenter hosting (Vercel), tapi

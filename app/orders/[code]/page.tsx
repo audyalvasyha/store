@@ -17,7 +17,7 @@ const STATUS_TONE: Record<string, string> = {
 
 export const dynamic = "force-dynamic"
 
-export const metadata = { title: "Status Order // GAS STORE" }
+export const metadata = { title: "Status Order // GASTROS" }
 
 const METHOD_LABEL: Record<string, string> = Object.fromEntries(
   [...PAYMENT_METHODS, ...STONE_PAYMENT_METHODS].map((m) => [m.id, m.label])
@@ -33,7 +33,7 @@ export default async function OrderPage({
   if (!order) notFound()
 
   const waMessage = encodeURIComponent(
-    `Halo Gas Store! Saya sudah bayar order ${order.code} (${order.gameName} - ${order.denomLabel} x${order.quantity}, total ${formatIDR(order.amount)}). Mohon diproses ya, bukti transfer akan saya kirim di chat ini.`
+    `Halo Gastros! Saya sudah bayar order ${order.code} (${order.gameName} - ${order.denomLabel} x${order.quantity}, total ${formatIDR(order.amount)}). Mohon diproses ya, bukti transfer akan saya kirim di chat ini.`
   )
   const waLink = `https://wa.me/${WA_NUMBER}?text=${waMessage}`
 
@@ -48,7 +48,7 @@ export default async function OrderPage({
               <div className="absolute inset-0 bg-accent" />
               <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
             </div>
-            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
+            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link
@@ -100,6 +100,15 @@ export default async function OrderPage({
                   ...(order.phone ? [{ label: "Nomor WA", value: order.phone } as const] : []),
                   { label: "Pembayaran", value: METHOD_LABEL[order.method] ?? order.method },
                   { label: "Dibuat", value: new Date(order.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" }) + " WIB" },
+                  ...(order.discount
+                    ? [
+                        { label: "Subtotal", value: formatIDR(order.stoneOrderId ? order.amount : order.amount + order.discount) },
+                        {
+                          label: order.stoneOrderId ? `Cashback kupon${order.couponCode ? ` ${order.couponCode}` : ""}` : `Diskon kupon${order.couponCode ? ` ${order.couponCode}` : ""}`,
+                          value: `-${formatIDR(order.discount)}`,
+                        },
+                      ]
+                    : []),
                 ].map((row) => (
                   <div key={row.label} className="flex justify-between gap-4 border-b border-border/50 pb-1.5">
                     <span className="text-foreground/45 shrink-0">{row.label}</span>
@@ -111,6 +120,11 @@ export default async function OrderPage({
                 <span className="font-mono text-[10px] md:text-[11px] text-foreground/50 tracking-[0.2em] uppercase">Total</span>
                 <span className="font-sans text-2xl md:text-4xl text-accent tabular-nums">{formatIDR(order.amount)}</span>
               </div>
+              {order.discount && order.stoneOrderId ? (
+                <p className="font-mono text-[10px] md:text-xs text-accent mt-2 leading-relaxed">
+                  Kupon aktif: bayar penuh {formatIDR(order.amount)} ke provider — cashback {formatIDR(order.discount)} di-transfer CS ke nomor WA lu setelah status jadi SELESAI.
+                </p>
+              ) : null}
             </div>
 
             <div className="border border-border bg-card p-4 md:p-6">

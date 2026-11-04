@@ -6,7 +6,7 @@ import { AdminLoginForm } from "@/components/admin-login-form"
 
 export const dynamic = "force-dynamic"
 
-export const metadata = { title: "Admin Login // GAS STORE" }
+export const metadata = { title: "Admin Login // GASTROS" }
 
 export default async function AdminLoginPage() {
   const jar = await cookies()
@@ -24,7 +24,7 @@ export default async function AdminLoginPage() {
             <div className="absolute inset-0 bg-accent" />
             <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
           </div>
-          <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
+          <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
         </Link>
         <AdminLoginForm first={first} />
       </div>

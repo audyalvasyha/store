@@ -73,7 +73,7 @@ export default function OrdersPage() {
               <div className="absolute inset-0 bg-accent" />
               <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
             </div>
-            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gas Store</span>
+            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link

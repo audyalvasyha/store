@@ -312,7 +312,20 @@ export async function getStoneOrder(id: string): Promise<StoneOrder | null> {
   }
 }
 
-/** Variants aktif & visible saja. */
+/**
+ * Varian aktif & visible saja — varian berlabel "Global" ditumpuk di atas.
+ * Stable sort (indeks asli dipertahankan sebagai tie-breaker): di dalam grup
+ * Global / non-Global, urutan asli provider tidak diubah.
+ */
+const GLOBAL_VARIANT_EXP = /\bglobal\b/i
+
 export function activeStoneVariants(game: StoneGame): StoneVariant[] {
-  return (game.variants ?? []).filter((v) => v.is_active && v.is_show && !v.is_maintenance)
+  return (game.variants ?? [])
+    .filter((v) => v.is_active && v.is_show && !v.is_maintenance)
+    .map((v, i) => ({ v, i, isGlobal: GLOBAL_VARIANT_EXP.test(v.name) }))
+    .sort((a, b) => {
+      if (a.isGlobal !== b.isGlobal) return a.isGlobal ? -1 : 1
+      return a.i - b.i
+    })
+    .map(({ v }) => v)
 }

@@ -1,26 +1,19 @@
-/**
- * Sitemap SEO publik: beranda, /games, dan semua halaman top-up per game.
- * Katalog dibaca dari katalog statis (tanpa DB) supaya sitemap.js bisa
- * di-pre-render saat build tanpa butuh koneksi Mongo.
- */
 import type { MetadataRoute } from "next"
+
+// Sitemap statis: halaman publik + semua game kurasi (lib/catalog).
+// Game dinamis dari DB sengaja tidak diikutin biar route ini gak kena
+// koneksi DB saat build/revalidate — /games tetap mencakup semuanya.
 import { GAMES } from "@/lib/catalog"
 
-function baseUrl(): string {
-  const configured = process.env.APP_BASE_URL?.replace(/\/$/, "")
-  return configured ?? "https://audysignin.freebuff.app"
-}
+const SITE_URL = process.env.APP_BASE_URL?.replace(/\/$/, "") ?? "https://gastros.id"
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = baseUrl()
   const now = new Date()
-
   return [
-    { url: `${base}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
-    { url: `${base}/games`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
-    { url: `${base}/orders`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
-    ...GAMES.map((g) => ({
-      url: `${base}/top-up/${g.slug}`,
+    { url: `${SITE_URL}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
+    { url: `${SITE_URL}/games`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+    ...GAMES.map((game) => ({
+      url: `${SITE_URL}/top-up/${game.slug}`,
       lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.8,

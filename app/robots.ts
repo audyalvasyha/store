@@ -1,20 +1,16 @@
-/**
- * robots.txt: crawl semua halaman publik, blokir panel admin & API.
- */
 import type { MetadataRoute } from "next"
 
-function baseUrl(): string {
-  const configured = process.env.APP_BASE_URL?.replace(/\/$/, "")
-  return configured ?? "https://audysignin.freebuff.app"
-}
+const SITE_URL = process.env.APP_BASE_URL?.replace(/\/$/, "") ?? "https://gastros.id"
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/api/"],
+      // Admin panel (kredensial), API (internal), dan halaman detail order
+      // (berisi PII user, diakses via kode order) jangan ikut diindeks.
+      disallow: ["/admin", "/api/", "/orders"],
     },
-    sitemap: `${baseUrl()}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }

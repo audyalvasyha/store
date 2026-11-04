@@ -1,4 +1,4 @@
-# Toko Game Online — GAS STORE
+# Toko Game Online — GASTROS (gastros.id)
 
 Toko game online: beli koin, item, dan paket langganan untuk berbagai game.
 Bayar pakai QRIS, transfer bank, dan metode lainnya yang tersedia di halaman checkout.

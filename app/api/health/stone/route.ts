@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { clientIp, rateLimit } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -29,6 +30,14 @@ export async function GET(request: Request) {
 
   const probe = new URL(request.url).searchParams.get("probe")
   if (probe && proxyUrl) {
+    // Probe nembak request beneran ke provider pakai API key kita — tanpa
+    // limit, endpoint ini bisa dipakai siapa aja buat spam provider.
+    // 6/menit lebih dari cukup buat diagnosa.
+    const probeLimit = rateLimit("stone-probe", clientIp(request), 6, 60_000)
+    if (!probeLimit.ok) {
+      payload.probe = { error: `terlalu sering, coba lagi dalam ${probeLimit.retryAfter} detik` }
+      return NextResponse.json(payload, { status: 429, headers: { "Retry-After": String(probeLimit.retryAfter) } })
+    }
     const started = Date.now()
     try {
       const res = await fetch(`${proxyUrl}/games?limit=1`, {
