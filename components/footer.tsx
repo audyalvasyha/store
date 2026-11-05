@@ -36,16 +36,17 @@ export function Footer() {
   return (
     <footer className="relative bg-card border-t border-border">
       {/* Strip logo pembayaran — paling bawah semua page, tepat di atas footer
-          marquee. Bujuk user yang ragu: "cara bayarnya apa aja" langsung keliatan. */}
+          marquee. Layout centered: label di atas, logo tengah, catatan kecil
+          di bawah. Bujuk user yang ragu: "cara bayarnya apa aja" langsung keliatan. */}
       <div className="border-b border-border bg-background">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-3 md:py-4 flex flex-wrap items-center gap-x-3 gap-y-2 md:gap-x-6">
-          <span className="font-mono text-[9px] md:text-[10px] text-accent tracking-[0.25em] md:tracking-[0.3em] uppercase shrink-0">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-4 md:py-5 flex flex-col items-center gap-2.5 md:gap-3 text-center">
+          <span className="font-mono text-[9px] md:text-[10px] text-accent tracking-[0.25em] md:tracking-[0.3em] uppercase">
             Pembayaran
           </span>
           {/* Logo ditaruh dalam chip putih masing-masing, biar brand berwarna
               gelap (BCA, Mandiri, dst.) tetap kebaca di tema hitam aplikasi dan
               strip-nya rapi (tinggi chip seragam, logo centered). */}
-          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3">
             {payments.map((pay) => (
               <div
                 key={pay.label}
@@ -61,7 +62,7 @@ export function Footer() {
               </div>
             ))}
           </div>
-          <span className="ml-auto font-mono text-[9px] md:text-[10px] text-muted-foreground tracking-[0.15em] uppercase hidden lg:block">
+          <span className="font-mono text-[9px] md:text-[10px] text-muted-foreground tracking-[0.15em] uppercase">
             Tanpa login akun game 🔒
           </span>
         </div>
@@ -176,9 +177,19 @@ export function Footer() {
             &copy; 2026 GASTROS // SEMUA GAME ADALAH MILIK PUBLISHER MASING-MASING
           </span>
           <div className="flex items-center gap-4 md:gap-6">
-            {["Instagram", "TikTok", "Discord"].map((social) => (
-              <a key={social} href="#" className="font-mono text-[10px] md:text-[11px] text-muted-foreground hover:text-accent transition-colors tracking-[0.1em] md:tracking-[0.15em] uppercase py-1 min-h-[32px] flex items-center">
-                {social}
+            {[
+              { label: "Instagram", href: "https://www.instagram.com/gastros.id_?cplk=MTVqNjh1emh1M3B1bw==", external: true },
+              { label: "TikTok", href: "#", external: false },
+              { label: "Discord", href: "#", external: false },
+            ].map((social) => (
+              <a
+                key={social.label}
+                href={social.href}
+                target={social.external ? "_blank" : undefined}
+                rel={social.external ? "noopener noreferrer" : undefined}
+                className="font-mono text-[10px] md:text-[11px] text-muted-foreground hover:text-accent transition-colors tracking-[0.1em] md:tracking-[0.15em] uppercase py-1 min-h-[32px] flex items-center"
+              >
+                {social.label}
               </a>
             ))}
           </div>

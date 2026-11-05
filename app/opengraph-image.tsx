@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og"
 
 /**
  * OG image global (1200x630) — dipakai semua route yang gak punya
- * opengraph-image sendiri. Tema hitam-emas ala situs, brand GASTROS.
+ * opengraph-image sendiri. Tema hitam + merah brand (--accent) ala situs.
  */
 export const alt = "GASTROS — Top Up Game Online Murah & Proses Kilat"
 export const size = { width: 1200, height: 630 }
@@ -27,7 +27,7 @@ export default function OpengraphImage() {
             style={{
               width: 72,
               height: 72,
-              background: "#c9a227",
+              background: "#ff0000",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -42,7 +42,7 @@ export default function OpengraphImage() {
           <span style={{ fontSize: 92, color: "#ffffff", lineHeight: 1.05, fontWeight: 700 }}>
             Top Up Game Murah,
           </span>
-          <span style={{ fontSize: 92, color: "#c9a227", lineHeight: 1.05, fontWeight: 700 }}>
+          <span style={{ fontSize: 92, color: "#ff0000", lineHeight: 1.05, fontWeight: 700 }}>
             Proses Kilat 24 Jam
           </span>
         </div>
@@ -55,7 +55,7 @@ export default function OpengraphImage() {
             style={{
               fontSize: 32,
               color: "#080808",
-              background: "#c9a227",
+              background: "#ff0000",
               padding: "10px 28px",
               fontWeight: 700,
             }}

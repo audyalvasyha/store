@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   // Bikin order = bikin session pembayaran di provider (courtesy limit ke
   // provider): tiap IP dibatas 15 order/menit.
   const fingerprint = clientIp(request)
-  const postLimit = rateLimit("orders-post", fingerprint, 15, 60_000)
+  const postLimit = await rateLimit("orders-post", fingerprint, 15, 60_000)
   if (!postLimit.ok) {
     return NextResponse.json(
       { error: `Terlalu banyak order. Coba lagi dalam ${postLimit.retryAfter} detik.` },
@@ -276,7 +276,7 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   // Info order isinya PII (email/no. WA) — code cuma 32^6, jadi nge-GET
   // dibatis biar bruteforce enumerasi code jadi nggak praktis.
-  const readLimit = rateLimit("orders-get", clientIp(request), 30, 60_000)
+  const readLimit = await rateLimit("orders-get", clientIp(request), 30, 60_000)
   if (!readLimit.ok) {
     return NextResponse.json(
       { error: "Terlalu banyak permintaan. Coba lagi sebentar." },
@@ -286,12 +286,21 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const code = String(searchParams.get("code") ?? "")
-  const order = await getOrder(code)
-  if (!order) {
-    return NextResponse.json({ error: "Order tidak ditemukan" }, { status: 404 })
-  }
+  try {
+    const order = await getOrder(code)
+    if (!order) {
+      return NextResponse.json({ error: "Order tidak ditemukan" }, { status: 404 })
+    }
 
-  await syncStoneStatus(order)
-  const fresh = await getOrder(code)
-  return NextResponse.json({ order: fresh ?? order })
+    await syncStoneStatus(order)
+    const fresh = await getOrder(code)
+    return NextResponse.json({ order: fresh ?? order })
+  } catch {
+    // DB status order nggak bisa diakses — balikin 503 biar halaman Riwayat
+    // nampilin pesan ramah (bukan wall of error 500).
+    return NextResponse.json(
+      { error: "Sistem order lagi sibuk, coba lagi sebentar." },
+      { status: 503 }
+    )
+  }
 }

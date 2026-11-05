@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import { Bebas_Neue, JetBrains_Mono } from 'next/font/google'
 
 import './globals.css'
+import { FloatingWhatsApp } from '@/components/floating-whatsapp'
+import { safeJsonLd } from '@/lib/jsonld'
 
 const _bebasNeue = Bebas_Neue({
   weight: '400',
@@ -110,9 +112,10 @@ export default function RootLayout({
       <body className="font-mono antialiased overflow-x-hidden">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
         />
         {children}
+        <FloatingWhatsApp />
       </body>
     </html>
   )

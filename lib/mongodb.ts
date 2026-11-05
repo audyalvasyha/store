@@ -1,35 +1,51 @@
 import { MongoClient, type Db } from "mongodb";
 
-const uri: string = process.env.MONGODB_URI as string;
-if (!uri || !uri.startsWith("mongodb")) throw new Error("MONGODB_URI is not set or invalid");
+// URI dibaca saat modul load, tapi TIDAK divalidasi & TIDAK bikin client di sini.
+// Validasi pindah ke call-time (connectIfNeed/getDb): kalau MONGODB_URI hilang
+// atau salah, halaman publik masih bisa render dengan fallback katalog statis
+// (lihat lib/content.ts) — bukan crash total "landing down".
+const uri = process.env.MONGODB_URI as string | undefined;
 
 const globalForMongo = globalThis as typeof globalThis & { _mongoClient_?: MongoClient };
 
+/**
+ * Client di-cache di global juga di production: di serverless scope modul
+ * bisa hilang antar-invocation, dan bikin ulang MongoClient tiap kali
+ * itu artinya cold-start + pool baru untuk tiap instance.
+ */
 function makeClient(): MongoClient {
+  if (!uri || !uri.startsWith("mongodb")) {
+    throw new Error("MONGODB_URI is not set or invalid");
+  }
   return new MongoClient(uri, { maxPoolSize: 10 });
 }
 
-// Client di-cache di global juga di production: di serverless scope modul
-// bisa hilang antar-invocation, dan bikin ulang MongoClient tiap kali
-// itu artinya cold-start + pool baru untuk tiap instance.
-export const mongoClient = globalForMongo._mongoClient_ ?? makeClient();
-globalForMongo._mongoClient_ = mongoClient;
+function client(): MongoClient {
+  const c = globalForMongo._mongoClient_ ?? makeClient();
+  globalForMongo._mongoClient_ = c;
+  return c;
+}
 
 export const DB_NAME = process.env.MONGODB_DB ?? "topup-store";
 
 let connectPromise: Promise<void> | null = null;
 export async function connectIfNeed(): Promise<void> {
   if (connectPromise) return connectPromise;
-  connectPromise = mongoClient.connect().then(() => { connectPromise = null; }).catch((err) => {
-    connectPromise = null;
-    throw err;
-  });
+  connectPromise = client()
+    .connect()
+    .then(() => {
+      connectPromise = null;
+    })
+    .catch((err) => {
+      connectPromise = null;
+      throw err;
+    });
   return connectPromise;
 }
 
 export async function getDb(): Promise<Db> {
   await connectIfNeed();
-  return mongoClient.db(DB_NAME);
+  return client().db(DB_NAME);
 }
 
 export async function ensureIndexes(): Promise<void> {
@@ -53,4 +69,8 @@ export async function ensureIndexes(): Promise<void> {
     { key: { code: 1 }, unique: true },
     { key: { gameSlug: 1 } },
   ]);
+  // Rate limiter distribusi: dokumen window auto-hapus pas expiresAt lewat.
+  await db
+    .collection("rate_limits")
+    .createIndexes([{ key: { expiresAt: 1 }, expireAfterSeconds: 0 }]);
 }

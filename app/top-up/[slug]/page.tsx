@@ -6,6 +6,9 @@ import { BackButton } from "@/components/back-button"
 import { getDynamicGame } from "@/lib/content"
 import { getStoneGame, activeStoneVariants } from "@/lib/gamestone"
 import { TopupForm } from "@/components/topup-form"
+import { GameInfoBlock } from "@/components/game-info-block"
+import { Footer } from "@/components/footer"
+import { safeJsonLd } from "@/lib/jsonld"
 
 export const dynamic = "force-dynamic"
 
@@ -91,8 +94,7 @@ export default async function TopupPage({
   return (
     <main className="relative min-h-screen">
       <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        type="application/ld+json"          dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <div className="noise-overlay" aria-hidden="true" />
 
@@ -144,6 +146,9 @@ export default async function TopupPage({
       <section className="px-4 md:px-8 lg:px-12 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
         <TopupForm game={game} stoneVariants={stoneVariants} />
       </section>
+
+      <GameInfoBlock game={game} />
+      <Footer />
     </main>
   )
 }

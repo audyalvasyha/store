@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     // Probe nembak request beneran ke provider pakai API key kita — tanpa
     // limit, endpoint ini bisa dipakai siapa aja buat spam provider.
     // 6/menit lebih dari cukup buat diagnosa.
-    const probeLimit = rateLimit("stone-probe", clientIp(request), 6, 60_000)
+    const probeLimit = await rateLimit("stone-probe", clientIp(request), 6, 60_000)
     if (!probeLimit.ok) {
       payload.probe = { error: `terlalu sering, coba lagi dalam ${probeLimit.retryAfter} detik` }
       return NextResponse.json(payload, { status: 429, headers: { "Retry-After": String(probeLimit.retryAfter) } })

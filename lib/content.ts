@@ -36,17 +36,22 @@ async function ready(): Promise<void> {
 // ── Hero event ──────────────────────────────────────────────────────────────
 
 export async function getHeroEvent(): Promise<HeroEvent | null> {
-  await ready();
-  const db = await getDb();
-  const doc = await db.collection<HeroDoc>("site_content").findOne({ key: "hero" });
-  if (!doc || !doc.imageUrl) return null;
-  return {
-    imageUrl: doc.imageUrl,
-    label: doc.label,
-    note: doc.note,
-    href: doc.href,
-    updatedAt: doc.updatedAt,
-  };
+  try {
+    await ready();
+    const db = await getDb();
+    const doc = await db.collection<HeroDoc>("site_content").findOne({ key: "hero" });
+    if (!doc || !doc.imageUrl) return null;
+    return {
+      imageUrl: doc.imageUrl,
+      label: doc.label,
+      note: doc.note,
+      href: doc.href,
+      updatedAt: doc.updatedAt,
+    };
+  } catch {
+    // DB down / env hilang — landing harus tetap hidup, jadi tanpa event hero.
+    return null;
+  }
 }
 
 export async function saveHeroEvent(input: {
@@ -81,29 +86,38 @@ export async function clearHeroEvent(): Promise<void> {
 // ── Katalog games dinamis ───────────────────────────────────────────────────
 
 export async function getDynamicGames(): Promise<GameItem[]> {
-  await ready();
-  const db = await getDb();
-  const docs = await db.collection("games").find().sort({ slug: 1 }).toArray();
-  if (docs.length === 0) return GAMES;
-  // Merge: katalog statis sebagai dasar, dokumen DB menimpa slug yang sama.
-  // Admin edit di DB tetap menang, tapi game kurasi di lib/catalog tidak ilang
-  // walaupun katalog Gamestone di-sync penuh ke DB.
-  const bySlug = new Map<string, GameItem>(GAMES.map((g) => [g.slug, g]));
-  for (const { _id, ...game } of docs) {
-    void _id;
-    bySlug.set(game.slug, game as GameItem);
+  try {
+    await ready();
+    const db = await getDb();
+    const docs = await db.collection("games").find().sort({ slug: 1 }).toArray();
+    if (docs.length === 0) return GAMES;
+    // Merge: katalog statis sebagai dasar, dokumen DB menimpa slug yang sama.
+    // Admin edit di DB tetap menang, tapi game kurasi di lib/catalog tidak ilang
+    // walaupun katalog Gamestone di-sync penuh ke DB.
+    const bySlug = new Map<string, GameItem>(GAMES.map((g) => [g.slug, g]));
+    for (const { _id, ...game } of docs) {
+      void _id;
+      bySlug.set(game.slug, game as GameItem);
+    }
+    return [...bySlug.values()];
+  } catch {
+    // Fallback katalog statis — katalog Gamestone di-sync penuh ke DB (lib/catalog).
+    return GAMES;
   }
-  return [...bySlug.values()];
 }
 
 export async function getDynamicGame(slug: string): Promise<GameItem | undefined> {
-  await ready();
-  const db = await getDb();
-  const doc = await db.collection("games").findOne({ slug });
-  if (!doc) return getGame(slug);
-  const { _id, ...game } = doc;
-  void _id;
-  return game as GameItem;
+  try {
+    await ready();
+    const db = await getDb();
+    const doc = await db.collection("games").findOne({ slug });
+    if (!doc) return getGame(slug);
+    const { _id, ...game } = doc;
+    void _id;
+    return game as GameItem;
+  } catch {
+    return getGame(slug);
+  }
 }
 
 export async function upsertGame(game: GameItem): Promise<void> {

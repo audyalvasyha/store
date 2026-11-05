@@ -9,7 +9,7 @@ export const preferredRegion = "sin1"
 export async function GET(request: Request) {
   // Langsung nembak provider dengan API key kita tiap GET → tanpa limit,
   // siapa aja bisa buat spam provider + bikin key gua di-flag.
-  const limit = rateLimit("stone-probe-sg", clientIp(request), 6, 60_000)
+  const limit = await rateLimit("stone-probe-sg", clientIp(request), 6, 60_000)
   if (!limit.ok) {
     return NextResponse.json(
       { error: `Terlalu sering, coba lagi dalam ${limit.retryAfter} detik.` },

@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
   // Brute-force password lama: 5 percobaan per menit cukup buat manusia.
   const ip = clientIp(request)
-  if (!rateLimit("admin-pw", ip, 5, 60_000).ok) {
+  if (!(await rateLimit("admin-pw", ip, 5, 60_000)).ok) {
     return NextResponse.json({ error: "Terlalu sering. Coba lagi nanti." }, { status: 429 })
   }
 

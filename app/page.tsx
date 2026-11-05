@@ -4,6 +4,7 @@ import { MarqueeStrip } from "@/components/marquee-strip"
 import { GameGrid } from "@/components/program-grid"
 import { PriceList } from "@/components/schedule-block"
 import { WhyUs } from "@/components/split-feature"
+import { TestimonialStrip } from "@/components/testimonial-strip"
 import { FaqSection } from "@/components/faq-section"
 import { FinalCta } from "@/components/cta-block"
 import { Footer } from "@/components/footer"
@@ -38,6 +39,7 @@ export default async function Page({
       <GameGrid games={games} sold={sold} />
       <PriceList games={games} />
       <WhyUs />
+      <TestimonialStrip />
       <FaqSection />
       <FinalCta />
       <Footer />

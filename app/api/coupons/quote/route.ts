@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
  * konsumsi beneran terjadi di POST /api/orders (atomik + guarded).
  */
 export async function GET(request: Request) {
-  const readLimit = rateLimit("coupon-quote", clientIp(request), 30, 60_000)
+  const readLimit = await rateLimit("coupon-quote", clientIp(request), 30, 60_000)
   if (!readLimit.ok) {
     return NextResponse.json(
       { error: "Terlalu banyak permintaan. Coba lagi sebentar." },
@@ -27,7 +27,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Parameter tidak valid" }, { status: 400 })
   }
 
-  const result = await checkCoupon(code, { gameSlug, amount })
+  let result
+  try {
+    result = await checkCoupon(code, { gameSlug, amount })
+  } catch {
+    // DB kupon nggak bisa diakses — checkout jangan 500, surinta user coba lagi.
+    return NextResponse.json(
+      { error: "Sistem kupon lagi sibuk, coba lagi sebentar." },
+      { status: 503 }
+    )
+  }
   if ("error" in result) {
     return NextResponse.json({ error: result.error }, { status: 400 })
   }

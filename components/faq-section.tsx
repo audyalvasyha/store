@@ -1,3 +1,5 @@
+import { safeJsonLd } from "@/lib/jsonld"
+
 const FAQS = [
   {
     q: "Berapa lama proses top up di Gastros?",
@@ -38,7 +40,7 @@ export function FaqSection() {
 
   return (
     <section id="faq" aria-label="Pertanyaan yang sering ditanyakan" className="border-t border-border">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-10 md:py-20">
         <div className="flex items-center gap-3 mb-2 md:mb-4">
           <div className="h-[1.5px] w-5 md:w-10 bg-accent" />

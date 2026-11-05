@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   // Brute force login admin: 10 percobaan/menit per IP (login & register).
-  const limit = rateLimit("admin-auth", clientIp(request), 10, 60_000)
+  const limit = await rateLimit("admin-auth", clientIp(request), 10, 60_000)
   if (!limit.ok) {
     return NextResponse.json(
       { error: `Terlalu banyak percobaan. Coba lagi dalam ${limit.retryAfter} detik.` },

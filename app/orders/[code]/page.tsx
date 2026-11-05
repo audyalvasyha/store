@@ -29,7 +29,51 @@ export default async function OrderPage({
   params: Promise<{ code: string }>
 }) {
   const { code } = await params
-  const order = await getOrder(decodeURIComponent(code).toUpperCase())
+  // DB order bisa aja nggak nyambung (maintenance / network) — jangan bikin
+  // halaman status meledak 500. Bedakan "order nggak ada" (404) vs "sistem
+  // sibuk" (pesan ramah, tetap bisa balik / hubungi CS).
+  let order: Awaited<ReturnType<typeof getOrder>> = null
+  let dbUnavailable = false
+  try {
+    order = await getOrder(decodeURIComponent(code).toUpperCase())
+  } catch {
+    dbUnavailable = true
+  }
+
+  if (dbUnavailable) {
+    return (
+      <main className="relative min-h-screen flex items-center justify-center">
+        <div className="noise-overlay" aria-hidden="true" />
+        <div className="relative border border-border bg-card p-6 md:p-10 max-w-md text-center mx-4">
+          <span className="font-mono text-[10px] text-accent tracking-[0.3em] uppercase block mb-3">
+            [Order Status]
+          </span>
+          <h1 className="font-sans text-2xl md:text-3xl tracking-tighter text-foreground uppercase mb-3">
+            Sistem sibuk
+          </h1>
+          <p className="font-mono text-[11px] md:text-xs text-muted-foreground leading-relaxed mb-6">
+            Status order {decodeURIComponent(code).toUpperCase()} lagi nggak bisa diakses
+            sebentar. Coba refresh halaman — atau konfirmasi langsung ke CS biar
+            tetap cepat diproses.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Link
+              href={`/orders/${code}`}
+              className="bg-accent text-accent-foreground font-mono text-[10px] tracking-[0.2em] uppercase px-4 py-2 hover:opacity-90 transition-opacity"
+            >
+              Refresh
+            </Link>
+            <Link
+              href="/orders"
+              className="border border-border font-mono text-[10px] tracking-[0.2em] uppercase px-4 py-2 text-foreground/70 hover:text-foreground transition-colors"
+            >
+              Riwayat
+            </Link>
+          </div>
+        </div>
+      </main>
+    )
+  }
   if (!order) notFound()
 
   const waMessage = encodeURIComponent(
