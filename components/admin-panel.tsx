@@ -21,6 +21,123 @@ const EMPTY_GAME: GameItem = {
   denominations: [{ id: "new-1", label: "Item baru", price: 10000 }],
 }
 
+// ── Helper UI buat tab "Top Up Juga": chip urutan bernomor + pencari game biar nggak ngescroll dropdown 157 pilihan ──
+
+function TjChips({
+  list,
+  gamesBySlug,
+  onMove,
+  onRemove,
+}: {
+  list: string[]
+  gamesBySlug: Map<string, GameItem>
+  onMove: (slug: string, dir: -1 | 1) => void
+  onRemove: (slug: string) => void
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {list.map((slug, idx) => {
+        const g = gamesBySlug.get(slug)
+        return (
+          <span
+            key={slug}
+            className="inline-flex items-center gap-2 border border-border bg-background px-2.5 py-1.5 font-mono text-[10px] text-foreground uppercase"
+          >
+            <span className="text-accent font-bold">{idx + 1}.</span>
+            {g?.short ?? slug}
+            <button
+              onClick={() => onMove(slug, -1)}
+              disabled={idx === 0}
+              className="text-foreground/40 hover:text-accent disabled:opacity-25 text-sm px-1"
+              aria-label={`Geser ${slug} ke kiri`}
+            >
+              &larr;
+            </button>
+            <button
+              onClick={() => onMove(slug, 1)}
+              disabled={idx === list.length - 1}
+              className="text-foreground/40 hover:text-accent disabled:opacity-25 text-sm px-1"
+              aria-label={`Geser ${slug} ke kanan`}
+            >
+              &rarr;
+            </button>
+            <button
+              onClick={() => onRemove(slug)}
+              className="text-foreground/40 hover:text-destructive text-sm px-1"
+              aria-label={`Hapus ${slug}`}
+            >
+              &times;
+            </button>
+          </span>
+        )
+      })}
+      {list.length === 0 && (
+        <span className="font-mono text-[10px] text-foreground/30">(kosong — urutan otomatis)</span>
+      )}
+    </div>
+  )
+}
+
+function TjPicker({
+  games,
+  exclude,
+  query,
+  setQuery,
+  onPick,
+  placeholder,
+}: {
+  games: GameItem[]
+  exclude: string[]
+  query: string
+  setQuery: (q: string) => void
+  onPick: (slug: string) => void
+  placeholder: string
+}) {
+  const q = query.trim().toLowerCase()
+  const matches = q
+    ? games
+        .filter((g) => !exclude.includes(g.slug))
+        .filter(
+          (g) =>
+            g.short.toLowerCase().includes(q) || g.slug.includes(q) || g.name.toLowerCase().includes(q)
+        )
+        .slice(0, 8)
+    : []
+  return (
+    <div className="flex flex-col gap-2 max-w-md">
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={placeholder}
+        className="bg-background border border-border p-2.5 font-mono text-[10px] md:text-xs text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-accent"
+      />
+      {matches.length > 0 && (
+        <div className="border border-border bg-background flex flex-col max-h-60 overflow-y-auto">
+          {matches.map((g) => (
+            <button
+              key={g.slug}
+              type="button"
+              onClick={() => {
+                onPick(g.slug)
+                setQuery("")
+              }}
+              className="text-left px-3 py-2 font-mono text-[10px] md:text-xs text-foreground hover:bg-foreground/10 border-b border-border last:border-b-0 flex justify-between gap-3"
+            >
+              <span className="text-accent">+ {g.short}</span>
+              <span className="text-foreground/40">{g.slug}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {q && matches.length === 0 && (
+        <span className="font-mono text-[10px] text-foreground/30">
+          Gak ketemu game "{query}" (atau udah masuk list).
+        </span>
+      )}
+    </div>
+  )
+}
+
 export function AdminPanel({
   email,
   hero,
@@ -55,6 +172,8 @@ export function AdminPanel({
   const [tjSel, setTjSel] = useState<string>("")
   const [tjMsg, setTjMsg] = useState<string | null>(null)
   const [tjBusy, setTjBusy] = useState(false)
+  const [tjQuery, setTjQuery] = useState("")
+  const [tjPerQuery, setTjPerQuery] = useState("")
 
   function tjMove(setter: (list: string[]) => void, list: string[], slug: string, dir: -1 | 1) {
     const i = list.indexOf(slug)
@@ -109,6 +228,7 @@ export function AdminPanel({
   }
 
   const tjGamesBySlug = new Map(games.map((g) => [g.slug, g] as const))
+  const tjPerCount = Object.values(tjPer).filter((l) => l.length > 0).length
 
   async function saveHero(clear = false) {
     setHeroBusy(true)
@@ -372,164 +492,100 @@ export function AdminPanel({
         </div>
       )}
 
-      {/* TOP UP JUGA TAB — urutan & pemilihan game blok "[Top Up Juga]" */}
+      {/* TOP UP JUGA TAB — alur 3 langkah: cari game → susun urutan → simpan */}
       {tab === "topupjuga" && (
         <div className="flex flex-col gap-4 md:gap-6">
           <div className="border border-border bg-card p-4 md:p-6 flex flex-col gap-3">
             <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase">
-              Urutan Global (semua halaman game)
+              Blok [Top Up Juga] — game & urutan di bawah tiap halaman top up
             </span>
-            <p className="font-mono text-[10px] text-foreground/50 leading-relaxed">
-              Game yang muncul di blok [Top Up Juga] tiap halaman top up + urutannya (kiri ke kanan). maksimal 20. Kosongin lalu simpan = urutan otomatis (game se-kategori + featured).
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {(tjGlobal.length > 0 ? tjGlobal : []).map((slug) => {
-                const g = tjGamesBySlug.get(slug)
-                return (
-                  <span
-                    key={slug}
-                    className="inline-flex items-center gap-2 border border-border bg-background px-2.5 py-1.5 font-mono text-[10px] text-foreground uppercase"
-                  >
-                    {g?.short ?? slug}
-                    <button
-                      onClick={() => tjMove(setTjGlobal, tjGlobal, slug, -1)}
-                      disabled={tjGlobal.indexOf(slug) === 0}
-                      className="text-foreground/40 hover:text-accent disabled:opacity-25"
-                      aria-label={`Geser ${slug} ke kiri`}
-                    >
-                      &larr;
-                    </button>
-                    <button
-                      onClick={() => tjMove(setTjGlobal, tjGlobal, slug, 1)}
-                      disabled={tjGlobal.indexOf(slug) === tjGlobal.length - 1}
-                      className="text-foreground/40 hover:text-accent disabled:opacity-25"
-                      aria-label={`Geser ${slug} ke kanan`}
-                    >
-                      &rarr;
-                    </button>
-                    <button
-                      onClick={() => tjRemove(setTjGlobal, tjGlobal, slug)}
-                      className="text-foreground/40 hover:text-destructive"
-                      aria-label={`Hapus ${slug}`}
-                    >
-                      &times;
-                    </button>
-                  </span>
-                )
-              })}
-              {tjGlobal.length === 0 && (
-                <span className="font-mono text-[10px] text-foreground/30">(kosong — urutan otomatis)</span>
-              )}
-            </div>
-            <select
-              value=""
-              onChange={(e) => tjAdd(setTjGlobal, tjGlobal, e.target.value)}
-              className="bg-background border border-border p-2.5 font-mono text-[10px] md:text-xs text-foreground focus:outline-none focus:border-accent max-w-xs"
-            >
-              <option value="">+ Tambah game ke urutan global…</option>
-              {games
-                .filter((g) => !tjGlobal.includes(g.slug))
-                .map((g) => (
-                  <option key={g.slug} value={g.slug}>
-                    {g.short} — {g.slug}
-                  </option>
-                ))}
-            </select>
+            <ol className="font-mono text-[10px] text-foreground/60 leading-relaxed space-y-1 list-decimal list-inside">
+              <li>Cari game di kotak di bawah, klik hasilnya → otomatis masuk urutan.</li>
+              <li>Atur posisi pakai ← → (angka = posisinya, kiri muncul duluan). × buat keluarin.</li>
+              <li>Klik Simpan. Mau balik ke otomatis? Kosongin semua terus Simpan, atau pakai tombol Reset.</li>
+            </ol>
+
+            <TjPicker
+              games={games}
+              exclude={tjGlobal}
+              query={tjQuery}
+              setQuery={setTjQuery}
+              onPick={(slug) => tjAdd(setTjGlobal, tjGlobal, slug)}
+              placeholder="Cari game… ketik 'mlbb', 'free fire', 'genshin'…"
+            />
+
+            <TjChips
+              list={tjGlobal}
+              gamesBySlug={tjGamesBySlug}
+              onMove={(slug, dir) => tjMove(setTjGlobal, tjGlobal, slug, dir)}
+              onRemove={(slug) => tjRemove(setTjGlobal, tjGlobal, slug)}
+            />
           </div>
 
-          <div className="border border-border bg-card p-4 md:p-6 flex flex-col gap-3">
-            <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase">
-              Override Per Halaman Game (opsional)
-            </span>
-            <p className="font-mono text-[10px] text-foreground/50 leading-relaxed">
-              Mau urutan beda di game tertentu? Pilih game, susun list-nya — override ini menang atas urutan global.
-            </p>
-            <select
-              value={tjSel}
-              onChange={(e) => setTjSel(e.target.value)}
-              className="bg-background border border-border p-2.5 font-mono text-[10px] md:text-xs text-foreground focus:outline-none focus:border-accent max-w-xs"
-            >
-              <option value="">— pilih halaman game —</option>
-              {games.map((g) => (
-                <option key={g.slug} value={g.slug}>
-                  {g.short} — {g.slug}{tjPer[g.slug]?.length ? " (override aktif)" : ""}
-                </option>
-              ))}
-            </select>
-            {tjSel && (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] text-foreground/60 uppercase">
-                    Override: {tjSel}
-                  </span>
-                  <button
-                    onClick={() => {
-                      const next = { ...tjPer }
-                      delete next[tjSel]
-                      setTjPer(next)
-                    }}
-                    className="font-mono text-[9px] uppercase tracking-[0.15em] text-foreground/40 hover:text-destructive"
-                  >
-                    Hapus override (ikut global)
-                  </button>
+          <details className="border border-border bg-card p-4 md:p-6">
+            <summary className="font-mono text-[10px] md:text-xs text-foreground/60 tracking-[0.2em] uppercase cursor-pointer select-none hover:text-foreground">
+              ⚙️ Lanjutan: urutan beda per halaman game{tjPerCount > 0 ? ` (${tjPerCount} aktif)` : " — nggak perlu, skip aja"}
+            </summary>
+            <div className="flex flex-col gap-3 mt-4">
+              <p className="font-mono text-[10px] text-foreground/50 leading-relaxed">
+                Cuma dipakai kalau satu game harus menampilkan blok yang beda dari game lain. Pilih halaman game di bawah, lalu susun list-nya — override ini menang atas urutan global di atas.
+              </p>
+              <select
+                value={tjSel}
+                onChange={(e) => setTjSel(e.target.value)}
+                className="bg-background border border-border p-2.5 font-mono text-[10px] md:text-xs text-foreground focus:outline-none focus:border-accent max-w-xs"
+              >
+                <option value="">— pilih halaman game —</option>
+                {games.map((g) => (
+                  <option key={g.slug} value={g.slug}>
+                    {g.short} — {g.slug}
+                    {tjPer[g.slug]?.length ? " (override aktif)" : ""}
+                  </option>
+                ))}
+              </select>
+              {tjSel && (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px] text-foreground/60 uppercase">
+                      Override: {tjSel}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const next = { ...tjPer }
+                        delete next[tjSel]
+                        setTjPer(next)
+                      }}
+                      className="font-mono text-[9px] uppercase tracking-[0.15em] text-foreground/40 hover:text-destructive"
+                    >
+                      Hapus override (ikut global)
+                    </button>
+                  </div>
+
+                  <TjPicker
+                    games={games}
+                    exclude={[tjSel, ...(tjPer[tjSel] ?? [])]}
+                    query={tjPerQuery}
+                    setQuery={setTjPerQuery}
+                    onPick={(slug) =>
+                      tjAdd((l) => setTjPer({ ...tjPer, [tjSel]: l }), tjPer[tjSel] ?? [], slug)
+                    }
+                    placeholder="Cari game untuk override ini…"
+                  />
+
+                  <TjChips
+                    list={tjPer[tjSel] ?? []}
+                    gamesBySlug={tjGamesBySlug}
+                    onMove={(slug, dir) =>
+                      tjMove((l) => setTjPer({ ...tjPer, [tjSel]: l }), tjPer[tjSel] ?? [], slug, dir)
+                    }
+                    onRemove={(slug) =>
+                      tjRemove((l) => setTjPer({ ...tjPer, [tjSel]: l }), tjPer[tjSel] ?? [], slug)
+                    }
+                  />
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {(tjPer[tjSel] ?? []).map((slug) => {
-                    const g = tjGamesBySlug.get(slug)
-                    const list = tjPer[tjSel] ?? []
-                    return (
-                      <span
-                        key={slug}
-                        className="inline-flex items-center gap-2 border border-accent/40 bg-background px-2.5 py-1.5 font-mono text-[10px] text-foreground uppercase"
-                      >
-                        {g?.short ?? slug}
-                        <button
-                          onClick={() => tjMove((l) => setTjPer({ ...tjPer, [tjSel]: l }), list, slug, -1)}
-                          disabled={list.indexOf(slug) === 0}
-                          className="text-foreground/40 hover:text-accent disabled:opacity-25"
-                          aria-label={`Geser ${slug} ke kiri`}
-                        >
-                          &larr;
-                        </button>
-                        <button
-                          onClick={() => tjMove((l) => setTjPer({ ...tjPer, [tjSel]: l }), list, slug, 1)}
-                          disabled={list.indexOf(slug) === list.length - 1}
-                          className="text-foreground/40 hover:text-accent disabled:opacity-25"
-                          aria-label={`Geser ${slug} ke kanan`}
-                        >
-                          &rarr;
-                        </button>
-                        <button
-                          onClick={() => tjRemove((l) => setTjPer({ ...tjPer, [tjSel]: l }), list, slug)}
-                          className="text-foreground/40 hover:text-destructive"
-                          aria-label={`Hapus ${slug}`}
-                        >
-                          &times;
-                        </button>
-                      </span>
-                    )
-                  })}
-                  {(tjPer[tjSel] ?? []).length === 0 && (
-                    <span className="font-mono text-[10px] text-foreground/30">(ikuti urutan global)</span>
-                  )}
-                </div>
-                <select
-                  value=""
-                  onChange={(e) => tjAdd((l) => setTjPer({ ...tjPer, [tjSel]: l }), tjPer[tjSel] ?? [], e.target.value)}
-                  className="bg-background border border-border p-2.5 font-mono text-[10px] md:text-xs text-foreground focus:outline-none focus:border-accent max-w-xs"
-                >
-                  <option value="">+ Tambah game ke override ini…</option>
-                  {games
-                    .filter((g) => g.slug !== tjSel && !(tjPer[tjSel] ?? []).includes(g.slug))
-                    .map((g) => (
-                      <option key={g.slug} value={g.slug}>
-                        {g.short} — {g.slug}
-                      </option>
-                    ))}
-                </select>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </details>
 
           {tjMsg && <span className="font-mono text-[10px] text-accent">{tjMsg}</span>}
           <div className="flex gap-2">
