@@ -7,7 +7,7 @@ import type { MetadataRoute } from "next"
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "GASTROS — Top Up Game Online Murah & Proses Kilat",
+    name: "GASTROS - Top Up Game Online Murah & Proses Kilat",
     short_name: "GASTROS",
     description:
       "Top up game favorit lo: Diamond MLBB, Free Fire, CODM, LoL, dan 100+ game lainnya. Proses kilat, jalur resmi publisher, layanan 24 jam.",
