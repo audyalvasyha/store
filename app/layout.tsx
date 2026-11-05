@@ -22,7 +22,7 @@ const SITE_URL = process.env.APP_BASE_URL?.replace(/\/$/, "") ?? 'https://gastro
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'GASTROS — Top Up Game Online Murah & Proses Kilat',
+    default: 'GASTROS - Top Up Game Online Murah & Proses Kilat',
     template: '%s // GASTROS',
   },
   description: 'Top up game favorit lo: Diamond MLBB, Diamond FF, CP CODM, RP LoL, dan 100+ game lainnya. Proses kilat, jalur resmi publisher, harga bersahabat, layanan 24 jam di gastros.id.',
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: 'GASTROS — Top Up Game Online Murah & Proses Kilat',
+    title: 'GASTROS - Top Up Game Online Murah & Proses Kilat',
     description: 'Top up instant, jalur resmi publisher, layanan 24 jam. Pilih game, isi ID, gas!',
     url: SITE_URL,
     siteName: 'GASTROS',

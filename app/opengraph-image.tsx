@@ -4,7 +4,7 @@ import { ImageResponse } from "next/og"
  * OG image global (1200x630) — dipakai semua route yang gak punya
  * opengraph-image sendiri. Tema hitam + merah brand (--accent) ala situs.
  */
-export const alt = "GASTROS — Top Up Game Online Murah & Proses Kilat"
+export const alt = "GASTROS - Top Up Game Online Murah & Proses Kilat"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
