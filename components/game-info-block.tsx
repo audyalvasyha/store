@@ -1,30 +1,49 @@
 import Link from "next/link"
 import { GAMES, formatIDR, PAYMENT_METHODS } from "@/lib/catalog"
 import type { GameItem } from "@/lib/catalog"
+import { GameArtwork } from "@/components/game-artwork"
+import { getDynamicGames, getTopUpJugaConfig } from "@/lib/content"
+
+/** Maks tile per blok — admin bisa isi lebih, tapi dibatasi biar gak mbuhor. */
+const MAX_TILES = 8 as const
 
 /**
  * Blok konten + internal link di bawah form top up.
  *
  * Kenapa ada: halaman top up sebelumnya tipis (header + form aja) — buat
  * Google itu thin content. Blok ini nambahin copy deskriptif per-game kayak
- * harga rendahnya, publisher, metode bayar, plus 4 link internal ke game
- * lain biar crawl equity ngalir Antar halaman top up.
+ * harga rendahnya, publisher, metode bayar, plus link internal ke game
+ * lain biar crawl equity ngalir antar halaman top up.
  */
-export function GameInfoBlock({ game }: { game: GameItem }) {
+export async function GameInfoBlock({ game }: { game: GameItem }) {
   const prices = game.denominations.map((d) => d.price)
   const minPrice = Math.min(...prices)
   const maxPrice = Math.max(...prices)
-
-  const payLine = [...PAYMENT_METHODS, "QRIS"]
+  const payLine = [
+    ...PAYMENT_METHODS.map((p) => (typeof p === "string" ? p : p.label)),
+    "QRIS",
+  ]
     .filter((p, i, arr) => arr.indexOf(p) === i)
     .slice(0, 6)
     .join(", ")
 
   // Related: prioritaskan game se-kategori, sisanya game featured. Max 4.
-  const related = [
-    ...GAMES.filter((g) => g.slug !== game.slug && g.category === game.category),
-    ...GAMES.filter((g) => g.slug !== game.slug && g.featured && g.category !== game.category),
-  ].slice(0, 4)
+  // Related: config admin menang (per-game override, lalu urutan global).
+  // Tanpa config, jatuh ke urutan otomatis: game se-kategori, lalu featured.
+  const [cfg, allGames] = await Promise.all([getTopUpJugaConfig(), getDynamicGames()])
+  const bySlug = new Map(allGames.map((g) => [g.slug, g] as const))
+  const configSlugs = cfg?.perGame?.[game.slug] ?? cfg?.global ?? null
+  const related: GameItem[] =
+    configSlugs && configSlugs.length > 0
+      ? configSlugs
+          .map((slug) => bySlug.get(slug))
+          .filter((g): g is GameItem => Boolean(g) && g!.slug !== game.slug)
+      : [
+          ...allGames.filter((g) => g.slug !== game.slug && g.category === game.category),
+          ...allGames.filter((g) => g.slug !== game.slug && g.featured && g.category !== game.category),
+        ]
+
+  const shown = related.slice(0, MAX_TILES)
 
   return (
     <section aria-label={`Info lengkap top up ${game.name}`} className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 pb-10 md:pb-16">
@@ -76,33 +95,38 @@ export function GameInfoBlock({ game }: { game: GameItem }) {
         </div>
       </div>
 
-      {/* Internal links: game terkait */}
+      {/* Internal links: game terkait — rasio tile sama dengan "Paling Sering
+          Di-Top Up" (aspect 3/4 + artwork asli), tapi grid dibatasi lebih
+          sempit biar tile-nya sedikit lebih kecil. */}
       <div className="mt-4 md:mt-8">
         <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.25em] uppercase block mb-2 md:mb-3">
           [Top Up Juga] &mdash; Game Lainnya
         </span>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-          {related.map((r) => (
+        <div className="md:max-w-[1000px] grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+          {shown.map((r) => (
             <Link
               key={r.slug}
               href={`/top-up/${r.slug}`}
-              className="group border border-border bg-card p-3 md:p-4 hover:border-accent transition-colors"
+              className="group relative"
             >
-              <div className="flex items-center gap-2 md:gap-2.5">
-                <div
-                  className="w-8 h-8 md:w-9 md:h-9 shrink-0 flex items-center justify-center font-sans text-[10px] md:text-xs text-background"
-                  style={{ backgroundColor: `hsl(${r.hue})` }}
-                >
-                  {r.glyph}
-                </div>
-                <div className="min-w-0">
-                  <span className="block font-mono text-[10px] md:text-xs text-foreground group-hover:text-accent transition-colors uppercase truncate">
-                    {r.short}
-                  </span>
-                  <span className="block font-mono text-[9px] md:text-[10px] text-foreground/40 truncate">
-                    Mulai {formatIDR(Math.min(...r.denominations.map((d) => d.price)))}
-                  </span>
-                </div>
+              <div className="relative overflow-hidden border border-border group-hover:border-accent transition-colors aspect-[3/4]">
+                <GameArtwork
+                  game={r}
+                  sizes="50vw, 220px"
+                  className="object-cover"
+                  initialsClassName="text-2xl"
+                />
+                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-accent scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+                <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-accent/0 group-hover:border-accent transition-colors duration-300" />
+                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-accent/0 group-hover:border-accent transition-colors duration-300" />
+              </div>
+              <div className="pt-2">
+                <span className="block font-sans text-base md:text-lg text-foreground/90 font-bold tracking-tight group-hover:text-accent transition-colors uppercase truncate">
+                  {r.short}
+                </span>
+                <span className="block font-mono text-[9px] md:text-[10px] text-foreground/40 tracking-[0.1em] uppercase">
+                  Mulai {formatIDR(Math.min(...r.denominations.map((d) => d.price)))}
+                </span>
               </div>
             </Link>
           ))}

@@ -36,6 +36,12 @@ export async function generateMetadata({
       description: `${game.currency} ${game.name} masuk akun lewat jalur resmi publisher. Proses kilat, layanan 24 jam.`,
       url: `/top-up/${slug}`,
       type: "website",
+      // og:image tidak diisi manual: otomatis dari app/top-up/[slug]/opengraph-image.tsx.
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Top Up ${game.name} — Mulai ${formatIDR(minPrice)}`,
+      description: `Jalur resmi publisher, proses kilat, layanan 24 jam. Mulai ${formatIDR(minPrice)}.`,
     },
   }
 }

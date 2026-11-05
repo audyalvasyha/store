@@ -13,7 +13,15 @@ export default async function AdminLoginPage() {
   const email = await getAdminEmail(jar.get(SESSION_COOKIE)?.value)
   if (email) redirect("/admin")
 
-  const first = (await countAdmins()) === 0
+  // Sandbox/preview tanpa MONGODB_URI: countAdmins meledak → 500 mentah.
+  // Halaman login harus tetap hidup dan jujur bilang DB nggak nyambung.
+  let first = false
+  let dbOk = true
+  try {
+    first = (await countAdmins()) === 0
+  } catch {
+    dbOk = false
+  }
 
   return (
     <main className="relative min-h-screen flex items-center justify-center px-4">
@@ -26,7 +34,20 @@ export default async function AdminLoginPage() {
           </div>
           <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
         </Link>
-        <AdminLoginForm first={first} />
+        {dbOk ? (
+          <AdminLoginForm first={first} />
+        ) : (
+          <div className="border border-border bg-card p-5 max-w-md text-center">
+            <span className="font-mono text-[10px] text-accent tracking-[0.25em] uppercase block mb-2">
+              [Sistem Sibuk]
+            </span>
+            <p className="font-mono text-[11px] text-foreground/60 leading-relaxed">
+              Database lagi nggak nyambung, jadi login admin belum bisa
+              di environment ini. Halaman admin tetap jalan normal di
+              production (www.gastros.id/admin).
+            </p>
+          </div>
+        )}
       </div>
     </main>
   )

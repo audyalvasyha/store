@@ -128,6 +128,73 @@ export async function upsertGame(game: GameItem): Promise<void> {
     .updateOne({ slug: game.slug }, { $set: game }, { upsert: true });
 }
 
+// ── Konfigurasi [Top Up Juga] — Game Lainnya ──────────────────────────────
+
+/**
+ * Urutan & pemilihan game di blok "[Top Up Juga]" pada halaman top up,
+ * aturannya dari /admin:
+ * - `global`  : urutan slug yang dipakai SEMUA halaman game (fallback).
+ * - `perGame` : override urutan khusus per slug game — menang atas global.
+ * Disimpan sebagai dokumen site_content key "topup-juga". Tanpa config,
+ * blok pakai urutan otomatis (game se-kategori + featured).
+ */
+export type TopUpJugaConfig = {
+  global: string[];
+  perGame: Record<string, string[]>;
+  updatedAt: string;
+};
+
+type TopUpJugaDoc = {
+  key: string;
+  global: string[];
+  perGame?: Record<string, string[]>;
+  updatedAt: string;
+};
+
+const TOPUP_JUGA_KEY = "topup-juga";
+
+export async function getTopUpJugaConfig(): Promise<TopUpJugaConfig | null> {
+  try {
+    await ready();
+    const db = await getDb();
+    const doc = await db.collection<TopUpJugaDoc>("site_content").findOne({ key: TOPUP_JUGA_KEY });
+    if (!doc) return null;
+    return {
+      global: Array.isArray(doc.global) ? doc.global : [],
+      perGame: doc.perGame && typeof doc.perGame === "object" ? doc.perGame : {},
+      updatedAt: doc.updatedAt ?? "",
+    };
+  } catch {
+    // DB down — halaman publik jatuh ke urutan otomatis, bukan error.
+    return null;
+  }
+}
+
+export async function saveTopUpJuga(input: {
+  global: string[];
+  perGame: Record<string, string[]>;
+}): Promise<void> {
+  await ready();
+  const db = await getDb();
+  await db.collection<TopUpJugaDoc>("site_content").updateOne(
+    { key: TOPUP_JUGA_KEY },
+    {
+      $set: {
+        global: input.global,
+        perGame: input.perGame,
+        updatedAt: new Date().toISOString(),
+      },
+    },
+    { upsert: true }
+  );
+}
+
+export async function clearTopUpJuga(): Promise<void> {
+  await ready();
+  const db = await getDb();
+  await db.collection<TopUpJugaDoc>("site_content").deleteOne({ key: TOPUP_JUGA_KEY });
+}
+
 export async function deleteGame(slug: string): Promise<void> {
   await ready();
   const db = await getDb();

@@ -3,9 +3,9 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { PAYMENT_METHODS, GAMES, formatIDR, type GameItem, type Denomination } from "@/lib/catalog"
-import type { HeroEvent } from "@/lib/content"
+import type { HeroEvent, TopUpJugaConfig } from "@/lib/content"
 
-type Tab = "hero" | "games"
+type Tab = "hero" | "games" | "topupjuga"
 
 const EMPTY_GAME: GameItem = {
   slug: "",
@@ -25,10 +25,12 @@ export function AdminPanel({
   email,
   hero,
   games,
+  topUpJuga,
 }: {
   email: string
   hero: HeroEvent | null
   games: GameItem[]
+  topUpJuga: TopUpJugaConfig | null
 }) {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>("hero")
@@ -46,6 +48,67 @@ export function AdminPanel({
   const [gameJson, setGameJson] = useState(JSON.stringify(EMPTY_GAME, null, 2))
   const [gamesMsg, setGamesMsg] = useState<string | null>(null)
   const [gamesBusy, setGamesBusy] = useState(false)
+
+  // ── Top Up Juga state ──
+  const [tjGlobal, setTjGlobal] = useState<string[]>(topUpJuga?.global ?? [])
+  const [tjPer, setTjPer] = useState<Record<string, string[]>>(topUpJuga?.perGame ?? {})
+  const [tjSel, setTjSel] = useState<string>("")
+  const [tjMsg, setTjMsg] = useState<string | null>(null)
+  const [tjBusy, setTjBusy] = useState(false)
+
+  function tjMove(setter: (list: string[]) => void, list: string[], slug: string, dir: -1 | 1) {
+    const i = list.indexOf(slug)
+    const j = i + dir
+    if (i < 0 || j < 0 || j >= list.length) return
+    const next = [...list]
+    ;[next[i], next[j]] = [next[j]!, next[i]!]
+    setter(next)
+  }
+
+  function tjAdd(setter: (list: string[]) => void, list: string[], slug: string) {
+    if (!slug || list.includes(slug)) return
+    setter([...list, slug])
+  }
+
+  function tjRemove(setter: (list: string[]) => void, list: string[], slug: string) {
+    setter(list.filter((s) => s !== slug))
+  }
+
+  async function saveTopUpJuga(clear = false) {
+    setTjBusy(true)
+    setTjMsg(null)
+    try {
+      const res = await fetch("/api/admin/topup-juga", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          clear
+            ? { clear: true }
+            : {
+                global: tjGlobal,
+                // Override kosong dibuang — artinya "ikuti global".
+                perGame: Object.fromEntries(
+                  Object.entries(tjPer).filter(([, list]) => list.length > 0)
+                ),
+              }
+        ),
+      })
+      const data = await res.json()
+      setTjMsg(
+        res.ok
+          ? clear
+            ? "Di-reset — urutan otomatis (kategori + featured) dipakai lagi."
+            : "Konfigurasi Top Up Juga tersimpan!"
+          : data.error ?? "Gagal"
+      )
+      if (res.ok) router.refresh()
+    } catch {
+      setTjMsg("Koneksi bermasalah")
+    }
+    setTjBusy(false)
+  }
+
+  const tjGamesBySlug = new Map(games.map((g) => [g.slug, g] as const))
 
   async function saveHero(clear = false) {
     setHeroBusy(true)
@@ -150,6 +213,12 @@ export function AdminPanel({
             className={`font-mono text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 border border-border min-h-[40px] ${tab === "games" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
           >
             Katalog Games ({games.length})
+          </button>
+          <button
+            onClick={() => setTab("topupjuga")}
+            className={`font-mono text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 border border-border min-h-[40px] ${tab === "topupjuga" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
+          >
+            Top Up Juga
           </button>
           <button
             onClick={doLogout}
@@ -298,6 +367,185 @@ export function AdminPanel({
               className={`font-mono text-[10px] tracking-[0.2em] uppercase px-5 py-3.5 min-h-[44px] ${gamesBusy ? "bg-foreground/10 text-foreground/30 cursor-not-allowed" : "bg-accent text-accent-foreground hover-glitch"}`}
             >
               {gamesBusy ? "Menyimpan..." : "Simpan Game"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TOP UP JUGA TAB — urutan & pemilihan game blok "[Top Up Juga]" */}
+      {tab === "topupjuga" && (
+        <div className="flex flex-col gap-4 md:gap-6">
+          <div className="border border-border bg-card p-4 md:p-6 flex flex-col gap-3">
+            <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase">
+              Urutan Global (semua halaman game)
+            </span>
+            <p className="font-mono text-[10px] text-foreground/50 leading-relaxed">
+              Game yang muncul di blok [Top Up Juga] tiap halaman top up + urutannya (kiri ke kanan). maksimal 20. Kosongin lalu simpan = urutan otomatis (game se-kategori + featured).
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {(tjGlobal.length > 0 ? tjGlobal : []).map((slug) => {
+                const g = tjGamesBySlug.get(slug)
+                return (
+                  <span
+                    key={slug}
+                    className="inline-flex items-center gap-2 border border-border bg-background px-2.5 py-1.5 font-mono text-[10px] text-foreground uppercase"
+                  >
+                    {g?.short ?? slug}
+                    <button
+                      onClick={() => tjMove(setTjGlobal, tjGlobal, slug, -1)}
+                      disabled={tjGlobal.indexOf(slug) === 0}
+                      className="text-foreground/40 hover:text-accent disabled:opacity-25"
+                      aria-label={`Geser ${slug} ke kiri`}
+                    >
+                      &larr;
+                    </button>
+                    <button
+                      onClick={() => tjMove(setTjGlobal, tjGlobal, slug, 1)}
+                      disabled={tjGlobal.indexOf(slug) === tjGlobal.length - 1}
+                      className="text-foreground/40 hover:text-accent disabled:opacity-25"
+                      aria-label={`Geser ${slug} ke kanan`}
+                    >
+                      &rarr;
+                    </button>
+                    <button
+                      onClick={() => tjRemove(setTjGlobal, tjGlobal, slug)}
+                      className="text-foreground/40 hover:text-destructive"
+                      aria-label={`Hapus ${slug}`}
+                    >
+                      &times;
+                    </button>
+                  </span>
+                )
+              })}
+              {tjGlobal.length === 0 && (
+                <span className="font-mono text-[10px] text-foreground/30">(kosong — urutan otomatis)</span>
+              )}
+            </div>
+            <select
+              value=""
+              onChange={(e) => tjAdd(setTjGlobal, tjGlobal, e.target.value)}
+              className="bg-background border border-border p-2.5 font-mono text-[10px] md:text-xs text-foreground focus:outline-none focus:border-accent max-w-xs"
+            >
+              <option value="">+ Tambah game ke urutan global…</option>
+              {games
+                .filter((g) => !tjGlobal.includes(g.slug))
+                .map((g) => (
+                  <option key={g.slug} value={g.slug}>
+                    {g.short} — {g.slug}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div className="border border-border bg-card p-4 md:p-6 flex flex-col gap-3">
+            <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase">
+              Override Per Halaman Game (opsional)
+            </span>
+            <p className="font-mono text-[10px] text-foreground/50 leading-relaxed">
+              Mau urutan beda di game tertentu? Pilih game, susun list-nya — override ini menang atas urutan global.
+            </p>
+            <select
+              value={tjSel}
+              onChange={(e) => setTjSel(e.target.value)}
+              className="bg-background border border-border p-2.5 font-mono text-[10px] md:text-xs text-foreground focus:outline-none focus:border-accent max-w-xs"
+            >
+              <option value="">— pilih halaman game —</option>
+              {games.map((g) => (
+                <option key={g.slug} value={g.slug}>
+                  {g.short} — {g.slug}{tjPer[g.slug]?.length ? " (override aktif)" : ""}
+                </option>
+              ))}
+            </select>
+            {tjSel && (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] text-foreground/60 uppercase">
+                    Override: {tjSel}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const next = { ...tjPer }
+                      delete next[tjSel]
+                      setTjPer(next)
+                    }}
+                    className="font-mono text-[9px] uppercase tracking-[0.15em] text-foreground/40 hover:text-destructive"
+                  >
+                    Hapus override (ikut global)
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(tjPer[tjSel] ?? []).map((slug) => {
+                    const g = tjGamesBySlug.get(slug)
+                    const list = tjPer[tjSel] ?? []
+                    return (
+                      <span
+                        key={slug}
+                        className="inline-flex items-center gap-2 border border-accent/40 bg-background px-2.5 py-1.5 font-mono text-[10px] text-foreground uppercase"
+                      >
+                        {g?.short ?? slug}
+                        <button
+                          onClick={() => tjMove((l) => setTjPer({ ...tjPer, [tjSel]: l }), list, slug, -1)}
+                          disabled={list.indexOf(slug) === 0}
+                          className="text-foreground/40 hover:text-accent disabled:opacity-25"
+                          aria-label={`Geser ${slug} ke kiri`}
+                        >
+                          &larr;
+                        </button>
+                        <button
+                          onClick={() => tjMove((l) => setTjPer({ ...tjPer, [tjSel]: l }), list, slug, 1)}
+                          disabled={list.indexOf(slug) === list.length - 1}
+                          className="text-foreground/40 hover:text-accent disabled:opacity-25"
+                          aria-label={`Geser ${slug} ke kanan`}
+                        >
+                          &rarr;
+                        </button>
+                        <button
+                          onClick={() => tjRemove((l) => setTjPer({ ...tjPer, [tjSel]: l }), list, slug)}
+                          className="text-foreground/40 hover:text-destructive"
+                          aria-label={`Hapus ${slug}`}
+                        >
+                          &times;
+                        </button>
+                      </span>
+                    )
+                  })}
+                  {(tjPer[tjSel] ?? []).length === 0 && (
+                    <span className="font-mono text-[10px] text-foreground/30">(ikuti urutan global)</span>
+                  )}
+                </div>
+                <select
+                  value=""
+                  onChange={(e) => tjAdd((l) => setTjPer({ ...tjPer, [tjSel]: l }), tjPer[tjSel] ?? [], e.target.value)}
+                  className="bg-background border border-border p-2.5 font-mono text-[10px] md:text-xs text-foreground focus:outline-none focus:border-accent max-w-xs"
+                >
+                  <option value="">+ Tambah game ke override ini…</option>
+                  {games
+                    .filter((g) => g.slug !== tjSel && !(tjPer[tjSel] ?? []).includes(g.slug))
+                    .map((g) => (
+                      <option key={g.slug} value={g.slug}>
+                        {g.short} — {g.slug}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {tjMsg && <span className="font-mono text-[10px] text-accent">{tjMsg}</span>}
+          <div className="flex gap-2">
+            <button
+              onClick={() => saveTopUpJuga(false)}
+              disabled={tjBusy}
+              className={`font-mono text-[10px] tracking-[0.2em] uppercase px-5 py-3 min-h-[44px] ${tjBusy ? "bg-foreground/10 text-foreground/30 cursor-not-allowed" : "bg-accent text-accent-foreground hover-glitch"}`}
+            >
+              {tjBusy ? "Menyimpan..." : "Simpan Konfigurasi"}
+            </button>
+            <button
+              onClick={() => saveTopUpJuga(true)}
+              disabled={tjBusy}
+              className="font-mono text-[10px] tracking-[0.2em] uppercase px-5 py-3 min-h-[44px] border border-border text-foreground/50 hover:text-destructive"
+            >
+              Reset ke Otomatis
             </button>
           </div>
         </div>

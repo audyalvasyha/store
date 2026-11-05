@@ -2,7 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
 import { getAdminEmail, SESSION_COOKIE } from "@/lib/admin-auth"
-import { getHeroEvent, getDynamicGames } from "@/lib/content"
+import { getHeroEvent, getDynamicGames, getTopUpJugaConfig } from "@/lib/content"
 import { AdminPanel } from "@/components/admin-panel"
 import { AdminCoupons } from "@/components/admin-coupons"
 
@@ -15,7 +15,11 @@ export default async function AdminPage() {
   const email = await getAdminEmail(jar.get(SESSION_COOKIE)?.value)
   if (!email) redirect("/admin/login")
 
-  const [hero, games] = await Promise.all([getHeroEvent(), getDynamicGames()])
+  const [hero, games, topUpJuga] = await Promise.all([
+    getHeroEvent(),
+    getDynamicGames(),
+    getTopUpJugaConfig(),
+  ])
 
   return (
     <main className="relative min-h-screen py-5 md:py-8">
@@ -37,7 +41,7 @@ export default async function AdminPage() {
           </Link>
         </div>
 
-        <AdminPanel email={email} hero={hero} games={games} />
+        <AdminPanel email={email} hero={hero} games={games} topUpJuga={topUpJuga} />
 
         <div className="mt-6 md:mt-8">
           <AdminCoupons />
