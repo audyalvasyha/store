@@ -4,8 +4,10 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { PAYMENT_METHODS, GAMES, formatIDR, type GameItem, type Denomination } from "@/lib/catalog"
 import type { HeroEvent, TopUpJugaConfig } from "@/lib/content"
+import { AdminStatsView } from "@/components/admin-stats"
+import type { AdminStats } from "@/lib/analytics"
 
-type Tab = "hero" | "games" | "topupjuga"
+type Tab = "stats" | "hero" | "games" | "topupjuga"
 
 const EMPTY_GAME: GameItem = {
   slug: "",
@@ -143,14 +145,16 @@ export function AdminPanel({
   hero,
   games,
   topUpJuga,
+  stats,
 }: {
   email: string
   hero: HeroEvent | null
   games: GameItem[]
   topUpJuga: TopUpJugaConfig | null
+  stats: AdminStats | null
 }) {
   const router = useRouter()
-  const [tab, setTab] = useState<Tab>("hero")
+  const [tab, setTab] = useState<Tab>("stats")
 
   // ── Hero event state ──
   const [imageUrl, setImageUrl] = useState(hero?.imageUrl ?? "")
@@ -323,6 +327,12 @@ export function AdminPanel({
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setTab("stats")}
+            className={`font-mono text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 border border-border min-h-[40px] ${tab === "stats" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
+          >
+            Statistik
+          </button>
+          <button
             onClick={() => setTab("hero")}
             className={`font-mono text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 border border-border min-h-[40px] ${tab === "hero" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
           >
@@ -348,6 +358,9 @@ export function AdminPanel({
           </button>
         </div>
       </div>
+
+      {/* STATISTIK TAB — dashboard ringkas dari data order asli */}
+      {tab === "stats" && <AdminStatsView stats={stats} />}
 
       {/* HERO TAB */}
       {tab === "hero" && (

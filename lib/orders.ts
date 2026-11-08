@@ -107,6 +107,35 @@ export async function updateOrder(code: string, patch: Partial<Order>): Promise<
     .findOneAndUpdate({ code }, { $set: patch }, { returnDocument: "after" });
 }
 
+/** Riwayat order untuk email akun (case-insensitive, cocokkan data lama). */
+export async function getOrdersByEmail(emails: string[], limit = 30): Promise<Order[]> {
+  await ensureReady();
+  const db = await getDb();
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return db
+    .collection<Order>("orders")
+    .find({
+      $or: emails.map((email) => ({
+        email: { $regex: `^${escape(email)}$`, $options: "i" },
+      })),
+    })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .toArray();
+}
+
+/** Riwayat order untuk satu nomor WA (akun pembeli). */
+export async function getOrdersByPhone(phones: string[], limit = 30): Promise<Order[]> {
+  await ensureReady();
+  const db = await getDb();
+  return db
+    .collection<Order>("orders")
+    .find({ phone: { $in: phones } })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .toArray();
+}
+
 /**
  * Social proof: total item terjual (quantity dijumlah) per gameSlug bulan ini.
  * Order yang gagal/expired tidak dihitung. Return map slug -> jumlah terjual;

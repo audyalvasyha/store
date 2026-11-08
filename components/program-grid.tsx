@@ -5,6 +5,7 @@ import Link from "next/link"
 import { GAMES, lowestPrice, formatIDR, formatPriceShort, type GameItem } from "@/lib/catalog"
 import { GameArtwork } from "@/components/game-artwork"
 import { GamesSearchInput } from "@/components/games-search-input"
+import { RatingBadge } from "@/components/rating-badge"
 
 // Landing cuma render MAX_ROWS baris awal — sisanya via /games biar web ga berat.
 const MAX_ROWS = 12
@@ -12,10 +13,13 @@ const MAX_ROWS = 12
 export function GameGrid({
   games = GAMES,
   sold,
+  ratings,
 }: {
   games?: GameItem[]
   /** Map slug -> total item terjual bulan ini (dari Mongo). Kosong = sembunyikan badge. */
   sold?: Record<string, number>
+  /** Map slug -> rating rata-rata + jumlah ulasan asli. */
+  ratings?: Record<string, { average: number; count: number }>
 }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
@@ -177,6 +181,7 @@ export function GameGrid({
 
                 {/* Meta */}
                 <div className="flex items-center gap-2 md:gap-6 shrink-0">
+                  <RatingBadge rating={ratings?.[game.slug]} className="hidden sm:inline-flex" />
                   {/* Social proof: jumlah terjual bulan ini (badge hanya kalau ada data) */}
                   {typeof sold?.[game.slug] === "number" && sold[game.slug]! > 0 && (
                     <span className="hidden md:inline-flex items-center gap-1.5 border border-accent/40 bg-accent/10 px-2 py-1 font-mono text-[9px] md:text-[10px] text-accent tracking-[0.1em] uppercase tabular-nums">

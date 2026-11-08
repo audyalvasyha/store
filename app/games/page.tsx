@@ -4,6 +4,8 @@ import { BackButton } from "@/components/back-button"
 import { GAMES } from "@/lib/catalog"
 import { getDynamicGames } from "@/lib/content"
 import { GamesCatalog } from "@/components/games-catalog"
+import { getRatingsByGame } from "@/lib/reviews"
+import { soldCountsByGame } from "@/lib/orders"
 import { GamesSearchInput } from "@/components/games-search-input"
 import { filterGames } from "@/lib/catalog"
 import { Suspense } from "react"
@@ -31,14 +33,36 @@ export const metadata: Metadata = {
 export default async function GamesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<{ q?: string; sort?: string }>
 }) {
-  const { q } = await searchParams
+  const { q, sort: sortRaw } = await searchParams
   const query = String(q ?? "").trim().toLowerCase()
+  const sort = ["rating", "terlaris"].includes(String(sortRaw)) ? String(sortRaw) : "nama"
 
   // Katalog dinamis dari MongoDB (admin /admin ngatur ini), fallback ke statis.
-  const allGames = await getDynamicGames()
-  const safeGames = filterGames(allGames.length > 0 ? allGames : GAMES, query)
+  const [allGames, ratings, sold] = await Promise.all([
+    getDynamicGames(),
+    getRatingsByGame().catch(() => ({}) as Record<string, { average: number; count: number }>),
+    soldCountsByGame().catch(() => ({}) as Record<string, number>),
+  ])
+  const filtered = filterGames(allGames.length > 0 ? allGames : GAMES, query)
+  // Salin dulu: filterGames bisa balikin array referensi katalog — jangan dimutasi.
+  const safeGames = [...filtered]
+  if (sort === "rating") {
+    safeGames.sort((a, b) => {
+      const ra = ratings[a.slug]
+      const rb = ratings[b.slug]
+      return (
+        (rb?.average ?? 0) - (ra?.average ?? 0) ||
+        (rb?.count ?? 0) - (ra?.count ?? 0) ||
+        a.short.localeCompare(b.short)
+      )
+    })
+  } else if (sort === "terlaris") {
+    safeGames.sort(
+      (a, b) => (sold[b.slug] ?? 0) - (sold[a.slug] ?? 0) || a.short.localeCompare(b.short)
+    )
+  }
 
   return (
     <main className="relative min-h-screen">
@@ -69,6 +93,12 @@ export default async function GamesPage({
             >
               Riwayat
             </Link>
+            <Link
+              href="/akun"
+              className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+            >
+              Akun
+            </Link>
           </nav>
         </div>
       </header>
@@ -79,7 +109,7 @@ export default async function GamesPage({
         </div>
       </section>
 
-      <GamesCatalog games={safeGames} />
+      <GamesCatalog games={safeGames} ratings={ratings} sort={sort} q={query} />
       <Footer />
     </main>
   )

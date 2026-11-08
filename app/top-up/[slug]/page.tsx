@@ -174,6 +174,12 @@ export default async function TopupPage({
               Harga
             </Link>
             <Link
+              href="/akun"
+              className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+            >
+              Akun
+            </Link>
+            <Link
               href="/orders"
               className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
             >

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { GAMES, lowestPrice, formatIDR, type GameItem } from "@/lib/catalog"
 import { GameArtwork } from "@/components/game-artwork"
+import { RatingBadge } from "@/components/rating-badge"
 
 /**
  * Halaman katalog lengkap: SEMUA game beserta artwork-nya.
@@ -13,7 +14,17 @@ import { GameArtwork } from "@/components/game-artwork"
  */
 const BATCH = 16
 
-export function GamesCatalog({ games = GAMES }: { games?: GameItem[] }) {
+export function GamesCatalog({
+  games = GAMES,
+  ratings,
+  sort = "nama",
+  q = "",
+}: {
+  games?: GameItem[]
+  ratings?: Record<string, { average: number; count: number }>
+  sort?: string
+  q?: string
+}) {
   const sectionRef = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   const [showCount, setShowCount] = useState(BATCH)
@@ -41,6 +52,15 @@ export function GamesCatalog({ games = GAMES }: { games?: GameItem[] }) {
 
   const totalItems = games.reduce((sum, g) => sum + g.denominations.length, 0)
 
+  // Urutan katalog: nama (default), rating tertinggi, atau terlaris.
+  function sortHref(key: string) {
+    const params = new URLSearchParams()
+    if (q) params.set("q", q)
+    if (key !== "nama") params.set("sort", key)
+    const qs = params.toString()
+    return qs ? `/games?${qs}` : "/games"
+  }
+
   return (
     <section ref={sectionRef} className="relative max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-6 md:py-14 overflow-hidden">
       {/* Header */}
@@ -61,6 +81,32 @@ export function GamesCatalog({ games = GAMES }: { games?: GameItem[] }) {
         >
           Pilih game di bawah, isi ID akun, pilih nominal &mdash; diamond &amp; currency masuk akun lo lewat jalur resmi publisher.
         </p>
+
+        {/* Urutkan katalog — server-side lewat ?sort= */}
+        <div className={`flex flex-wrap items-center gap-2 mt-3 md:mt-5 ${visible ? "anim-cut-in" : "opacity-0"}`} style={{ animationDelay: "0.5s" }}>
+          <span className="font-mono text-[9px] md:text-[10px] text-foreground/35 tracking-[0.15em] uppercase">
+            [Urutkan]
+          </span>
+          {(
+            [
+              { key: "nama", label: "Nama" },
+              { key: "rating", label: "Rating" },
+              { key: "terlaris", label: "Terlaris" },
+            ] as const
+          ).map((opt) => (
+            <Link
+              key={opt.key}
+              href={sortHref(opt.key)}
+              className={`border px-2.5 py-1.5 font-mono text-[9px] md:text-[10px] tracking-[0.15em] uppercase transition-colors ${
+                sort === opt.key
+                  ? "border-accent text-accent"
+                  : "border-border text-foreground/50 hover:text-foreground"
+              }`}
+            >
+              {opt.label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Grid game cards */}
@@ -71,7 +117,7 @@ export function GamesCatalog({ games = GAMES }: { games?: GameItem[] }) {
             className={visible ? "anim-counter-pop" : "opacity-0"}
             style={{ animationDelay: `${i < BATCH ? 0.3 + i * 0.08 : 0.05}s` }}
           >
-            <GameCard game={game} />
+            <GameCard game={game} rating={ratings?.[game.slug]} />
           </div>
         ))}
       </div>
@@ -123,7 +169,13 @@ export function GamesCatalog({ games = GAMES }: { games?: GameItem[] }) {
   )
 }
 
-function GameCard({ game }: { game: GameItem }) {
+function GameCard({
+  game,
+  rating,
+}: {
+  game: GameItem
+  rating?: { average: number; count: number }
+}) {
   return (
     <Link href={`/top-up/${game.slug}`} className="relative group block">
       {/* Artwork: gambar asli (Gamestone/admin), fallback gradient pakai hue game */}
@@ -157,11 +209,12 @@ function GameCard({ game }: { game: GameItem }) {
       </div>
 
       {/* Label bawah kartu */}
-      <div className="mt-1.5 md:mt-2.5 flex items-center justify-between px-0.5">
+      <div className="mt-1.5 md:mt-2.5 flex items-center justify-between px-0.5 gap-2">
         <span className="font-sans text-lg md:text-2xl text-foreground/90 font-bold tracking-tight uppercase truncate">
           {game.short}
         </span>
         <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+          <RatingBadge rating={rating} />
           <span className="font-mono text-[9px] md:text-[10px] text-muted-foreground">
             {formatIDR(lowestPrice(game))}
           </span>

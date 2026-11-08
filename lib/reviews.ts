@@ -85,6 +85,25 @@ export async function getGameRating(
   return { average: Math.round(row.avg * 10) / 10, count: row.count };
 }
 
+/** Rating semua game sekaligus — buat badge bintang di katalog (satu query). */
+export async function getRatingsByGame(): Promise<
+  Record<string, { average: number; count: number }>
+> {
+  await ensureReady();
+  const db = await getDb();
+  const rows = await db
+    .collection<Review>("reviews")
+    .aggregate<{ _id: string; avg: number; count: number }>([
+      { $group: { _id: "$gameSlug", avg: { $avg: "$rating" }, count: { $sum: 1 } } },
+    ])
+    .toArray();
+  const out: Record<string, { average: number; count: number }> = {};
+  for (const row of rows) {
+    out[row._id] = { average: Math.round(row.avg * 10) / 10, count: row.count };
+  }
+  return out;
+}
+
 /** Cek apakah sebuah order sudah diulas. */
 export async function hasReviewed(orderCode: string): Promise<boolean> {
   await ensureReady();

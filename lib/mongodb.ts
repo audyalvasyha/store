@@ -55,6 +55,9 @@ export async function ensureIndexes(): Promise<void> {
     { key: { createdAt: 1 } },
     { key: { status: 1 } },
     { key: { gameSlug: 1 } },
+    // Nomor WA / email dipakai sebagai identitas akun pembeli → riwayat order.
+    { key: { phone: 1 } },
+    { key: { email: 1 } },
   ]);
   // Site content (hero event / games MC) + admin auth
   await db.collection("admins").createIndexes([{ key: { email: 1 }, unique: true }]);
@@ -68,6 +71,25 @@ export async function ensureIndexes(): Promise<void> {
   await db.collection("coupons").createIndexes([
     { key: { code: 1 }, unique: true },
     { key: { gameSlug: 1 } },
+  ]);
+  // Akun pembeli: identitas bisa email atau nomor WA. Index lama {phone:1}
+  // unique dibuang karena dokumen email nggak punya field phone (unique index
+  // menganggap semua dokumen tanpa phone sebagai null → bentrok).
+  try {
+    await db.collection("customer_accounts").dropIndex("phone_1");
+  } catch {
+    // belum ada / sudah dibuang — aman diabaikan
+  }
+  await db.collection("customer_accounts").createIndexes([
+    { key: { kind: 1, identifier: 1 }, unique: true },
+  ]);
+  await db.collection("customer_otps").createIndexes([
+    { key: { kind: 1, identifier: 1, createdAt: -1 } },
+    { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
+  ]);
+  await db.collection("customer_sessions").createIndexes([
+    { key: { token: 1 }, unique: true },
+    { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
   ]);
   // Ulasan pembeli: satu ulasan per order + query ulasan per game terbaru.
   await db.collection("reviews").createIndexes([
