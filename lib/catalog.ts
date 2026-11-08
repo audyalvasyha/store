@@ -17,6 +17,19 @@ export type Denomination = {
  */
 export type DenomKind = "pass" | "membership" | "voucher" | "bundle" | "currency"
 
+/** Skor popularitas nominal dari order yang sudah dibayar, buat ranking price list. */
+export type DenomPopularity = {
+  byId: Record<string, number>
+  byLabel: Record<string, number>
+}
+
+export type PopularDenomsByGame = Record<string, DenomPopularity>
+
+/** Normalisasi label biar varian provider & katalog lokal tetap bisa dicocokkan. */
+export function denomLabelKey(label: string): string {
+  return label.trim().toLowerCase().replace(/\s+/g, " ")
+}
+
 /**
  * Heuristik dari label + detail (gratis, ga kena network):
  * - pass: Battle Pass, Level Up Pass, Twilight Pass, Ads Pass, dst.
