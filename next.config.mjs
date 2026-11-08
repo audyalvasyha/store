@@ -4,6 +4,12 @@
 // prod makin ketat (tanpa eval). 'unsafe-inline' di script tetap perlu
 // karena Next.js menulis payload/JSON inline di HTML langsung.
 const isDev = process.env.NODE_ENV !== "production"
+// Preview sandbox menampilkan situs di dalam iframe (Freebuff Cloud). Di dev
+// saja frame itu diizinkan; production tetap 'none' + X-Frame-Options DENY
+// supaya situs publik nggak bisa di-embed / di-clickjack.
+const frameAncestors = isDev
+  ? "frame-ancestors 'self' https://freebuff.com https://*.freebuff.com https://*.daytonaproxy01.net"
+  : "frame-ancestors 'none'"
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
@@ -13,7 +19,7 @@ const csp = [
   "connect-src 'self'",
   "media-src 'self'",
   "object-src 'none'",
-  "frame-ancestors 'none'",
+  frameAncestors,
   "form-action 'self'",
   "base-uri 'self'",
 ].join("; ")
@@ -43,7 +49,9 @@ const nextConfig = {
         source: "/(.*)",
         headers: [
           { key: "Content-Security-Policy", value: csp },
-          { key: "X-Frame-Options", value: "DENY" },
+          // X-Frame-Options cuma mendukung SAMEORIGIN/DENY (gak bisa daftar origin),
+          // jadi di dev header-nya dihilangkan — CSP frame-ancestors yang jaga.
+          ...(isDev ? [] : [{ key: "X-Frame-Options", value: "DENY" }]),
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {

@@ -69,6 +69,11 @@ export async function ensureIndexes(): Promise<void> {
     { key: { code: 1 }, unique: true },
     { key: { gameSlug: 1 } },
   ]);
+  // Ulasan pembeli: satu ulasan per order + query ulasan per game terbaru.
+  await db.collection("reviews").createIndexes([
+    { key: { orderCode: 1 }, unique: true },
+    { key: { gameSlug: 1, createdAt: -1 } },
+  ]);
   // Rate limiter distribusi: dokumen window auto-hapus pas expiresAt lewat.
   await db
     .collection("rate_limits")

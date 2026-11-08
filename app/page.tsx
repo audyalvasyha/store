@@ -9,6 +9,7 @@ import { FaqSection } from "@/components/faq-section"
 import { FinalCta } from "@/components/cta-block"
 import { Footer } from "@/components/footer"
 import { getHeroEvent, getDynamicGames } from "@/lib/content"
+import { getLatestReviews } from "@/lib/reviews"
 import { filterGames } from "@/lib/catalog"
 import { soldCountsByGame } from "@/lib/orders"
 
@@ -23,8 +24,20 @@ export default async function Page({
   const { q } = await searchParams
   // Konten live dari MongoDB (admin /admin ngatur ini) — fallback ke katalog statis.
   // ?q= ngering semua section game (featured, grid, price list).
-  const [allGames, heroEvent] = await Promise.all([getDynamicGames(), getHeroEvent()])
+  const [allGames, heroEvent, latestReviews] = await Promise.all([
+    getDynamicGames(),
+    getHeroEvent(),
+    // Testimoni = ulasan asli pembeli. DB error → array kosong → section hidden.
+    getLatestReviews(12).catch(() => []),
+  ])
   const games = filterGames(allGames, String(q ?? ""))
+  const shortBySlug = new Map(allGames.map((g) => [g.slug, g.short] as const))
+  const testimonials = latestReviews.map((r) => ({
+    text: r.comment ?? "",
+    name: r.authorName,
+    tag: shortBySlug.get(r.gameSlug) ?? r.gameSlug.toUpperCase(),
+    rating: r.rating,
+  }))
   // Social proof "terjual" bulan ini — gagal DB jangan pernah bikin landing down.
   const sold = await soldCountsByGame().catch(() => ({}) as Record<string, number>)
 
@@ -39,7 +52,7 @@ export default async function Page({
       <GameGrid games={games} sold={sold} />
       <PriceList games={games} />
       <WhyUs />
-      <TestimonialStrip />
+      <TestimonialStrip reviews={testimonials} />
       <FaqSection />
       <FinalCta />
       <Footer />

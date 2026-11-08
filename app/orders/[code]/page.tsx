@@ -6,6 +6,8 @@ import { PAYMENT_METHODS, STONE_PAYMENT_METHODS, formatIDR, WA_NUMBER } from "@/
 import { StatusPoller } from "@/app/orders/[code]/status-poller"
 import { StonePayBox } from "@/app/orders/[code]/stone-pay-box"
 import { CopyOrderCode } from "@/app/orders/[code]/copy-code"
+import { ReviewForm } from "@/components/review-form"
+import { hasReviewed } from "@/lib/reviews"
 
 /** Warna semantik badge status — biar user langsung nangkep kondisi order tanpa baca teks. */
 const STATUS_TONE: Record<string, string> = {
@@ -75,6 +77,15 @@ export default async function OrderPage({
     )
   }
   if (!order) notFound()
+
+  // Cek ulasan server-side: form nggak muncul lagi kalau order ini sudah diulas.
+  // DB error jangan bikin halaman order 500 — anggap aja belum diulas.
+  let reviewed = false
+  try {
+    reviewed = await hasReviewed(order.code)
+  } catch {
+    reviewed = false
+  }
 
   const waMessage = encodeURIComponent(
     `Halo Gastros! Saya sudah bayar order ${order.code} (${order.gameName} - ${order.denomLabel} x${order.quantity}, total ${formatIDR(order.amount)}). Mohon diproses ya, bukti transfer akan saya kirim di chat ini.`
@@ -187,6 +198,23 @@ export default async function OrderPage({
                         : `Item belum dikirim karena pembayaran belum terverifikasi. Setelah konfirmasi, ${order.currency} dikirim ke akun (biasanya < 3 menit). Simpan kode order ini sebagai bukti.`}
               </p>
             </div>
+
+            {/* Ulasan: cuma untuk order yang benar-benar selesai. */}
+            {order.status === "SELESAI" && (
+              <div className="border border-border bg-card p-4 md:p-6">
+                <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3">
+                  [Ulasan] {reviewed ? "— terkirim" : "— bintang buat game ini"}
+                </span>
+                {reviewed ? (
+                  <p className="font-mono text-[10px] md:text-xs text-foreground/70 leading-relaxed">
+                    Makasih! Ulasan kamu untuk <span className="text-accent">{order.gameName}</span> sudah
+                    tampil di halaman game dan bantu pembeli lain. GG!
+                  </p>
+                ) : (
+                  <ReviewForm code={order.code} />
+                )}
+              </div>
+            )}
           </div>
 
           {/* Instruksi bayar */}

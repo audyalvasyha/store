@@ -9,6 +9,7 @@ import { TopupForm } from "@/components/topup-form"
 import { GameInfoBlock } from "@/components/game-info-block"
 import { Footer } from "@/components/footer"
 import { safeJsonLd } from "@/lib/jsonld"
+import { getGameRating, getGameReviews, type Review } from "@/lib/reviews"
 
 export const dynamic = "force-dynamic"
 
@@ -61,6 +62,17 @@ export default async function TopupPage({
     ? activeStoneVariants(stoneGame).map((v) => ({ id: String(v.id), label: v.name, price: v.price }))
     : undefined
 
+  // Ulasan asli pembeli (hanya dari order SELESAI). Kalau DB bermasalah,
+  // sembunyikan section + schema — halaman jualan tetap jalan.
+  let rating = { average: 0, count: 0 }
+  let reviews: Review[] = []
+  try {
+    ;[rating, reviews] = await Promise.all([getGameRating(slug), getGameReviews(slug, 6)])
+  } catch {
+    rating = { average: 0, count: 0 }
+    reviews = []
+  }
+
   // JSON-LD: Product + AggregateOffer — bantu Google paham kalau ini halaman
   // jualan top up (bisa muncul rich result harga di SERP).
   const prices = stoneVariants?.length
@@ -77,14 +89,49 @@ export default async function TopupPage({
         description: `Top up ${game.currency} ${game.name} lewat jalur resmi publisher, proses kilat, layanan 24 jam.`,
         category: game.currency,
         brand: { "@type": "Brand", name: "GASTROS" },
-        offers: {
-          "@type": "AggregateOffer",
-          lowPrice: Math.min(...prices),
-          highPrice: Math.max(...prices),
-          priceCurrency: "IDR",
-          availability: "https://schema.org/InStock",
-          url: `${SITE_URL}/top-up/${slug}`,
-        },
+        // offerCount = jumlah nominal yang dijual (wajib buat AggregateOffer).
+        // Kalau nominal kosong, jangan kirim offers sama sekali — Math.min(...[]) = Infinity bikin JSON-LD invalid.
+        offers: prices.length
+          ? {
+              "@type": "AggregateOffer",
+              lowPrice: Math.min(...prices),
+              highPrice: Math.max(...prices),
+              priceCurrency: "IDR",
+              offerCount: prices.length,
+              availability: "https://schema.org/InStock",
+              url: `${SITE_URL}/top-up/${slug}`,
+            }
+          : undefined,
+        // Rating & ulasan asli dari pembeli (bukan karangan) — baru dikirim
+        // kalau memang sudah ada ulasan yang tersimpan dari order selesai.
+        ...(rating.count > 0
+          ? {
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: rating.average,
+                reviewCount: rating.count,
+                bestRating: 5,
+                worstRating: 1,
+              },
+              // Schema review cuma yang ada teksnya; ulasan bintang-saja tetap
+              // kecatat di reviewCount aggregateRating di atas.
+              review: reviews
+                .filter((r) => r.comment)
+                .slice(0, 5)
+                .map((r) => ({
+                  "@type": "Review",
+                  author: { "@type": "Person", name: r.authorName },
+                  datePublished: r.createdAt.slice(0, 10),
+                  reviewRating: {
+                    "@type": "Rating",
+                    ratingValue: r.rating,
+                    bestRating: 5,
+                    worstRating: 1,
+                  },
+                  reviewBody: r.comment,
+                })),
+            }
+          : {}),
       },
       {
         "@type": "BreadcrumbList",
@@ -154,6 +201,57 @@ export default async function TopupPage({
       </section>
 
       <GameInfoBlock game={game} />
+
+      {rating.count > 0 && (
+        <section className="px-4 md:px-8 lg:px-12 pb-8 md:pb-16 max-w-[1400px] mx-auto w-full">
+          <div className="border border-border bg-card p-4 md:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase">
+                [Ulasan Pembeli] {rating.count}
+              </span>
+              <span className="inline-flex items-center gap-2 font-mono text-[10px] md:text-xs text-foreground/60">
+                <span className="text-accent text-sm md:text-base tracking-[0.15em]" aria-hidden="true">
+                  {"★".repeat(Math.round(rating.average))}
+                  {"☆".repeat(5 - Math.round(rating.average))}
+                </span>
+                {rating.average.toFixed(1)}/5
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {reviews.map((r) => (
+                <div
+                  key={r.orderCode}
+                  className="border border-border/60 p-3 md:p-4 flex flex-col gap-1.5"
+                >
+                  <div className="flex items-center justify-between gap-2 font-mono text-[10px]">
+                    <span className="text-foreground/70 uppercase">{r.authorName}</span>
+                    <span className="text-foreground/35">
+                      {new Date(r.createdAt).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <span
+                    className="text-accent text-[11px] tracking-[0.15em]"
+                    aria-label={`${r.rating} dari 5 bintang`}
+                  >
+                    {"★".repeat(r.rating)}
+                    {"☆".repeat(5 - r.rating)}
+                  </span>
+                  {r.comment && (
+                    <p className="font-mono text-[10px] md:text-[11px] text-foreground/60 leading-relaxed">
+                      {r.comment}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       <Footer />
     </main>
   )
