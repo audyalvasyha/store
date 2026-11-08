@@ -8,6 +8,7 @@ import { StonePayBox } from "@/app/orders/[code]/stone-pay-box"
 import { CopyOrderCode } from "@/app/orders/[code]/copy-code"
 import { ReviewForm } from "@/components/review-form"
 import { hasReviewed } from "@/lib/reviews"
+import { AuthNav } from "@/components/auth-nav"
 
 /** Warna semantik badge status — biar user langsung nangkep kondisi order tanpa baca teks. */
 const STATUS_TONE: Record<string, string> = {
@@ -105,13 +106,14 @@ export default async function OrderPage({
             </div>
             <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 md:gap-5">
             <Link
               href="/orders"
               className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
             >
               Riwayat &rarr;
             </Link>
+            <AuthNav />
           </div>
         </div>
       </header>

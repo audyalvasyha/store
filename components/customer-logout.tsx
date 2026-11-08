@@ -10,6 +10,7 @@ export function CustomerLogout() {
   async function logout() {
     setBusy(true)
     await fetch("/api/akun/logout", { method: "POST" }).catch(() => null)
+    window.dispatchEvent(new Event("gas-auth-updated"))
     router.replace("/akun")
     router.refresh()
     setBusy(false)
@@ -22,7 +23,7 @@ export function CustomerLogout() {
       disabled={busy}
       className="font-mono text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 border border-border text-foreground/50 hover:text-destructive min-h-[40px]"
     >
-      {busy ? "Keluar..." : "Logout"}
+      {busy ? "Keluar..." : "Keluar"}
     </button>
   )
 }

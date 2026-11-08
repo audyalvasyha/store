@@ -7,6 +7,7 @@ import { GamesCatalog } from "@/components/games-catalog"
 import { getRatingsByGame } from "@/lib/reviews"
 import { soldCountsByGame } from "@/lib/orders"
 import { GamesSearchInput } from "@/components/games-search-input"
+import { AuthNav } from "@/components/auth-nav"
 import { filterGames } from "@/lib/catalog"
 import { Suspense } from "react"
 import { Footer } from "@/components/footer"
@@ -83,7 +84,7 @@ export default async function GamesPage({
             </Suspense>
             <Link
               href="/"
-              className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+              className="hidden sm:block font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
             >
               Home
             </Link>
@@ -93,12 +94,7 @@ export default async function GamesPage({
             >
               Riwayat
             </Link>
-            <Link
-              href="/akun"
-              className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
-            >
-              Akun
-            </Link>
+            <AuthNav />
           </nav>
         </div>
       </header>

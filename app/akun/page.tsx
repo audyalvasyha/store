@@ -6,17 +6,27 @@ import {
   CUSTOMER_COOKIE,
   getCustomerIdentity,
   getCustomerOrders,
+  getCustomerProfile,
   maskIdentity,
 } from "@/lib/customer-auth"
 import { CustomerLogin } from "@/components/customer-login"
 import { CustomerLogout } from "@/components/customer-logout"
+import { ProfileEditor } from "@/components/profile-editor"
+import { LogoutAllButton } from "@/components/logout-all-button"
+import { PasswordLogin } from "@/components/password-login"
+import { PasswordRegister } from "@/components/password-register"
+import { PasswordEditor } from "@/components/password-editor"
+import { GoogleLoginButton } from "@/components/google-login-button"
+import { AuthNav } from "@/components/auth-nav"
 import { Footer } from "@/components/footer"
+import { getGoogleClientId } from "@/lib/google-auth"
 
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
   title: "Akun // GASTROS",
-  description: "Masuk dengan email atau nomor WhatsApp untuk melihat riwayat order dan beli lagi.",
+  description:
+    "Masuk atau daftar dengan email + password, kode OTP, atau Google untuk melihat riwayat order, profil, dan keamanan akun.",
   robots: { index: false, follow: false },
 }
 
@@ -27,14 +37,47 @@ const STATUS_TONE: Record<string, string> = {
   GAGAL: "border-destructive/60 text-destructive",
 }
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>
+}) {
+  const { mode } = await searchParams
+  const isRegister = mode === "daftar"
+  const googleClientId = getGoogleClientId()
+
   const jar = await cookies()
   // DB bermasalah ≠ login gagal permanen — tampilkan form biasa.
   const identity = await getCustomerIdentity(jar.get(CUSTOMER_COOKIE)?.value).catch(() => null)
   const orders = identity ? await getCustomerOrders(identity).catch(() => []) : []
+  const profile = identity ? await getCustomerProfile(identity).catch(() => null) : null
 
   const completed = orders.filter((o) => o.status === "SELESAI")
   const totalSpent = completed.reduce((sum, o) => sum + o.amount, 0)
+  const masked = identity ? maskIdentity(identity) : ""
+  const loginMethod =
+    identity?.kind === "phone"
+      ? "WhatsApp (OTP)"
+      : identity?.provider === "google"
+        ? "Google"
+        : identity?.provider === "password"
+          ? "Email & password"
+          : "Email (OTP)"
+  const displayName = profile?.name?.trim() || "Pembeli Gastros"
+  const initial = (profile?.name?.trim()?.[0] ?? masked[0] ?? "G").toUpperCase()
+  const joinedAt = profile?.createdAt
+    ? new Date(profile.createdAt).toLocaleDateString("id-ID", {
+        dateStyle: "long",
+        timeZone: "Asia/Jakarta",
+      })
+    : null
+  const lastLogin = profile?.lastLoginAt
+    ? new Date(profile.lastLoginAt).toLocaleString("id-ID", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "Asia/Jakarta",
+      }) + " WIB"
+    : null
 
   return (
     <main className="relative min-h-screen">
@@ -49,7 +92,7 @@ export default async function AccountPage() {
             </div>
             <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
           </Link>
-          <nav className="flex items-center gap-4 md:gap-8">
+          <nav className="flex items-center gap-3 md:gap-6">
             <Link
               href="/games"
               className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
@@ -62,35 +105,200 @@ export default async function AccountPage() {
             >
               Riwayat
             </Link>
+            <AuthNav
+              initialUser={
+                identity
+                  ? {
+                      kind: identity.kind,
+                      provider: identity.provider,
+                      masked,
+                      name: profile?.name ?? null,
+                    }
+                  : null
+              }
+            />
           </nav>
         </div>
       </header>
 
       <section className="px-4 md:px-8 lg:px-12 pt-6 md:pt-12 pb-8 md:pb-20 max-w-[1400px] mx-auto w-full">
-        <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
-          [Akun]
-        </span>
-        <h1 className="font-sans text-[14vw] sm:text-6xl md:text-7xl tracking-tighter text-foreground leading-none uppercase mb-4 md:mb-6">
-          {identity ? "Akun Saya" : "Masuk"}
-          <span className="text-accent">.</span>
-        </h1>
-
         {!identity ? (
-          <>
-            <p className="font-mono text-[10px] md:text-xs text-foreground/50 max-w-md leading-relaxed mb-6 md:mb-8">
-              Masuk pakai email atau nomor WhatsApp — tanpa password, cukup kode 6 digit.
-              Semua order dengan email/nomor ini (termasuk yang lama) langsung kelihatan.
-            </p>
-            <CustomerLogin />
-          </>
+          <div className="mx-auto w-full max-w-xl py-4 md:py-10">
+            <div className="text-center">
+              <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
+                [Akun]
+              </span>
+              <h1 className="font-sans text-[14vw] sm:text-6xl md:text-7xl tracking-tighter text-foreground leading-none uppercase mb-3 md:mb-4">
+                {isRegister ? "Daftar" : "Masuk"}
+                <span className="text-accent">.</span>
+              </h1>
+              <p className="mx-auto max-w-md font-mono text-[10px] md:text-xs text-foreground/50 leading-relaxed">
+                {isRegister
+                  ? "Daftar pakai email + password. Kita verifikasi email sekali lewat kode 6 digit — setelah itu login tinggal pakai password. Bisa juga daftar langsung pakai kode OTP di bawah."
+                  : "Masuk pakai email + password. Kalau belum punya password, pakai kode OTP di bawah dulu — nanti bisa dibuat di halaman akun."}
+              </p>
+            </div>
+
+            <div className="relative mx-auto mt-7 w-full max-w-md border border-border bg-card p-4 md:p-6">
+              <span className="absolute left-0 top-0 h-0.5 w-16 bg-accent" aria-hidden="true" />
+
+              <nav
+                aria-label="Pilih mode akun"
+                className="mb-6 grid grid-cols-2 gap-1 border border-border bg-background p-1"
+              >
+                <Link
+                  href="/akun?mode=login"
+                  aria-current={!isRegister ? "page" : undefined}
+                  className={`flex min-h-[44px] items-center justify-center px-3 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors ${
+                    !isRegister
+                      ? "bg-accent text-accent-foreground"
+                      : "text-foreground/50 hover:bg-card hover:text-foreground"
+                  }`}
+                >
+                  Masuk
+                </Link>
+                <Link
+                  href="/akun?mode=daftar"
+                  aria-current={isRegister ? "page" : undefined}
+                  className={`flex min-h-[44px] items-center justify-center px-3 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors ${
+                    isRegister
+                      ? "bg-accent text-accent-foreground"
+                      : "text-foreground/50 hover:bg-card hover:text-foreground"
+                  }`}
+                >
+                  Daftar
+                </Link>
+              </nav>
+
+              <div className="flex flex-col items-center">
+                {googleClientId && (
+                  <>
+                    <div className="w-full max-w-sm">
+                      <GoogleLoginButton clientId={googleClientId} />
+                    </div>
+                    <div className="my-6 flex w-full max-w-sm items-center gap-3">
+                      <span className="h-px flex-1 bg-border" />
+                      <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-foreground/30">
+                        {isRegister ? "atau daftar pakai email" : "atau masuk pakai email"}
+                      </span>
+                      <span className="h-px flex-1 bg-border" />
+                    </div>
+                  </>
+                )}
+
+                {isRegister ? <PasswordRegister /> : <PasswordLogin />}
+
+                <div className="mt-6 flex w-full max-w-sm items-center gap-3">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-foreground/30">
+                    atau pakai kode OTP
+                  </span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+
+                <div id="otp" className="mt-4 w-full scroll-mt-24">
+                  <CustomerLogin
+                    key={isRegister ? "daftar" : "login"}
+                    mode={isRegister ? "daftar" : "login"}
+                  />
+                </div>
+
+                <div className="mt-6 w-full border-t border-border pt-4 text-center">
+                  <p className="font-mono text-[9px] md:text-[10px] text-foreground/35 leading-relaxed">
+                    Satu akun buat semua game: riwayat order permanen, status real-time,
+                    dan tombol beli lagi tanpa isi ulang data.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         ) : (
           <>
+            <span className="font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-2">
+              [Akun]
+            </span>
+            <h1 className="font-sans text-[14vw] sm:text-6xl md:text-7xl tracking-tighter text-foreground leading-none uppercase mb-4 md:mb-6">
+              Akun Saya<span className="text-accent">.</span>
+            </h1>
+
             <div className="flex flex-wrap items-center justify-between gap-3 mb-5 md:mb-8">
               <p className="font-mono text-[10px] md:text-xs text-foreground/50">
-                Login sebagai{" "}
-                <span className="text-foreground">{maskIdentity(identity)}</span>
+                Halo, <span className="text-foreground">{displayName}</span>{" "}
+                <span className="text-foreground/35">// {masked}</span>
               </p>
               <CustomerLogout />
+            </div>
+
+            {/* Profil + keamanan */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-10">
+              <section className="border border-border bg-card p-4 md:p-6">
+                <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3">
+                  [Profil]
+                </span>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-accent font-sans text-2xl leading-none text-accent-foreground">
+                    {initial}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-sans text-xl md:text-2xl uppercase tracking-tight text-foreground">
+                      {displayName}
+                    </p>
+                    <p className="truncate font-mono text-[10px] text-foreground/45">
+                      {masked} · {identity.kind === "email" ? "Email" : "WhatsApp"}
+                    </p>
+                  </div>
+                </div>
+                <ProfileEditor initialName={profile?.name} />
+                {joinedAt && (
+                  <p className="mt-3 font-mono text-[9px] text-foreground/35">
+                    Member sejak {joinedAt}
+                  </p>
+                )}
+              </section>
+
+              <section className="border border-border bg-card p-4 md:p-6">
+                <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3">
+                  [Keamanan]
+                </span>
+                <dl className="flex flex-col gap-2 font-mono text-[10px] md:text-xs">
+                  <div className="flex justify-between gap-3 border-b border-border/50 pb-1.5">
+                    <dt className="text-foreground/45">Metode masuk</dt>
+                    <dd className="text-foreground">{loginMethod}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3 border-b border-border/50 pb-1.5">
+                    <dt className="text-foreground/45">Identitas</dt>
+                    <dd className="text-foreground text-right break-all">{masked}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3 border-b border-border/50 pb-1.5">
+                    <dt className="text-foreground/45">Terakhir masuk</dt>
+                    <dd className="text-foreground text-right">{lastLogin ?? "Baru saja"}</dd>
+                  </div>
+                  {identity.kind === "email" && (
+                    <div className="flex justify-between gap-3 border-b border-border/50 pb-1.5">
+                      <dt className="text-foreground/45">Password</dt>
+                      <dd className="text-foreground text-right">
+                        {profile?.hasPassword ? "Aktif" : "Belum diatur"}
+                      </dd>
+                    </div>
+                  )}
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-foreground/45">Masa sesi</dt>
+                    <dd className="text-foreground text-right">30 hari · httpOnly</dd>
+                  </div>
+                </dl>
+                {identity.kind === "email" && (
+                  <PasswordEditor
+                    hasPassword={Boolean(profile?.hasPassword)}
+                    provider={identity.provider}
+                  />
+                )}
+                <div className="mt-4">
+                  <LogoutAllButton />
+                </div>
+                <p className="mt-2 font-mono text-[9px] text-foreground/30 leading-relaxed">
+                  Keluar dari perangkat ini pakai tombol Keluar di atas.
+                </p>
+              </section>
             </div>
 
             {/* Ringkasan */}
@@ -121,7 +329,8 @@ export default async function AccountPage() {
                   Belum ada order<span className="text-accent">.</span>
                 </p>
                 <p className="font-mono text-[10px] md:text-xs text-foreground/50 leading-relaxed mt-2 mb-5">
-                  Order pertama kamu bakal otomatis muncul di sini, pakai nomor WA yang sama saat checkout.
+                  Order pertama kamu bakal otomatis muncul di sini, pakai email atau
+                  nomor WhatsApp yang sama saat checkout.
                 </p>
                 <Link
                   href="/games"

@@ -3,6 +3,7 @@
 import React from "react"
 import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
+import { AuthNav } from "@/components/auth-nav"
 
 function Counter({
   target,
@@ -172,9 +173,12 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
           <span className="font-mono text-[10px] text-foreground/30 hidden md:block tracking-[0.15em] anim-cut-in" style={d(300)}>
             ONLINE 24/7
           </span>
+          <div className="anim-cut-in" style={d(320)}>
+            <AuthNav />
+          </div>
           <Link
             href="/games"
-            className="relative font-mono text-[10px] md:text-[11px] bg-accent text-accent-foreground px-3 md:px-5 py-2 md:py-2.5 tracking-[0.15em] uppercase overflow-hidden group anim-snap-in min-h-[36px] md:min-h-[40px] flex items-center"
+            className="relative font-mono text-[10px] md:text-[11px] bg-accent text-accent-foreground px-3 md:px-5 py-2 md:py-2.5 tracking-[0.15em] uppercase overflow-hidden group anim-snap-in min-h-[36px] md:min-h-[40px] hidden sm:flex items-center"
             style={d(350)}
           >
             <span className="relative z-10">Top Up Now</span>
@@ -218,6 +222,9 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
             {link.item}
           </Link>
         ))}
+        <div className="pt-2 border-t border-border w-full max-w-xs flex justify-center">
+          <AuthNav menuAlign="center" />
+        </div>
       </div>
 
       {/* ── CONTENT ── */}

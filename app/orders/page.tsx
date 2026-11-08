@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { BackButton } from "@/components/back-button"
+import { AuthNav } from "@/components/auth-nav"
 
 const RECENT_KEY = "gas-recent-orders"
 
@@ -76,12 +77,7 @@ export default function OrdersPage() {
             <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
           </Link>
           <div className="flex items-center gap-3 md:gap-6">
-            <Link
-              href="/akun"
-              className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
-            >
-              Akun
-            </Link>
+            <AuthNav />
             <Link
               href="/"
               className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"

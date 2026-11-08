@@ -5,14 +5,19 @@ import { useRouter } from "next/navigation"
 
 type Channel = "email" | "wa"
 
-const CHANNELS: { key: Channel; label: string; hint: string }[] = [
-  { key: "email", label: "Email", hint: "via Resend" },
-  { key: "wa", label: "WhatsApp", hint: "via Fonnte" },
+const CHANNELS: { key: Channel; label: string }[] = [
+  { key: "email", label: "Email" },
+  { key: "wa", label: "WhatsApp" },
 ]
 
-/** Login pembeli: email (Resend) atau nomor WhatsApp → kode OTP 6 digit. */
-export function CustomerLogin() {
+/** Login/daftar pembeli: email (Resend) atau nomor WhatsApp → kode OTP 6 digit. */
+export function CustomerLogin({
+  mode = "login",
+}: {
+  mode?: "login" | "daftar"
+}) {
   const router = useRouter()
+  const isRegister = mode === "daftar"
   const [channel, setChannel] = useState<Channel>("email")
   const [step, setStep] = useState<"identity" | "code">("identity")
   const [value, setValue] = useState("")
@@ -54,6 +59,7 @@ export function CustomerLogin() {
         setMsg(data.error ?? "Gagal mengirim kode")
       } else {
         setStep("code")
+        setCode("")
         setCooldown(30)
         setMsg(null)
       }
@@ -76,6 +82,9 @@ export function CustomerLogin() {
       if (!res.ok) {
         setMsg(data.error ?? "Kode salah")
       } else {
+        // Sinkronkan chip akun di header tanpa perlu reload penuh.
+        window.dispatchEvent(new Event("gas-auth-updated"))
+        router.replace("/akun")
         router.refresh()
       }
     } catch {
@@ -93,20 +102,19 @@ export function CustomerLogin() {
             key={c.key}
             type="button"
             onClick={() => switchChannel(c.key)}
-            className={`border px-3 py-2.5 text-left min-h-[48px] transition-colors ${
+            className={`flex items-center justify-center border px-3 py-2.5 min-h-[48px] transition-colors ${
               channel === c.key
                 ? "border-accent bg-accent/10"
                 : "border-border hover:border-foreground/40"
             }`}
           >
             <span
-              className={`font-mono text-[10px] tracking-[0.15em] uppercase block ${
+              className={`font-mono text-[10px] tracking-[0.15em] uppercase ${
                 channel === c.key ? "text-accent" : "text-foreground/60"
               }`}
             >
               {c.label}
             </span>
-            <span className="font-mono text-[9px] text-foreground/35">{c.hint}</span>
           </button>
         ))}
       </div>
@@ -139,8 +147,8 @@ export function CustomerLogin() {
           </button>
           {msg && <p className="font-mono text-[10px] text-destructive leading-relaxed">{msg}</p>}
           <p className="font-mono text-[9px] md:text-[10px] text-foreground/35 leading-relaxed">
-            Tanpa password — cukup kode 6 digit. Email/nomor dipakai buat nyambungin
-            riwayat order kamu, termasuk order sebelum punya akun.
+            Masuk cepat tanpa password — cukup kode 6 digit. Email/nomor dipakai buat
+            nyambungin riwayat order kamu, termasuk order sebelum punya akun.
           </p>
         </>
       ) : (
@@ -166,12 +174,12 @@ export function CustomerLogin() {
                 : "bg-accent text-accent-foreground hover-glitch"
             }`}
           >
-            {busy ? "Memverifikasi..." : "Masuk ke Akun"}
+            {busy ? "Memverifikasi..." : isRegister ? "Buat Akun & Masuk" : "Masuk ke Akun"}
           </button>
           {msg && <p className="font-mono text-[10px] text-destructive leading-relaxed">{msg}</p>}
           <p className="font-mono text-[9px] text-foreground/40 leading-relaxed">
             Kode dikirim ke <span className="text-foreground/70">{value.trim()}</span>. Cek
-            {isEmail ? " inbox/spam" : " WhatsApp"} — berlaku 5 menit.
+            {isEmail ? " inbox/spam" : " WhatsApp"} — berlaku 10 menit.
           </p>
           <div className="flex items-center justify-between gap-3">
             <button
@@ -196,6 +204,7 @@ export function CustomerLogin() {
           </div>
         </>
       )}
+
     </div>
   )
 }
