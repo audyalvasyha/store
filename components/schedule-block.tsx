@@ -2,7 +2,25 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
-import { GAMES, formatIDR, formatPriceShort, type GameItem } from "@/lib/catalog";
+import {
+  GAMES,
+  denomLabelKey,
+  formatIDR,
+  formatPriceShort,
+  type DenomPopularity,
+  type GameItem,
+  type PopularDenomsByGame,
+} from "@/lib/catalog";
+
+/** Price list cuma nampilin 5 nominal terpopuler kalau variannya lebih banyak. */
+const MAX_PRICE_LIST_VARIANTS = 5;
+
+function popularityScore(denom: GameItem["denominations"][number], popularity?: DenomPopularity): number {
+  return Math.max(
+    popularity?.byId[denom.id] ?? 0,
+    popularity?.byLabel[denomLabelKey(denom.label)] ?? 0,
+  );
+}
 
 function StockIndicator({ index }: { index: number }) {
   const isHot = index < 2;
@@ -15,7 +33,13 @@ function StockIndicator({ index }: { index: number }) {
   );
 }
 
-export function PriceList({ games = GAMES }: { games?: GameItem[] }) {
+export function PriceList({
+  games = GAMES,
+  popularDenoms,
+}: {
+  games?: GameItem[];
+  popularDenoms?: PopularDenomsByGame;
+}) {
   const [activeSlug, setActiveSlug] = useState<string>(games[0]?.slug ?? GAMES[0].slug);
   const [visible, setVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
@@ -54,6 +78,18 @@ export function PriceList({ games = GAMES }: { games?: GameItem[] }) {
   }
 
   const denoms = activeGame.denominations;
+  const popularity = popularDenoms?.[activeGame.slug];
+  const isTrimmed = denoms.length > MAX_PRICE_LIST_VARIANTS;
+  const originalOrder = new Map(denoms.map((denom, index) => [denom.id, index] as const));
+  const shownDenoms = isTrimmed
+    ? [...denoms]
+        .sort((a, b) => {
+          const scoreDiff = popularityScore(b, popularity) - popularityScore(a, popularity);
+          if (scoreDiff !== 0) return scoreDiff;
+          return (originalOrder.get(a.id) ?? 0) - (originalOrder.get(b.id) ?? 0);
+        })
+        .slice(0, MAX_PRICE_LIST_VARIANTS)
+    : denoms;
 
   return (
     <section
@@ -65,7 +101,7 @@ export function PriceList({ games = GAMES }: { games?: GameItem[] }) {
         className="absolute top-6 md:top-8 right-2 md:right-12 font-sans text-[25vw] md:text-[18vw] leading-none text-foreground/[0.02] tracking-tighter select-none pointer-events-none"
         aria-hidden="true"
       >
-        {String(denoms.length).padStart(2, "0")}
+        {String(shownDenoms.length).padStart(2, "0")}
       </div>
 
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 relative">
@@ -89,7 +125,7 @@ export function PriceList({ games = GAMES }: { games?: GameItem[] }) {
                 <div className="flex items-center gap-1 md:gap-2">
                   <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-accent" />
                   <span className="font-mono text-[9px] md:text-[11px] text-foreground/60 tracking-[0.1em]">
-                    {denoms.length} NOMINAL
+                    {isTrimmed ? `${shownDenoms.length} TERPOPULER` : `${denoms.length} NOMINAL`}
                   </span>
                 </div>
                 <div className="w-[1px] h-2 md:h-3 bg-foreground/15" />
@@ -132,7 +168,7 @@ export function PriceList({ games = GAMES }: { games?: GameItem[] }) {
         </div>
 
         <div className="border-b border-border">
-          {denoms.map((denom, i) => (
+          {shownDenoms.map((denom, i) => (
             <Link
               key={`${activeSlug}-${denom.id}`}
               href={`/top-up/${activeSlug}`}
@@ -178,6 +214,21 @@ export function PriceList({ games = GAMES }: { games?: GameItem[] }) {
             </Link>
           ))}
         </div>
+
+        {isTrimmed && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3 py-3 md:py-4 border-b border-foreground/5">
+            <span className="font-mono text-[9px] md:text-[11px] text-foreground/35 tracking-[0.08em] md:tracking-[0.15em] uppercase">
+              Menampilkan {shownDenoms.length} dari {denoms.length} nominal terpopuler
+            </span>
+            <Link
+              href={`/top-up/${activeGame.slug}`}
+              className="inline-flex items-center gap-1.5 font-mono text-[9px] md:text-[11px] text-accent hover:text-foreground tracking-[0.1em] md:tracking-[0.15em] uppercase transition-colors"
+            >
+              Lihat semua nominal
+              <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        )}
 
         <div
           className={`flex items-center justify-between pt-1.5 md:pt-4 transition-all duration-700 ${visible ? "opacity-100 delay-700" : "opacity-0"}`}

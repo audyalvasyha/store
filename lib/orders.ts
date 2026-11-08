@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { getDb, ensureIndexes } from "./mongodb";
+import { denomLabelKey, type PopularDenomsByGame } from "./catalog";
 
 let initPromise: Promise<void> | null = null;
 
@@ -157,6 +158,59 @@ export async function soldCountsByGame(): Promise<Record<string, number>> {
   const out: Record<string, number> = {};
   for (const r of rows) {
     if (r._id) out[r._id] = r.count;
+  }
+  return out;
+}
+
+/**
+ * Popularitas nominal per game dari seluruh order yang sudah dibayar.
+ * Dicocokkan lewat denomId (katalog lokal) dan label (varian provider yang
+ * punya id numerik berbeda), jadi price list tetap bisa ranking walau game
+ * memakai harga live Gamestone.
+ */
+export async function popularDenomsByGame(): Promise<PopularDenomsByGame> {
+  await ensureReady();
+  const db = await getDb();
+  const rows = await db
+    .collection<Order>("orders")
+    .aggregate<{
+      _id: { gameSlug?: string; denomId?: string; denomLabel?: string };
+      count: number;
+    }>([
+      {
+        $match: {
+          status: { $in: ["SELESAI", "DIPROSES"] },
+          gameSlug: { $type: "string" },
+          denomId: { $type: "string" },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            gameSlug: "$gameSlug",
+            denomId: "$denomId",
+            denomLabel: "$denomLabel",
+          },
+          count: { $sum: "$quantity" },
+        },
+      },
+    ])
+    .toArray();
+
+  const out: PopularDenomsByGame = {};
+  for (const row of rows) {
+    const slug = row._id?.gameSlug;
+    const denomId = row._id?.denomId;
+    if (!slug || !denomId) continue;
+
+    const game = out[slug] ?? (out[slug] = { byId: {}, byLabel: {} });
+    game.byId[denomId] = (game.byId[denomId] ?? 0) + row.count;
+
+    const label = row._id.denomLabel;
+    if (label) {
+      const key = denomLabelKey(label);
+      game.byLabel[key] = (game.byLabel[key] ?? 0) + row.count;
+    }
   }
   return out;
 }

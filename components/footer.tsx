@@ -180,7 +180,7 @@ export function Footer() {
           <div className="flex items-center gap-4 md:gap-6">
             {[
               { label: "Instagram", href: "https://www.instagram.com/gastros.id_?cplk=MTVqNjh1emh1M3B1bw==", external: true },
-              { label: "TikTok", href: "#", external: false },
+              { label: "TikTok", href: "https://www.tiktok.com/@gastros.id_?_r=1&_t=ZS-9BEahsvMyY8", external: true },
               { label: "Discord", href: "#", external: false },
             ].map((social) => (
               <a

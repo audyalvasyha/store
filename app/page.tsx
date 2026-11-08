@@ -11,7 +11,7 @@ import { Footer } from "@/components/footer"
 import { getHeroEvent, getDynamicGames } from "@/lib/content"
 import { getLatestReviews, getRatingsByGame } from "@/lib/reviews"
 import { filterGames } from "@/lib/catalog"
-import { soldCountsByGame } from "@/lib/orders"
+import { popularDenomsByGame, soldCountsByGame } from "@/lib/orders"
 
 // ISR: cache 30 detik — katalog tetap segar, tapi ga nge-hit DB tiap request.
 export const revalidate = 30
@@ -40,8 +40,12 @@ export default async function Page({
     tag: shortBySlug.get(r.gameSlug) ?? r.gameSlug.toUpperCase(),
     rating: r.rating,
   }))
-  // Social proof "terjual" bulan ini — gagal DB jangan pernah bikin landing down.
-  const sold = await soldCountsByGame().catch(() => ({}) as Record<string, number>)
+  // Social proof "terjual" bulan ini + ranking nominal populer — gagal DB
+  // jangan pernah bikin landing down.
+  const [sold, popularDenoms] = await Promise.all([
+    soldCountsByGame().catch(() => ({}) as Record<string, number>),
+    popularDenomsByGame().catch(() => ({})),
+  ])
 
   return (
     <main className="relative">
@@ -52,7 +56,7 @@ export default async function Page({
       <FeaturedGames games={games} />
       <MarqueeStrip />
       <GameGrid games={games} sold={sold} ratings={ratings} />
-      <PriceList games={games} />
+      <PriceList games={games} popularDenoms={popularDenoms} />
       <WhyUs />
       <TestimonialStrip reviews={testimonials} />
       <FaqSection />
