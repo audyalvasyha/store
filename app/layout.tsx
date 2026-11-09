@@ -1,6 +1,7 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { Bebas_Neue, JetBrains_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 
 import './globals.css'
 import { FloatingWhatsApp } from '@/components/floating-whatsapp'
@@ -118,6 +119,7 @@ export default function RootLayout({
         {children}
         <SiteSidebar />
         <FloatingWhatsApp />
+        <Analytics />
       </body>
     </html>
   )
