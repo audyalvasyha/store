@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getAdminEmail, SESSION_COOKIE } from "@/lib/admin-auth";
 import { getDynamicGames, upsertGame, deleteGame } from "@/lib/content";
@@ -91,6 +92,11 @@ export async function POST(request: Request) {
       );
     }
     await upsertGame(game);
+    revalidatePath("/");
+    revalidatePath("/games");
+    revalidatePath(`/top-up/${game.slug}`);
+    // Kartu "Top Up Juga" di halaman game lain juga memakai data katalog.
+    revalidatePath("/top-up/[slug]", "page");
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Gagal menyimpan game" }, { status: 500 });
@@ -107,5 +113,9 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Slug tidak valid" }, { status: 400 });
   }
   await deleteGame(slug);
+  revalidatePath("/");
+  revalidatePath("/games");
+  revalidatePath(`/top-up/${slug}`);
+  revalidatePath("/top-up/[slug]", "page");
   return NextResponse.json({ ok: true });
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { BackButton } from "@/components/back-button"
 import { AuthNav } from "@/components/auth-nav"
+import { SidebarMenuButton } from "@/components/site-sidebar"
 
 const RECENT_KEY = "gas-recent-orders"
 
@@ -84,6 +85,7 @@ export default function OrdersPage() {
             >
               &larr; Beranda
             </Link>
+            <SidebarMenuButton />
           </div>
         </div>
       </header>

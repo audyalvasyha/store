@@ -8,7 +8,7 @@ import { getRatingsByGame } from "@/lib/reviews"
 import { soldCountsByGame } from "@/lib/orders"
 import { GamesSearchInput } from "@/components/games-search-input"
 import { AuthNav } from "@/components/auth-nav"
-import { filterGames } from "@/lib/catalog"
+import { SidebarMenuButton } from "@/components/site-sidebar"
 import { Suspense } from "react"
 import { Footer } from "@/components/footer"
 
@@ -31,39 +31,15 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function GamesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string; sort?: string }>
-}) {
-  const { q, sort: sortRaw } = await searchParams
-  const query = String(q ?? "").trim().toLowerCase()
-  const sort = ["rating", "terlaris"].includes(String(sortRaw)) ? String(sortRaw) : "nama"
-
+export default async function GamesPage() {
   // Katalog dinamis dari MongoDB (admin /admin ngatur ini), fallback ke statis.
+  // Pencarian & urutan dilakukan di browser supaya halaman ini bisa di-cache
+  // dan user nggak nunggu request server tiap ketik.
   const [allGames, ratings, sold] = await Promise.all([
     getDynamicGames(),
     getRatingsByGame().catch(() => ({}) as Record<string, { average: number; count: number }>),
     soldCountsByGame().catch(() => ({}) as Record<string, number>),
   ])
-  const filtered = filterGames(allGames.length > 0 ? allGames : GAMES, query)
-  // Salin dulu: filterGames bisa balikin array referensi katalog — jangan dimutasi.
-  const safeGames = [...filtered]
-  if (sort === "rating") {
-    safeGames.sort((a, b) => {
-      const ra = ratings[a.slug]
-      const rb = ratings[b.slug]
-      return (
-        (rb?.average ?? 0) - (ra?.average ?? 0) ||
-        (rb?.count ?? 0) - (ra?.count ?? 0) ||
-        a.short.localeCompare(b.short)
-      )
-    })
-  } else if (sort === "terlaris") {
-    safeGames.sort(
-      (a, b) => (sold[b.slug] ?? 0) - (sold[a.slug] ?? 0) || a.short.localeCompare(b.short)
-    )
-  }
 
   return (
     <main className="relative min-h-screen">
@@ -87,11 +63,12 @@ export default async function GamesPage({
             </Link>
             <Link
               href="/orders"
-              className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+              className="hidden sm:block font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
             >
               Riwayat
             </Link>
             <AuthNav />
+            <SidebarMenuButton />
           </nav>
           <div className="order-3 sm:order-2 w-full min-w-0 sm:ml-auto sm:w-auto sm:max-w-md sm:flex-1 md:max-w-xl">
             <Suspense fallback={null}>
@@ -107,7 +84,7 @@ export default async function GamesPage({
         </div>
       </section>
 
-      <GamesCatalog games={safeGames} ratings={ratings} sort={sort} q={query} />
+      <GamesCatalog games={allGames.length > 0 ? allGames : GAMES} ratings={ratings} sold={sold} />
       <Footer />
     </main>
   )

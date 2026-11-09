@@ -9,6 +9,7 @@
  *
  * SERVER-ONLY: file ini mengimpor MongoDB.
  */
+import { cache } from "react"
 import { getDb, ensureIndexes } from "./mongodb"
 import { ARTICLES, type Article } from "./articles"
 import type { ArticleMeta, ArticleStatus } from "./article-index"
@@ -68,8 +69,9 @@ function staticAdminArticle(article: Article): AdminArticle {
   }
 }
 
-/** Artikel yang boleh tampil di publik, sudah digabung dengan override DB. */
-export async function getPublishedArticles(): Promise<Article[]> {
+/** Artikel yang boleh tampil di publik, sudah digabung dengan override DB.
+ *  Cache per-request supaya metadata + halaman detail nggak query dua kali. */
+export const getPublishedArticles = cache(async (): Promise<Article[]> => {
   let docs: ArticleDoc[] = []
 
   try {
@@ -100,7 +102,7 @@ export async function getPublishedArticles(): Promise<Article[]> {
   }
 
   return sortPublished([...bySlug.values()])
-}
+})
 
 export async function getPublishedArticle(slug: string): Promise<Article | undefined> {
   const articles = await getPublishedArticles()

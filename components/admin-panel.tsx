@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { PAYMENT_METHODS, GAMES, formatIDR, type GameItem, type Denomination } from "@/lib/catalog"
 import type { HeroEvent, TopUpJugaConfig } from "@/lib/content"
@@ -50,7 +50,7 @@ function TjChips({
             <button
               onClick={() => onMove(slug, -1)}
               disabled={idx === 0}
-              className="text-foreground/40 hover:text-accent disabled:opacity-25 text-sm px-1"
+              className="inline-flex h-10 w-10 items-center justify-center text-sm text-foreground/40 hover:text-accent disabled:opacity-25"
               aria-label={`Geser ${slug} ke kiri`}
             >
               &larr;
@@ -58,14 +58,14 @@ function TjChips({
             <button
               onClick={() => onMove(slug, 1)}
               disabled={idx === list.length - 1}
-              className="text-foreground/40 hover:text-accent disabled:opacity-25 text-sm px-1"
+              className="inline-flex h-10 w-10 items-center justify-center text-sm text-foreground/40 hover:text-accent disabled:opacity-25"
               aria-label={`Geser ${slug} ke kanan`}
             >
               &rarr;
             </button>
             <button
               onClick={() => onRemove(slug)}
-              className="text-foreground/40 hover:text-destructive text-sm px-1"
+              className="inline-flex h-10 w-10 items-center justify-center text-sm text-foreground/40 hover:text-destructive"
               aria-label={`Hapus ${slug}`}
             >
               &times;
@@ -111,7 +111,7 @@ function TjPicker({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={placeholder}
-        className="bg-background border border-border p-2.5 font-mono text-[10px] md:text-xs text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-accent"
+        className="min-h-[44px] w-full bg-background border border-border p-3 font-mono text-[11px] text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-accent md:text-xs"
       />
       {matches.length > 0 && (
         <div className="border border-border bg-background flex flex-col max-h-60 overflow-y-auto">
@@ -123,7 +123,7 @@ function TjPicker({
                 onPick(g.slug)
                 setQuery("")
               }}
-              className="text-left px-3 py-2 font-mono text-[10px] md:text-xs text-foreground hover:bg-foreground/10 border-b border-border last:border-b-0 flex justify-between gap-3"
+              className="flex min-h-[44px] justify-between gap-3 border-b border-border px-3 py-2 text-left font-mono text-[11px] text-foreground hover:bg-foreground/10 last:border-b-0 md:text-xs"
             >
               <span className="text-accent">+ {g.short}</span>
               <span className="text-foreground/40">{g.slug}</span>
@@ -154,6 +154,7 @@ export function AdminPanel({
   stats: AdminStats | null
 }) {
   const router = useRouter()
+  const gameEditorRef = useRef<HTMLDivElement>(null)
   const [tab, setTab] = useState<Tab>("stats")
 
   // ── Hero event state ──
@@ -288,6 +289,14 @@ export function AdminPanel({
     setGamesBusy(false)
   }
 
+  function editGame(game: GameItem) {
+    setGameJson(JSON.stringify(game, null, 2))
+    // Di HP, daftar game bisa panjang — langsung bawa user ke editor.
+    requestAnimationFrame(() => {
+      gameEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    })
+  }
+
   async function deleteGameBySlug(slug: string) {
     setGamesBusy(true)
     setGamesMsg(null)
@@ -315,7 +324,7 @@ export function AdminPanel({
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+      <div className="flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <span className="font-mono text-[10px] text-accent tracking-[0.3em] uppercase block">
             [Gastros Admin]
@@ -325,34 +334,34 @@ export function AdminPanel({
           </h1>
           <span className="font-mono text-[10px] text-foreground/40">{email}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:w-auto lg:flex-wrap lg:items-center">
           <button
             onClick={() => setTab("stats")}
-            className={`font-mono text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 border border-border min-h-[40px] ${tab === "stats" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
+            className={`min-h-[44px] border border-border px-3 py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.12em] md:text-[10px] md:tracking-[0.15em] ${tab === "stats" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
           >
             Statistik
           </button>
           <button
             onClick={() => setTab("hero")}
-            className={`font-mono text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 border border-border min-h-[40px] ${tab === "hero" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
+            className={`min-h-[44px] border border-border px-3 py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.12em] md:text-[10px] md:tracking-[0.15em] ${tab === "hero" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
           >
             Hero Event
           </button>
           <button
             onClick={() => setTab("games")}
-            className={`font-mono text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 border border-border min-h-[40px] ${tab === "games" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
+            className={`min-h-[44px] border border-border px-3 py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.12em] md:text-[10px] md:tracking-[0.15em] ${tab === "games" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
           >
             Katalog Games ({games.length})
           </button>
           <button
             onClick={() => setTab("topupjuga")}
-            className={`font-mono text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 border border-border min-h-[40px] ${tab === "topupjuga" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
+            className={`min-h-[44px] border border-border px-3 py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.12em] md:text-[10px] md:tracking-[0.15em] ${tab === "topupjuga" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
           >
             Top Up Juga
           </button>
           <button
             onClick={doLogout}
-            className="font-mono text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 border border-border text-foreground/50 hover:text-destructive min-h-[40px]"
+            className="col-span-2 min-h-[44px] border border-border px-3 py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.12em] text-foreground/50 hover:text-destructive sm:col-span-1 md:text-[10px] md:tracking-[0.15em]"
           >
             Logout
           </button>
@@ -410,18 +419,18 @@ export function AdminPanel({
             />
           </div>
           {heroMsg && <span className="font-mono text-[10px] text-accent">{heroMsg}</span>}
-          <div className="flex gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
             <button
               onClick={() => saveHero(false)}
               disabled={heroBusy || !imageUrl.startsWith("https://")}
-              className={`font-mono text-[10px] tracking-[0.2em] uppercase px-5 py-3 min-h-[44px] ${heroBusy || !imageUrl.startsWith("https://") ? "bg-foreground/10 text-foreground/30 cursor-not-allowed" : "bg-accent text-accent-foreground hover-glitch"}`}
+              className={`min-h-[44px] w-full px-5 py-3 font-mono text-[10px] uppercase tracking-[0.2em] sm:w-auto ${heroBusy || !imageUrl.startsWith("https://") ? "bg-foreground/10 text-foreground/30 cursor-not-allowed" : "bg-accent text-accent-foreground hover-glitch"}`}
             >
               {heroBusy ? "Menyimpan..." : "Simpan & Aktifkan"}
             </button>
             <button
               onClick={() => saveHero(true)}
               disabled={heroBusy}
-              className="font-mono text-[10px] tracking-[0.2em] uppercase px-5 py-3 min-h-[44px] border border-border text-foreground/50 hover:text-destructive"
+              className="min-h-[44px] w-full border border-border px-5 py-3 font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/50 hover:text-destructive sm:w-auto"
             >
               Nonaktifkan
             </button>
@@ -440,28 +449,28 @@ export function AdminPanel({
               {games.map((game) => (
                 <div
                   key={game.slug}
-                  className="flex items-center justify-between gap-2 border border-border bg-background p-2.5"
+                  className="flex flex-col gap-2 border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
-                    <span className="font-mono text-xs text-foreground block truncate">
+                    <span className="block truncate font-mono text-xs text-foreground">
                       {game.slug}
-                      {game.featured && <span className="text-accent ml-2 uppercase">featured</span>}
+                      {game.featured && <span className="ml-2 uppercase text-accent">featured</span>}
                     </span>
-                    <span className="font-mono text-[9px] text-foreground/40 block truncate">
+                    <span className="block truncate font-mono text-[9px] text-foreground/40">
                       {game.short} &mdash; {game.name} &mdash; {game.denominations.length} nominal
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="grid grid-cols-2 gap-1.5 sm:flex sm:shrink-0 sm:items-center">
                     <button
-                      onClick={() => setGameJson(JSON.stringify(game, null, 2))}
-                      className="font-mono text-[9px] uppercase tracking-[0.1em] px-2.5 py-1.5 border border-border text-foreground/60 hover:text-accent hover:border-accent"
+                      onClick={() => editGame(game)}
+                      className="min-h-[40px] border border-border px-3 py-2 font-mono text-[9px] uppercase tracking-[0.1em] text-foreground/60 hover:border-accent hover:text-accent"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => deleteGameBySlug(game.slug)}
                       disabled={gamesBusy}
-                      className="font-mono text-[9px] uppercase tracking-[0.1em] px-2.5 py-1.5 border border-border text-foreground/60 hover:text-destructive"
+                      className="min-h-[40px] border border-border px-3 py-2 font-mono text-[9px] uppercase tracking-[0.1em] text-foreground/60 hover:text-destructive"
                     >
                       Hapus
                     </button>
@@ -471,14 +480,17 @@ export function AdminPanel({
             </div>
           </div>
 
-          <div className="border border-border bg-card p-4 md:p-6 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
+          <div
+            ref={gameEditorRef}
+            className="scroll-mt-4 border border-border bg-card p-4 md:p-6 flex flex-col gap-3"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase">
                 Editor Game (JSON)
               </span>
               <button
                 onClick={() => setGameJson(JSON.stringify(EMPTY_GAME, null, 2))}
-                className="font-mono text-[9px] uppercase tracking-[0.15em] text-foreground/40 hover:text-accent"
+                className="inline-flex min-h-[40px] items-center font-mono text-[9px] uppercase tracking-[0.15em] text-foreground/40 hover:text-accent"
               >
                 + Game baru
               </button>
@@ -497,7 +509,7 @@ export function AdminPanel({
             <button
               onClick={saveGame}
               disabled={gamesBusy}
-              className={`font-mono text-[10px] tracking-[0.2em] uppercase px-5 py-3.5 min-h-[44px] ${gamesBusy ? "bg-foreground/10 text-foreground/30 cursor-not-allowed" : "bg-accent text-accent-foreground hover-glitch"}`}
+              className={`min-h-[44px] w-full px-5 py-3.5 font-mono text-[10px] uppercase tracking-[0.2em] sm:w-auto ${gamesBusy ? "bg-foreground/10 text-foreground/30 cursor-not-allowed" : "bg-accent text-accent-foreground hover-glitch"}`}
             >
               {gamesBusy ? "Menyimpan..." : "Simpan Game"}
             </button>
@@ -536,7 +548,7 @@ export function AdminPanel({
           </div>
 
           <details className="border border-border bg-card p-4 md:p-6">
-            <summary className="font-mono text-[10px] md:text-xs text-foreground/60 tracking-[0.2em] uppercase cursor-pointer select-none hover:text-foreground">
+            <summary className="flex min-h-[44px] cursor-pointer select-none items-center font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/60 hover:text-foreground md:text-xs">
               ⚙️ Lanjutan: urutan beda per halaman game{tjPerCount > 0 ? ` (${tjPerCount} aktif)` : " — nggak perlu, skip aja"}
             </summary>
             <div className="flex flex-col gap-3 mt-4">
@@ -546,7 +558,7 @@ export function AdminPanel({
               <select
                 value={tjSel}
                 onChange={(e) => setTjSel(e.target.value)}
-                className="bg-background border border-border p-2.5 font-mono text-[10px] md:text-xs text-foreground focus:outline-none focus:border-accent max-w-xs"
+                className="min-h-[44px] w-full max-w-none bg-background border border-border p-2.5 font-mono text-[11px] text-foreground focus:outline-none focus:border-accent sm:max-w-xs md:text-xs"
               >
                 <option value="">— pilih halaman game —</option>
                 {games.map((g) => (
@@ -558,8 +570,8 @@ export function AdminPanel({
               </select>
               {tjSel && (
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10px] text-foreground/60 uppercase">
+                  <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                    <span className="min-w-0 truncate font-mono text-[10px] uppercase text-foreground/60">
                       Override: {tjSel}
                     </span>
                     <button
@@ -568,7 +580,7 @@ export function AdminPanel({
                         delete next[tjSel]
                         setTjPer(next)
                       }}
-                      className="font-mono text-[9px] uppercase tracking-[0.15em] text-foreground/40 hover:text-destructive"
+                      className="inline-flex min-h-[40px] items-center font-mono text-[9px] uppercase tracking-[0.15em] text-foreground/40 hover:text-destructive"
                     >
                       Hapus override (ikut global)
                     </button>
@@ -601,18 +613,18 @@ export function AdminPanel({
           </details>
 
           {tjMsg && <span className="font-mono text-[10px] text-accent">{tjMsg}</span>}
-          <div className="flex gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
             <button
               onClick={() => saveTopUpJuga(false)}
               disabled={tjBusy}
-              className={`font-mono text-[10px] tracking-[0.2em] uppercase px-5 py-3 min-h-[44px] ${tjBusy ? "bg-foreground/10 text-foreground/30 cursor-not-allowed" : "bg-accent text-accent-foreground hover-glitch"}`}
+              className={`min-h-[44px] w-full px-5 py-3 font-mono text-[10px] uppercase tracking-[0.2em] sm:w-auto ${tjBusy ? "bg-foreground/10 text-foreground/30 cursor-not-allowed" : "bg-accent text-accent-foreground hover-glitch"}`}
             >
               {tjBusy ? "Menyimpan..." : "Simpan Konfigurasi"}
             </button>
             <button
               onClick={() => saveTopUpJuga(true)}
               disabled={tjBusy}
-              className="font-mono text-[10px] tracking-[0.2em] uppercase px-5 py-3 min-h-[44px] border border-border text-foreground/50 hover:text-destructive"
+              className="min-h-[44px] w-full border border-border px-5 py-3 font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/50 hover:text-destructive sm:w-auto"
             >
               Reset ke Otomatis
             </button>

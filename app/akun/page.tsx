@@ -18,6 +18,7 @@ import { PasswordRegister } from "@/components/password-register"
 import { PasswordEditor } from "@/components/password-editor"
 import { GoogleLoginButton } from "@/components/google-login-button"
 import { AuthNav } from "@/components/auth-nav"
+import { SidebarMenuButton } from "@/components/site-sidebar"
 import { Footer } from "@/components/footer"
 import { getGoogleClientId } from "@/lib/google-auth"
 
@@ -117,6 +118,7 @@ export default async function AccountPage({
                   : null
               }
             />
+            <SidebarMenuButton />
           </nav>
         </div>
       </header>

@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { GAMES, lowestPrice, formatIDR, type GameItem } from "@/lib/catalog"
+import { GAMES, filterGames, lowestPrice, formatIDR, type GameItem } from "@/lib/catalog"
 import { GameArtwork } from "@/components/game-artwork"
 import { RatingBadge } from "@/components/rating-badge"
+import { GAMES_SEARCH_EVENT } from "@/components/games-search-input"
 
 /**
  * Halaman katalog lengkap: SEMUA game beserta artwork-nya.
@@ -17,23 +18,75 @@ const BATCH = 16
 export function GamesCatalog({
   games = GAMES,
   ratings,
+  sold,
   sort = "nama",
-  q = "",
 }: {
   games?: GameItem[]
   ratings?: Record<string, { average: number; count: number }>
+  sold?: Record<string, number>
   sort?: string
-  q?: string
 }) {
   const sectionRef = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   const [showCount, setShowCount] = useState(BATCH)
+  const [activeSort, setActiveSort] = useState(sort)
+  const [query, setQuery] = useState("")
 
-  const shownGames = games.slice(0, showCount)
-  const remaining = games.length - shownGames.length
+  // Semua game sudah dikirim server, jadi cari + urutkan cukup di browser.
+  // Ini menghindari request RSC + query DB setiap kali user mengetik/menyortir.
+  const filteredGames = useMemo(() => filterGames(games, query), [games, query])
+  const sortedGames = useMemo(() => {
+    const list = [...filteredGames]
+    if (activeSort === "rating") {
+      list.sort((a, b) => {
+        const ra = ratings?.[a.slug]
+        const rb = ratings?.[b.slug]
+        return (
+          (rb?.average ?? 0) - (ra?.average ?? 0) ||
+          (rb?.count ?? 0) - (ra?.count ?? 0) ||
+          a.short.localeCompare(b.short)
+        )
+      })
+    } else if (activeSort === "terlaris") {
+      list.sort(
+        (a, b) =>
+          (sold?.[b.slug] ?? 0) - (sold?.[a.slug] ?? 0) ||
+          a.short.localeCompare(b.short)
+      )
+    }
+    return list
+  }, [filteredGames, activeSort, ratings, sold])
+
+  // Baca ?q= / ?sort= saat mount + sinkron saat back/forward, lalu dengerin
+  // input header lewat event lokal (tanpa navigasi server).
+  useEffect(() => {
+    const syncFromUrl = () => {
+      const params = new URLSearchParams(window.location.search)
+      setQuery(params.get("q") ?? "")
+      const nextSort = params.get("sort")
+      setActiveSort(nextSort === "rating" || nextSort === "terlaris" ? nextSort : "nama")
+      setShowCount(BATCH)
+    }
+    syncFromUrl()
+
+    const onSearch = (event: Event) => {
+      setQuery((event as CustomEvent<string>).detail ?? "")
+      setShowCount(BATCH)
+    }
+
+    window.addEventListener("popstate", syncFromUrl)
+    window.addEventListener(GAMES_SEARCH_EVENT, onSearch)
+    return () => {
+      window.removeEventListener("popstate", syncFromUrl)
+      window.removeEventListener(GAMES_SEARCH_EVENT, onSearch)
+    }
+  }, [])
+
+  const shownGames = sortedGames.slice(0, showCount)
+  const remaining = sortedGames.length - shownGames.length
 
   function loadMore() {
-    setShowCount((c) => Math.min(c + BATCH, games.length))
+    setShowCount((c) => Math.min(c + BATCH, sortedGames.length))
   }
 
   useEffect(() => {
@@ -50,15 +103,19 @@ export function GamesCatalog({
     return () => observer.disconnect()
   }, [])
 
-  const totalItems = games.reduce((sum, g) => sum + g.denominations.length, 0)
+  const totalItems = sortedGames.reduce((sum, g) => sum + g.denominations.length, 0)
 
-  // Urutan katalog: nama (default), rating tertinggi, atau terlaris.
-  function sortHref(key: string) {
-    const params = new URLSearchParams()
-    if (q) params.set("q", q)
-    if (key !== "nama") params.set("sort", key)
+  // URL tetap diperbarui supaya pilihan sort bisa di-refresh/dibagikan,
+  // tapi tanpa memicu navigasi Next.js ke server.
+  function applySort(key: string) {
+    setActiveSort(key)
+    setShowCount(BATCH)
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    if (key === "nama") params.delete("sort")
+    else params.set("sort", key)
     const qs = params.toString()
-    return qs ? `/games?${qs}` : "/games"
+    window.history.replaceState(null, "", qs ? `/games?${qs}` : "/games")
   }
 
   return (
@@ -68,7 +125,7 @@ export function GamesCatalog({
         <span
           className={`font-mono text-[10px] md:text-[11px] text-accent tracking-[0.2em] md:tracking-[0.3em] uppercase block mb-1 md:mb-3 ${visible ? "anim-cut-in" : "opacity-0"}`}
         >
-          [Katalog] {String(games.length).padStart(3, "0")} Games // {totalItems} Item Top Up
+          [Katalog] {String(sortedGames.length).padStart(3, "0")} Games // {totalItems} Item Top Up
         </span>
         <h1 className="font-sans tracking-tighter text-foreground leading-none uppercase overflow-hidden">
           <span className={`block text-[13vw] sm:text-[9vw] md:text-8xl lg:text-9xl whitespace-nowrap ${visible ? "anim-shutter-up" : "opacity-0"}`}>
@@ -82,7 +139,7 @@ export function GamesCatalog({
           Pilih game di bawah, isi ID akun, pilih nominal &mdash; diamond &amp; currency masuk akun lo lewat jalur resmi publisher.
         </p>
 
-        {/* Urutkan katalog — server-side lewat ?sort= */}
+        {/* Urutkan katalog — client-side, tanpa reload */}
         <div className={`flex flex-wrap items-center gap-2 mt-3 md:mt-5 ${visible ? "anim-cut-in" : "opacity-0"}`} style={{ animationDelay: "0.5s" }}>
           <span className="font-mono text-[9px] md:text-[10px] text-foreground/35 tracking-[0.15em] uppercase">
             [Urutkan]
@@ -94,17 +151,19 @@ export function GamesCatalog({
               { key: "terlaris", label: "Terlaris" },
             ] as const
           ).map((opt) => (
-            <Link
+            <button
               key={opt.key}
-              href={sortHref(opt.key)}
-              className={`border px-2.5 py-1.5 font-mono text-[9px] md:text-[10px] tracking-[0.15em] uppercase transition-colors ${
-                sort === opt.key
+              type="button"
+              onClick={() => applySort(opt.key)}
+              aria-pressed={activeSort === opt.key}
+              className={`border px-2.5 py-1.5 font-mono text-[9px] md:text-[10px] tracking-[0.15em] uppercase transition-colors cursor-pointer ${
+                activeSort === opt.key
                   ? "border-accent text-accent"
                   : "border-border text-foreground/50 hover:text-foreground"
               }`}
             >
               {opt.label}
-            </Link>
+            </button>
           ))}
         </div>
       </div>
@@ -123,7 +182,7 @@ export function GamesCatalog({
       </div>
 
       {/* Empty state: hasil cari ga ketemu */}
-      {games.length === 0 && (
+      {sortedGames.length === 0 && (
         <div className="max-w-[1400px] mx-auto border border-border bg-card p-6 md:p-10 text-center">
           <p className="font-sans text-xl md:text-3xl text-foreground uppercase tracking-tight">
             Ga ada game yang cocok<span className="text-accent">.</span>
@@ -150,7 +209,7 @@ export function GamesCatalog({
             </svg>
           </button>
           <span className="font-mono text-[9px] md:text-[10px] text-foreground/40 tracking-[0.15em] uppercase">
-            {shownGames.length} / {games.length} game ditampilin
+            {shownGames.length} / {sortedGames.length} game ditampilin
           </span>
         </div>
       )}

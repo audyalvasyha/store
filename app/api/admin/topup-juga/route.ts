@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getAdminEmail, SESSION_COOKIE } from "@/lib/admin-auth";
 import {
@@ -49,6 +50,8 @@ export async function POST(request: Request) {
     // Reset: balik ke urutan otomatis (kategori + featured).
     if (body?.clear === true) {
       await clearTopUpJuga();
+      // Semua halaman game menampilkan blok ini.
+      revalidatePath("/top-up/[slug]", "page");
       return NextResponse.json({ ok: true, cleared: true });
     }
 
@@ -66,6 +69,7 @@ export async function POST(request: Request) {
     }
 
     await saveTopUpJuga({ global, perGame });
+    revalidatePath("/top-up/[slug]", "page");
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Gagal menyimpan konfigurasi Top Up Juga" }, { status: 500 });

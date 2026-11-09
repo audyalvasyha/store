@@ -123,7 +123,9 @@ function recordStoneFetchError(msg: string | null): void {
  * nggak layak di-retry. Network/timeout error yang layak. */
 class StoneHttpError extends Error {}
 
-async function stoneFetch<T>(path: string, init?: RequestInit): Promise<T> {
+type StoneFetchInit = RequestInit & { next?: { revalidate?: number } }
+
+async function stoneFetch<T>(path: string, init?: StoneFetchInit): Promise<T> {
   const timeoutMs = Number(process.env.GAMESTONE_TIMEOUT_MS) || 20_000
   // Retry maks 2 percobaan, cuma buat GET (idempotent): glitch jaringan/timeout
   // sesekali itu hal normal. HTTP error & POST nggak di-retry (rawan dobel order).
@@ -141,7 +143,9 @@ async function stoneFetch<T>(path: string, init?: RequestInit): Promise<T> {
           ...(process.env.STONE_PROXY_SECRET ? { "x-proxy-secret": process.env.STONE_PROXY_SECRET } : {}),
           ...(init?.headers ?? {}),
         },
-        cache: "no-store",
+        // Detail game boleh di-cache (halaman top up pakai ISR). Order/polling
+        // tetap no-store supaya status pembayaran nggak pernah basi.
+        cache: init?.cache ?? "no-store",
         // Timeout keras: provider hung nggak boleh bikin request nginx/fetch
         // numpuk pending sampai timeout platform pas traffic tinggi.
         signal: AbortSignal.timeout(timeoutMs),
@@ -265,7 +269,10 @@ export async function getStoneGame(slug: string): Promise<StoneGame | null> {
   const task = (async () => {
     let game: StoneGame | null = null
     try {
-      game = await stoneFetch<StoneGame>(`/games/${encodeURIComponent(slug)}`)
+      game = await stoneFetch<StoneGame>(`/games/${encodeURIComponent(slug)}`, {
+        cache: "force-cache",
+        next: { revalidate: STONE_GAME_TTL_MS / 1000 },
+      })
     } catch {
       game = null
     }

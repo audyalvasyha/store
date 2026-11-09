@@ -1,8 +1,8 @@
 import Link from "next/link"
-import { GAMES, formatIDR, PAYMENT_METHODS } from "@/lib/catalog"
+import { formatIDR, PAYMENT_METHODS } from "@/lib/catalog"
 import type { GameItem } from "@/lib/catalog"
 import { GameArtwork } from "@/components/game-artwork"
-import { getDynamicGames, getTopUpJugaConfig } from "@/lib/content"
+import type { TopUpJugaConfig } from "@/lib/content"
 
 /** Maks tile per blok — admin bisa isi lebih, tapi dibatasi biar gak mbuhor. */
 const MAX_TILES = 8 as const
@@ -15,7 +15,15 @@ const MAX_TILES = 8 as const
  * harga rendahnya, publisher, metode bayar, plus link internal ke game
  * lain biar crawl equity ngalir antar halaman top up.
  */
-export async function GameInfoBlock({ game }: { game: GameItem }) {
+export function GameInfoBlock({
+  game,
+  allGames,
+  topUpJuga,
+}: {
+  game: GameItem
+  allGames: GameItem[]
+  topUpJuga: TopUpJugaConfig | null
+}) {
   const prices = game.denominations.map((d) => d.price)
   const minPrice = Math.min(...prices)
   const maxPrice = Math.max(...prices)
@@ -30,9 +38,8 @@ export async function GameInfoBlock({ game }: { game: GameItem }) {
   // Related: prioritaskan game se-kategori, sisanya game featured. Max 4.
   // Related: config admin menang (per-game override, lalu urutan global).
   // Tanpa config, jatuh ke urutan otomatis: game se-kategori, lalu featured.
-  const [cfg, allGames] = await Promise.all([getTopUpJugaConfig(), getDynamicGames()])
   const bySlug = new Map(allGames.map((g) => [g.slug, g] as const))
-  const configSlugs = cfg?.perGame?.[game.slug] ?? cfg?.global ?? null
+  const configSlugs = topUpJuga?.perGame?.[game.slug] ?? topUpJuga?.global ?? null
   const related: GameItem[] =
     configSlugs && configSlugs.length > 0
       ? configSlugs
