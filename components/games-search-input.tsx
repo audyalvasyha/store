@@ -28,7 +28,10 @@ export function GamesSearchInput() {
     if (next.trim()) params.set("q", next.trim())
     else params.delete("q")
     const qs = params.toString()
-    window.history.replaceState(null, "", qs ? `/games?${qs}` : "/games")
+    // Tetap di halaman sekarang (homepage atau /games); jangan paksa pindah
+    // URL ke /games saat search dipakai di landing.
+    const path = window.location.pathname
+    window.history.replaceState(null, "", qs ? `${path}?${qs}` : path)
     window.dispatchEvent(new CustomEvent(GAMES_SEARCH_EVENT, { detail: next }))
   }
 

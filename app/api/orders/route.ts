@@ -6,6 +6,12 @@ import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gam
 import { clientIp, rateLimit } from "@/lib/rate-limit"
 import { checkCoupon, consumeCoupon, normalizeCouponCode } from "@/lib/coupons"
 import { sendOrderStatusNotifications } from "@/lib/notify"
+import {
+  manualOrderAmount,
+  resolveOrderDenom,
+  stoneOrderAmount,
+} from "@/lib/order-pricing"
+import { logOpsError } from "@/lib/ops-alert"
 
 export const dynamic = "force-dynamic"
 
@@ -64,34 +70,17 @@ export async function POST(request: Request) {
     const stoneMode = Boolean(game.stoneSlug && gamestoneConfigured())
     const stoneGame = stoneMode && game.stoneSlug ? await getStoneGame(game.stoneSlug) : null
     const stoneVariants = stoneGame ? activeStoneVariants(stoneGame) : []
-    let stoneVariant =
-      stoneVariants.find((v) => String(v.id) === String(denomId ?? "")) ?? null
 
     // Di mode Gamestone, form menampilkan variant provider sehingga denomId-nya
     // numeric id variant. Katalog lokal (id "ml-86" dsb.) tetap dipakai untuk
     // game non-Gamestone / waktu provider nggak bisa diakses pas render.
     const localDenom = getDenomination(game, String(denomId ?? ""))
-
-    // Fallback resolver: kalau variant id yang dipilih user sudah nggak ada di
-    // provider (render memakai cache 60s lalu list berubah), cari variant
-    // berdasarkan harga terdekat (toleransi 30%), lalu variant aktif pertama.
-    // Hanya untuk denomId numeric (id variant provider) supaya id katalog
-    // lokal nggak ikut ke-sapu fallback ini.
-    if (!stoneVariant && stoneMode && localDenom && /^\d+$/.test(String(denomId ?? "").trim())) {
-      let bestDiff = Number.POSITIVE_INFINITY
-      let best: (typeof stoneVariants)[0] | undefined = undefined
-      for (const v of stoneVariants) {
-        const diff = Math.abs(v.price - localDenom.price)
-        if (diff <= localDenom.price * 0.3 && diff < bestDiff) {
-          best = v
-          bestDiff = diff
-        }
-      }
-      stoneVariant = best ?? stoneVariants[0] ?? null
-    }
-    const denom = stoneVariant
-      ? { id: String(stoneVariant.id), label: stoneVariant.name, price: stoneVariant.price }
-      : localDenom
+    const { denom, stoneVariant } = resolveOrderDenom({
+      denomId: String(denomId ?? ""),
+      localDenom,
+      stoneVariants,
+      stoneMode,
+    })
     if (!denom) {
       return NextResponse.json(
         {
@@ -177,7 +166,7 @@ export async function POST(request: Request) {
       order.couponCode = check.coupon.code
       if (!stoneMode) {
         // Order manual: diskon beneran mengurangi nominal yang dibayar ke CS.
-        order.amount = order.amount - check.discount
+        order.amount = manualOrderAmount(order.amount, check.discount)
       }
     }
 
@@ -228,7 +217,7 @@ export async function POST(request: Request) {
           // Nominal QRIS fix dari provider — potongan kupon TIDAK bisa
           // merubah jumlah bayar. order.discount disimpan sebagai cashback
           // yang CS transfer setelah order selesai (tampil di halaman order).
-          amount: stoneOrder.total_price ?? order.amount - (order.discount ?? 0),
+          amount: stoneOrderAmount(stoneOrder.total_price, order.amount, order.discount),
           provider: "gamestone",
           stoneOrderId: stoneOrder.id,
           stoneTotal: stoneOrder.total_price,
@@ -251,8 +240,17 @@ export async function POST(request: Request) {
       // paymentError nyatet sebab teknisnya; kebaca juga di halaman order.
       // Order jadi manual: potongan kupon kembali makna "diskon beneran"
       // (kurangi nominal yang dibayar ke CS), bukan cashback.
+      logOpsError(
+        "order.gamestone_fallback",
+        new Error(stoneError ?? "Provider Gamestone gagal"),
+        {
+          orderCode: order.code,
+          gameSlug: game.slug,
+          method: String(method),
+        }
+      )
       if (order.discount && order.couponCode) {
-        order.amount = order.amount - order.discount
+        order.amount = manualOrderAmount(order.amount, order.discount)
       }
       await saveOrder(order)
       const manual = await updateOrder(order.code, {
@@ -268,7 +266,11 @@ export async function POST(request: Request) {
     await saveOrder(order)
     sendOrderStatusNotifications({ ...order, status: "MENUNGGU_PEMBAYARAN" })
     return NextResponse.json({ order }, { status: 201 })
-  } catch {
+  } catch (error) {
+    logOpsError("order.create_failed", error, {
+      ip: fingerprint,
+      route: "POST /api/orders",
+    })
     return NextResponse.json({ error: "Gagal membuat order" }, { status: 500 })
   }
 }
@@ -295,9 +297,13 @@ export async function GET(request: Request) {
     await syncStoneStatus(order)
     const fresh = await getOrder(code)
     return NextResponse.json({ order: fresh ?? order })
-  } catch {
+  } catch (error) {
     // DB status order nggak bisa diakses — balikin 503 biar halaman Riwayat
     // nampilin pesan ramah (bukan wall of error 500).
+    logOpsError("order.status_read_failed", error, {
+      route: "GET /api/orders",
+      orderCode: code,
+    })
     return NextResponse.json(
       { error: "Sistem order lagi sibuk, coba lagi sebentar." },
       { status: 503 }

@@ -54,6 +54,9 @@ export async function ensureIndexes(): Promise<void> {
     { key: { code: 1 }, unique: true },
     { key: { createdAt: 1 } },
     { key: { status: 1 } },
+    // Compound index buat analytics: filter status + rentang tanggal / game.
+    { key: { status: 1, createdAt: 1 } },
+    { key: { status: 1, gameSlug: 1 } },
     { key: { gameSlug: 1 } },
     // Nomor WA / email dipakai sebagai identitas akun pembeli → riwayat order.
     { key: { phone: 1 } },

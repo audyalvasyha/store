@@ -1,10 +1,17 @@
 "use client"
 
-import { Suspense, useState, useEffect, useRef } from "react"
+import { Suspense, useState, useEffect, useRef, useMemo } from "react"
 import Link from "next/link"
-import { GAMES, lowestPrice, formatIDR, formatPriceShort, type GameItem } from "@/lib/catalog"
+import {
+  GAMES,
+  filterGames,
+  lowestPrice,
+  formatIDR,
+  formatPriceShort,
+  type GameItem,
+} from "@/lib/catalog"
 import { GameArtwork } from "@/components/game-artwork"
-import { GamesSearchInput } from "@/components/games-search-input"
+import { GAMES_SEARCH_EVENT, GamesSearchInput } from "@/components/games-search-input"
 import { RatingBadge } from "@/components/rating-badge"
 
 // Landing cuma render MAX_ROWS baris awal — sisanya via /games biar web ga berat.
@@ -24,6 +31,14 @@ export function GameGrid({
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
+  const [query, setQuery] = useState("")
+
+  // Search homepage difilter di browser. URL ?q= tetap disinkronkan untuk
+  // refresh/share, tapi halaman nggak perlu request server per ketikan.
+  const filteredGames = useMemo(() => filterGames(games, query), [games, query])
+  const catalogHref = query.trim()
+    ? `/games?q=${encodeURIComponent(query.trim())}`
+    : "/games"
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -36,7 +51,24 @@ export function GameGrid({
     return () => observer.disconnect()
   }, [])
 
-  const totalItems = games.reduce((sum, g) => sum + g.denominations.length, 0)
+  useEffect(() => {
+    const syncFromUrl = () => {
+      setQuery(new URLSearchParams(window.location.search).get("q") ?? "")
+    }
+    syncFromUrl()
+
+    const onSearch = (event: Event) => {
+      setQuery((event as CustomEvent<string>).detail ?? "")
+    }
+    window.addEventListener("popstate", syncFromUrl)
+    window.addEventListener(GAMES_SEARCH_EVENT, onSearch)
+    return () => {
+      window.removeEventListener("popstate", syncFromUrl)
+      window.removeEventListener(GAMES_SEARCH_EVENT, onSearch)
+    }
+  }, [])
+
+  const totalItems = filteredGames.reduce((sum, g) => sum + g.denominations.length, 0)
 
   return (
     <section
@@ -45,7 +77,7 @@ export function GameGrid({
       className="relative py-5 md:py-20 overflow-hidden"
     >
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12">
-        {/* Search bar — filter game via ?q= (server-side) */}
+        {/* Search bar — filter katalog langsung di browser */}
         <div className="flex items-center justify-between gap-4 mb-2 md:mb-6">
           <div className="w-full sm:max-w-md md:max-w-xl">
             <Suspense fallback={null}>
@@ -53,7 +85,7 @@ export function GameGrid({
             </Suspense>
           </div>
           <Link
-            href="/games"
+            href={catalogHref}
             className="hidden sm:inline-flex items-center gap-2 font-mono text-[10px] md:text-[11px] text-foreground/50 hover:text-accent transition-colors tracking-[0.2em] uppercase shrink-0"
           >
             Semua Game
@@ -87,7 +119,7 @@ export function GameGrid({
               </p>
               <div className="flex items-center gap-3 md:gap-6">
                 {[
-                  { v: String(games.length).padStart(2, "0"), l: "Games" },
+                  { v: String(filteredGames.length).padStart(2, "0"), l: "Games" },
                   { v: String(totalItems), l: "Item Top Up" },
                   { v: "24/7", l: "Layanan" },
                 ].map((s) => (
@@ -136,7 +168,7 @@ export function GameGrid({
 
         {/* Game rows — dibatasi MAX_ROWS biar DOM & animasi enteng */}
         <div className="border-t border-border">
-          {games.slice(0, MAX_ROWS).map((game, idx) => (
+          {filteredGames.slice(0, MAX_ROWS).map((game, idx) => (
             <Link
               key={game.slug}
               href={`/top-up/${game.slug}`}
@@ -205,17 +237,25 @@ export function GameGrid({
             </Link>
           ))}
 
+          {filteredGames.length === 0 && (
+            <div className="border-b border-border py-8 text-center">
+              <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/45">
+                Ga ada game yang cocok. Coba kata kunci lain.
+              </p>
+            </div>
+          )}
+
           {/* Lihat semua — sisanya di halaman /games */}
-          {games.length > MAX_ROWS && (
+          {filteredGames.length > MAX_ROWS && (
             <Link
-              href="/games"
+              href={catalogHref}
               className="flex items-center justify-between border-b border-border py-4 md:py-6 pl-0 md:pl-4 group"
             >
               <span className="font-sans text-lg md:text-4xl tracking-tighter text-foreground/60 group-hover:text-accent transition-colors uppercase leading-none">
                 Lihat semua game
               </span>
               <span className="font-mono text-[10px] md:text-xs text-foreground/40 group-hover:text-accent transition-colors tracking-[0.15em] uppercase flex items-center gap-2 md:gap-4">
-                {games.length - MAX_ROWS} game lagi
+                {filteredGames.length - MAX_ROWS} game lagi
                 <svg width="14" height="14" viewBox="0 0 12 12" fill="none" className="text-accent" aria-hidden="true">
                   <path d="M1 11L11 1M11 1H3M11 1V9" stroke="currentColor" strokeWidth="1.5" />
                 </svg>

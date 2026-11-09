@@ -242,7 +242,7 @@ export function TopupForm({
                   value={filterQ}
                   onChange={(e) => setFilterQ(e.target.value)}
                   placeholder="Cari nominal atau harga..."
-                  className="bg-background border border-border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors"
+                  className="min-h-[44px] bg-background border border-border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors"
                 />
                 <div className="flex gap-0 border border-border">
                   {([
@@ -255,7 +255,7 @@ export function TopupForm({
                       key={key}
                       onClick={() => setSortBy(key)}
                       aria-pressed={sortBy === key}
-                      className={`px-3 md:px-4 py-2 font-mono text-xs md:text-sm tracking-[0.05em] uppercase whitespace-nowrap transition-colors ${sortBy === key
+                      className={`inline-flex min-h-[44px] items-center justify-center px-3 md:px-4 py-2 font-mono text-xs md:text-sm tracking-[0.05em] uppercase whitespace-nowrap transition-colors ${sortBy === key
                           ? "bg-accent text-accent-foreground"
                           : "text-foreground/50 hover:text-foreground"
                         }`}
@@ -272,7 +272,7 @@ export function TopupForm({
                         key={key}
                         onClick={() => setCat((prev) => (prev === key ? "all" : key))}
                         aria-pressed={cat === key}
-                        className={`border px-2.5 py-1.5 font-mono text-[10px] md:text-[11px] tracking-[0.08em] uppercase whitespace-nowrap transition-colors ${cat === key
+                        className={`inline-flex min-h-[40px] items-center justify-center border px-2.5 py-1.5 font-mono text-[10px] md:text-[11px] tracking-[0.08em] uppercase whitespace-nowrap transition-colors ${cat === key
                             ? "border-accent bg-accent text-accent-foreground"
                             : "border-border text-foreground/60 hover:text-foreground hover:border-foreground/50"
                           }`}
@@ -445,7 +445,7 @@ export function TopupForm({
               type="checkbox"
               checked={agree}
               onChange={(e) => setAgree(e.target.checked)}
-              className="mt-0.5 accent-[hsl(var(--accent))] w-4 h-4 shrink-0"
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[hsl(var(--accent))]"
             />
             <span className="font-mono text-[10px] md:text-[11px] text-foreground/50 leading-relaxed">
               Data akun yang saya isi benar. Item dikirim otomatis setelah pembayaran terverifikasi &mdash; salah ID bukan tanggung jawab Gastros.
@@ -490,7 +490,7 @@ export function TopupForm({
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="border border-border w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-foreground hover:border-accent hover:text-accent transition-colors"
+                  className="flex h-10 w-10 items-center justify-center border border-border text-foreground transition-colors hover:border-accent hover:text-accent"
                   aria-label="Kurangi jumlah"
                 >
                   -
@@ -499,7 +499,7 @@ export function TopupForm({
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.min(MAX_QTY, q + 1))}
-                  className="border border-border w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-foreground hover:border-accent hover:text-accent transition-colors"
+                  className="flex h-10 w-10 items-center justify-center border border-border text-foreground transition-colors hover:border-accent hover:text-accent"
                   aria-label="Tambah jumlah"
                 >
                   +
@@ -526,7 +526,7 @@ export function TopupForm({
               <button
                 type="button"
                 onClick={clearCoupon}
-                className="font-mono text-[9px] md:text-[10px] text-foreground/40 hover:text-destructive transition-colors shrink-0"
+                className="inline-flex min-h-[40px] shrink-0 items-center px-1 font-mono text-[9px] text-foreground/40 transition-colors hover:text-destructive md:text-[10px]"
               >
                 Hapus
               </button>
@@ -543,13 +543,13 @@ export function TopupForm({
                   }
                 }}
                 placeholder="KODE KUPON"
-                className="min-w-0 flex-1 bg-background border border-border px-2.5 py-2 font-mono text-[10px] md:text-xs text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent"
+                className="min-h-[44px] min-w-0 flex-1 bg-background border border-border px-2.5 py-2 font-mono text-[10px] text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent md:text-xs"
               />
               <button
                 type="button"
                 onClick={() => void applyCoupon()}
                 disabled={couponBusy || !couponInput.trim()}
-                className="border border-border px-3 font-mono text-[10px] md:text-xs tracking-[0.15em] uppercase text-foreground hover:border-accent hover:text-accent transition-colors disabled:opacity-40 shrink-0"
+                className="inline-flex min-h-[44px] shrink-0 items-center justify-center border border-border px-3 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground transition-colors hover:border-accent hover:text-accent disabled:opacity-40 md:text-xs"
               >
                 {couponBusy ? "..." : "Cek"}
               </button>
@@ -591,7 +591,7 @@ export function TopupForm({
 
         <Link
           href="/"
-          className="block text-center font-mono text-[10px] md:text-[11px] text-foreground/40 hover:text-accent transition-colors tracking-[0.15em] uppercase mt-3 py-1"
+          className="mt-3 inline-flex min-h-[40px] w-full items-center justify-center text-center font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/40 transition-colors hover:text-accent md:text-[11px]"
         >
           &larr; Pilih game lain
         </Link>
