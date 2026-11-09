@@ -36,12 +36,20 @@ export default async function AdminPage() {
             </div>
             <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
           </Link>
-          <Link
-            href="/"
-            className="font-mono text-[10px] tracking-[0.2em] text-foreground/50 hover:text-foreground uppercase"
-          >
-            Lihat Site &rarr;
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/admin/artikel"
+              className="font-mono text-[10px] tracking-[0.2em] text-accent hover:opacity-70 uppercase"
+            >
+              Kelola Artikel &rarr;
+            </Link>
+            <Link
+              href="/"
+              className="font-mono text-[10px] tracking-[0.2em] text-foreground/50 hover:text-foreground uppercase"
+            >
+              Lihat Site &rarr;
+            </Link>
+          </div>
         </div>
 
         <AdminPanel

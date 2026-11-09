@@ -67,6 +67,11 @@ export async function ensureIndexes(): Promise<void> {
   ]);
   await db.collection("site_content").createIndexes([{ key: { key: 1 }, unique: true }]);
   await db.collection("games").createIndexes([{ key: { slug: 1 }, unique: true }]);
+  // Artikel admin: slug unik + query daftar terbit berdasarkan tanggal.
+  await db.collection("articles").createIndexes([
+    { key: { slug: 1 }, unique: true },
+    { key: { status: 1, date: -1 } },
+  ]);
   // Kupon promo: kode unik + bantu cari by game.
   await db.collection("coupons").createIndexes([
     { key: { code: 1 }, unique: true },

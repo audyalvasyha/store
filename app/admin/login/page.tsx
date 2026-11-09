@@ -8,10 +8,24 @@ export const dynamic = "force-dynamic"
 
 export const metadata = { title: "Admin Login // GASTROS" }
 
-export default async function AdminLoginPage() {
+function safeAdminReturnTo(value: string | undefined): string {
+  if (!value) return "/admin"
+  if (value === "/admin" || value === "/admin/artikel" || value.startsWith("/admin/artikel/")) {
+    if (!value.startsWith("//") && !/[\u0000-\u001f\u007f]/.test(value)) return value
+  }
+  return "/admin"
+}
+
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ returnTo?: string }>
+}) {
+  const { returnTo } = await searchParams
+  const target = safeAdminReturnTo(returnTo)
   const jar = await cookies()
   const email = await getAdminEmail(jar.get(SESSION_COOKIE)?.value)
-  if (email) redirect("/admin")
+  if (email) redirect(target)
 
   // Sandbox/preview tanpa MONGODB_URI: countAdmins meledak → 500 mentah.
   // Halaman login harus tetap hidup dan jujur bilang DB nggak nyambung.
@@ -35,7 +49,7 @@ export default async function AdminLoginPage() {
           <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
         </Link>
         {dbOk ? (
-          <AdminLoginForm first={first} />
+          <AdminLoginForm first={first} returnTo={target} />
         ) : (
           <div className="border border-border bg-card p-5 max-w-md text-center">
             <span className="font-mono text-[10px] text-accent tracking-[0.25em] uppercase block mb-2">

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
-export function AdminLoginForm({ first }: { first: boolean }) {
+export function AdminLoginForm({ first, returnTo = "/admin" }: { first: boolean; returnTo?: string }) {
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -30,7 +30,7 @@ export function AdminLoginForm({ first }: { first: boolean }) {
         setBusy(false)
         return
       }
-      router.replace("/admin")
+      router.replace(returnTo)
       router.refresh()
     } catch {
       setError("Koneksi bermasalah, coba lagi.")

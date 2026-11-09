@@ -109,7 +109,7 @@ export default async function OrderPage({
           <div className="flex items-center gap-3 md:gap-5">
             <Link
               href="/orders"
-              className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+              className="hidden sm:block font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
             >
               Riwayat &rarr;
             </Link>

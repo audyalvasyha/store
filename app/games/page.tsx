@@ -70,18 +70,15 @@ export default async function GamesPage({
       <div className="noise-overlay" aria-hidden="true" />
 
       <header className="border-b border-border">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-3 md:py-6 flex items-center justify-between w-full">
-          <Link href="/" className="flex items-center gap-2">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-3 md:py-6 flex flex-wrap items-center gap-x-3 gap-y-2 w-full">
+          <Link href="/" className="order-1 flex shrink-0 items-center gap-2">
             <div className="relative w-8 h-8 flex items-center justify-center">
               <div className="absolute inset-0 bg-accent" />
               <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
             </div>
-            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
+            <span className="hidden sm:inline font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
           </Link>
-          <nav className="flex items-center gap-4 md:gap-8 flex-1 justify-end">
-            <Suspense fallback={null}>
-              <GamesSearchInput />
-            </Suspense>
+          <nav className="order-2 sm:order-3 ml-auto sm:ml-0 flex min-w-0 items-center gap-2 sm:gap-4 md:gap-8">
             <Link
               href="/"
               className="hidden sm:block font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
@@ -96,6 +93,11 @@ export default async function GamesPage({
             </Link>
             <AuthNav />
           </nav>
+          <div className="order-3 sm:order-2 w-full min-w-0 sm:ml-auto sm:w-auto sm:max-w-md sm:flex-1 md:max-w-xl">
+            <Suspense fallback={null}>
+              <GamesSearchInput />
+            </Suspense>
+          </div>
         </div>
       </header>
 

@@ -4,6 +4,7 @@ import { Bebas_Neue, JetBrains_Mono } from 'next/font/google'
 
 import './globals.css'
 import { FloatingWhatsApp } from '@/components/floating-whatsapp'
+import { SiteSidebar } from '@/components/site-sidebar'
 import { safeJsonLd } from '@/lib/jsonld'
 
 const _bebasNeue = Bebas_Neue({
@@ -115,6 +116,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
         />
         {children}
+        <SiteSidebar />
         <FloatingWhatsApp />
       </body>
     </html>

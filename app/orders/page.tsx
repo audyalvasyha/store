@@ -80,7 +80,7 @@ export default function OrdersPage() {
             <AuthNav />
             <Link
               href="/"
-              className="font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+              className="hidden sm:block font-mono text-[9px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
             >
               &larr; Beranda
             </Link>
