@@ -27,9 +27,6 @@ const csp = [
 ].join("; ")
 
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   images: {
     // Optimizer aktif: gambar eksternal di-resize + dikompress per ukuran layar.
     remotePatterns: [

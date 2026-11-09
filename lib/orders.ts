@@ -4,6 +4,20 @@ import { denomLabelKey, type PopularDenomsByGame } from "./catalog";
 
 let initPromise: Promise<void> | null = null;
 
+// Social proof/analytics nggak perlu real-time per request. Cache 5 menit
+// bikin landing yang revalidate tiap 30 detik nggak scan orders terus-terusan.
+const ANALYTICS_TTL_MS = 5 * 60_000;
+
+const globalForOrders = globalThis as typeof globalThis & {
+  _gasSoldCountsCache_?: { value: Record<string, number>; expiresAt: number };
+  _gasSoldCountsInflight_?: Promise<Record<string, number>>;
+  _gasPopularDenomsCache_?: {
+    value: PopularDenomsByGame;
+    expiresAt: number;
+  };
+  _gasPopularDenomsInflight_?: Promise<PopularDenomsByGame>;
+};
+
 async function ensureReady(): Promise<void> {
   if (initPromise) return initPromise;
   initPromise = ensureIndexes().catch((err) => {
@@ -143,23 +157,40 @@ export async function getOrdersByPhone(phones: string[], limit = 30): Promise<Or
  * game yang belum ada order sama sekali tidak masuk map.
  */
 export async function soldCountsByGame(): Promise<Record<string, number>> {
-  await ensureReady();
-  const start = new Date();
-  start.setUTCDate(1);
-  start.setUTCHours(0, 0, 0, 0); // awal bulan UTC
-  const db = await getDb();
-  const rows = await db
-    .collection<Order>("orders")
-    .aggregate<{ _id: string; count: number }>([
-      { $match: { status: { $in: ["SELESAI", "DIPROSES"] }, createdAt: { $gte: start.toISOString() } } },
-      { $group: { _id: "$gameSlug", count: { $sum: "$quantity" } } },
-    ])
-    .toArray();
-  const out: Record<string, number> = {};
-  for (const r of rows) {
-    if (r._id) out[r._id] = r.count;
+  const cached = globalForOrders._gasSoldCountsCache_;
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (globalForOrders._gasSoldCountsInflight_) {
+    return globalForOrders._gasSoldCountsInflight_;
   }
-  return out;
+
+  const task = (async () => {
+    await ensureReady();
+    const start = new Date();
+    start.setUTCDate(1);
+    start.setUTCHours(0, 0, 0, 0); // awal bulan UTC
+    const db = await getDb();
+    const rows = await db
+      .collection<Order>("orders")
+      .aggregate<{ _id: string; count: number }>([
+        { $match: { status: { $in: ["SELESAI", "DIPROSES"] }, createdAt: { $gte: start.toISOString() } } },
+        { $group: { _id: "$gameSlug", count: { $sum: "$quantity" } } },
+      ])
+      .toArray();
+    const out: Record<string, number> = {};
+    for (const r of rows) {
+      if (r._id) out[r._id] = r.count;
+    }
+    globalForOrders._gasSoldCountsCache_ = {
+      value: out,
+      expiresAt: Date.now() + ANALYTICS_TTL_MS,
+    };
+    return out;
+  })().finally(() => {
+    globalForOrders._gasSoldCountsInflight_ = undefined;
+  });
+
+  globalForOrders._gasSoldCountsInflight_ = task;
+  return task;
 }
 
 /**
@@ -169,48 +200,65 @@ export async function soldCountsByGame(): Promise<Record<string, number>> {
  * memakai harga live Gamestone.
  */
 export async function popularDenomsByGame(): Promise<PopularDenomsByGame> {
-  await ensureReady();
-  const db = await getDb();
-  const rows = await db
-    .collection<Order>("orders")
-    .aggregate<{
-      _id: { gameSlug?: string; denomId?: string; denomLabel?: string };
-      count: number;
-    }>([
-      {
-        $match: {
-          status: { $in: ["SELESAI", "DIPROSES"] },
-          gameSlug: { $type: "string" },
-          denomId: { $type: "string" },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            gameSlug: "$gameSlug",
-            denomId: "$denomId",
-            denomLabel: "$denomLabel",
-          },
-          count: { $sum: "$quantity" },
-        },
-      },
-    ])
-    .toArray();
-
-  const out: PopularDenomsByGame = {};
-  for (const row of rows) {
-    const slug = row._id?.gameSlug;
-    const denomId = row._id?.denomId;
-    if (!slug || !denomId) continue;
-
-    const game = out[slug] ?? (out[slug] = { byId: {}, byLabel: {} });
-    game.byId[denomId] = (game.byId[denomId] ?? 0) + row.count;
-
-    const label = row._id.denomLabel;
-    if (label) {
-      const key = denomLabelKey(label);
-      game.byLabel[key] = (game.byLabel[key] ?? 0) + row.count;
-    }
+  const cached = globalForOrders._gasPopularDenomsCache_;
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (globalForOrders._gasPopularDenomsInflight_) {
+    return globalForOrders._gasPopularDenomsInflight_;
   }
-  return out;
+
+  const task = (async () => {
+    await ensureReady();
+    const db = await getDb();
+    const rows = await db
+      .collection<Order>("orders")
+      .aggregate<{
+        _id: { gameSlug?: string; denomId?: string; denomLabel?: string };
+        count: number;
+      }>([
+        {
+          $match: {
+            status: { $in: ["SELESAI", "DIPROSES"] },
+            gameSlug: { $type: "string" },
+            denomId: { $type: "string" },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              gameSlug: "$gameSlug",
+              denomId: "$denomId",
+              denomLabel: "$denomLabel",
+            },
+            count: { $sum: "$quantity" },
+          },
+        },
+      ])
+      .toArray();
+
+    const out: PopularDenomsByGame = {};
+    for (const row of rows) {
+      const slug = row._id?.gameSlug;
+      const denomId = row._id?.denomId;
+      if (!slug || !denomId) continue;
+
+      const game = out[slug] ?? (out[slug] = { byId: {}, byLabel: {} });
+      game.byId[denomId] = (game.byId[denomId] ?? 0) + row.count;
+
+      const label = row._id.denomLabel;
+      if (label) {
+        const key = denomLabelKey(label);
+        game.byLabel[key] = (game.byLabel[key] ?? 0) + row.count;
+      }
+    }
+    globalForOrders._gasPopularDenomsCache_ = {
+      value: out,
+      expiresAt: Date.now() + ANALYTICS_TTL_MS,
+    };
+    return out;
+  })().finally(() => {
+    globalForOrders._gasPopularDenomsInflight_ = undefined;
+  });
+
+  globalForOrders._gasPopularDenomsInflight_ = task;
+  return task;
 }

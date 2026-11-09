@@ -1,4 +1,5 @@
 import { getDb, ensureIndexes } from "./mongodb"
+import { calculateCouponDiscount } from "./coupon-math"
 
 /**
  * Kupon promo GASTROS.
@@ -78,14 +79,7 @@ export async function checkCoupon(
     }
   }
 
-  let discount =
-    coupon.kind === "percent"
-      ? Math.floor((ctx.amount * coupon.value) / 100)
-      : coupon.value
-  if (coupon.kind === "percent" && coupon.maxDiscount !== undefined) {
-    discount = Math.min(discount, coupon.maxDiscount)
-  }
-  discount = Math.min(discount, ctx.amount)
+  const discount = calculateCouponDiscount(coupon, ctx.amount)
   if (discount <= 0) return { error: "Nilai potongan kupon jadi 0" }
   return { coupon, discount }
 }

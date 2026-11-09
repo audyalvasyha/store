@@ -10,20 +10,15 @@ import { FinalCta } from "@/components/cta-block"
 import { Footer } from "@/components/footer"
 import { getHeroEvent, getDynamicGames } from "@/lib/content"
 import { getLatestReviews, getRatingsByGame } from "@/lib/reviews"
-import { filterGames } from "@/lib/catalog"
 import { popularDenomsByGame, soldCountsByGame } from "@/lib/orders"
 
 // ISR: cache 30 detik — katalog tetap segar, tapi ga nge-hit DB tiap request.
 export const revalidate = 30
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string }>
-}) {
-  const { q } = await searchParams
+export default async function Page() {
   // Konten live dari MongoDB (admin /admin ngatur ini) — fallback ke katalog statis.
-  // ?q= ngering semua section game (featured, grid, price list).
+  // Pencarian game dilakukan di browser (GameGrid), jadi halaman ini bisa ISR
+  // dan nggak render ulang server tiap user mengetik.
   // Semua data publik diambil paralel. Sebelumnya social proof + popularitas
   // nominal menunggu batch pertama selesai, jadi TTFB landing nambah satu RTT.
   const [allGames, heroEvent, latestReviews, ratings, sold, popularDenoms] = await Promise.all([
@@ -38,7 +33,7 @@ export default async function Page({
     soldCountsByGame().catch(() => ({}) as Record<string, number>),
     popularDenomsByGame().catch(() => ({})),
   ])
-  const games = filterGames(allGames, String(q ?? ""))
+  const games = allGames
   const shortBySlug = new Map(allGames.map((g) => [g.slug, g.short] as const))
   const testimonials = latestReviews.map((r) => ({
     text: r.comment ?? "",

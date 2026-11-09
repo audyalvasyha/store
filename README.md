@@ -20,6 +20,18 @@ Bayar pakai QRIS, transfer bank, dan metode lainnya yang tersedia di halaman che
 - MongoDB (database order dan game)
 - Fonnte / WhatsApp API (notifikasi)
 
+## Testing
+
+```bash
+pnpm test
+```
+
+Test fokus ke perhitungan kupon, harga order manual/Gamestone, fallback nominal provider, dan pencarian katalog.
+
+## Alert operasional
+
+Error checkout dicatat sebagai JSON di log server. Untuk mengaktifkan email alert, set `ADMIN_ALERT_EMAIL`; pengiriman memakai `RESEND_API_KEY` dan `NOTIFY_FROM_EMAIL` yang sudah dipakai notifikasi order. Alert di-throttle 5 menit per jenis error.
+
 ## Alur checkout
 
 1. Pilih game dan nominal
