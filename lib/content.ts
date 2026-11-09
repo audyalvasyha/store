@@ -6,6 +6,7 @@
  *
  * File ini SERVER-ONLY: jangan diimpor dari komponen client.
  */
+import { cache } from "react";
 import { getDb, ensureIndexes } from "./mongodb";
 import { GAMES, getGame, type GameItem } from "./catalog";
 
@@ -85,7 +86,9 @@ export async function clearHeroEvent(): Promise<void> {
 
 // ── Katalog games dinamis ───────────────────────────────────────────────────
 
-export async function getDynamicGames(): Promise<GameItem[]> {
+// React cache membuat query yang sama dalam satu request cuma jalan sekali.
+// Contoh: generateMetadata + page top-up sama-sama butuh game yang sama.
+export const getDynamicGames = cache(async (): Promise<GameItem[]> => {
   try {
     await ready();
     const db = await getDb();
@@ -104,9 +107,9 @@ export async function getDynamicGames(): Promise<GameItem[]> {
     // Fallback katalog statis — katalog Gamestone di-sync penuh ke DB (lib/catalog).
     return GAMES;
   }
-}
+})
 
-export async function getDynamicGame(slug: string): Promise<GameItem | undefined> {
+export const getDynamicGame = cache(async (slug: string): Promise<GameItem | undefined> => {
   try {
     await ready();
     const db = await getDb();
@@ -118,7 +121,7 @@ export async function getDynamicGame(slug: string): Promise<GameItem | undefined
   } catch {
     return getGame(slug);
   }
-}
+})
 
 export async function upsertGame(game: GameItem): Promise<void> {
   await ready();
@@ -153,7 +156,7 @@ type TopUpJugaDoc = {
 
 const TOPUP_JUGA_KEY = "topup-juga";
 
-export async function getTopUpJugaConfig(): Promise<TopUpJugaConfig | null> {
+export const getTopUpJugaConfig = cache(async (): Promise<TopUpJugaConfig | null> => {
   try {
     await ready();
     const db = await getDb();
@@ -168,7 +171,7 @@ export async function getTopUpJugaConfig(): Promise<TopUpJugaConfig | null> {
     // DB down — halaman publik jatuh ke urutan otomatis, bukan error.
     return null;
   }
-}
+})
 
 export async function saveTopUpJuga(input: {
   global: string[];

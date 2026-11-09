@@ -1,41 +1,36 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
+
+/** Event lokal: header search -> katalog, tanpa request RSC/server. */
+export const GAMES_SEARCH_EVENT = "gastros:games-search"
 
 /**
- * Search bar buat header /games: ngetik → update `?q=` di URL (debounce 350ms),
- * katalog di-filter server-side oleh app/games/page.tsx.
- * Styling brutalist G$: mono, border, caret accent.
+ * Search bar buat header /games: ngetik → filter katalog langsung di browser.
+ * URL `?q=` tetap diperbarui supaya bisa di-refresh/dibagikan, tapi tanpa
+ * memicu navigasi Next.js. Ini bikin halaman katalog tetap static/ISR.
  */
 export function GamesSearchInput() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const initial = searchParams.get("q") ?? ""
-  const [value, setValue] = useState(initial)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [value, setValue] = useState("")
 
-  function pushQuery(q: string) {
-    const params = new URLSearchParams(searchParams.toString())
-    if (q.trim()) params.set("q", q.trim())
-    else params.delete("q")
-    const qs = params.toString()
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
-  }
+  useEffect(() => {
+    const syncFromUrl = () => {
+      setValue(new URLSearchParams(window.location.search).get("q") ?? "")
+    }
+    syncFromUrl()
+    window.addEventListener("popstate", syncFromUrl)
+    return () => window.removeEventListener("popstate", syncFromUrl)
+  }, [])
 
   function onChange(next: string) {
     setValue(next)
-    if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => pushQuery(next), 350)
+    const params = new URLSearchParams(window.location.search)
+    if (next.trim()) params.set("q", next.trim())
+    else params.delete("q")
+    const qs = params.toString()
+    window.history.replaceState(null, "", qs ? `/games?${qs}` : "/games")
+    window.dispatchEvent(new CustomEvent(GAMES_SEARCH_EVENT, { detail: next }))
   }
-
-  // Bersihin timer pas komponen unmount.
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [])
 
   return (
     <div className="relative flex w-full min-w-0 max-w-none flex-1 items-center sm:max-w-md md:max-w-xl">

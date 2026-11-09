@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import type { Metadata } from "next"
-import { GAMES, formatIDR } from "@/lib/catalog"
+import { formatIDR } from "@/lib/catalog"
 import { BackButton } from "@/components/back-button"
-import { getDynamicGame } from "@/lib/content"
+import { getDynamicGame, getDynamicGames, getTopUpJugaConfig } from "@/lib/content"
 import { getStoneGame, activeStoneVariants } from "@/lib/gamestone"
 import { TopupForm } from "@/components/topup-form"
 import { GameInfoBlock } from "@/components/game-info-block"
@@ -11,12 +11,13 @@ import { Footer } from "@/components/footer"
 import { safeJsonLd } from "@/lib/jsonld"
 import { getGameRating, getGameReviews, type Review } from "@/lib/reviews"
 import { AuthNav } from "@/components/auth-nav"
+import { SidebarMenuButton } from "@/components/site-sidebar"
 
-export const dynamic = "force-dynamic"
-
-export function generateStaticParams() {
-  return GAMES.map((g) => ({ slug: g.slug }))
-}
+// Cache HTML 30 detik. Harga provider sendiri sudah di-cache 60 detik, jadi
+// force-dynamic cuma menambah query DB di setiap kunjungan tanpa data lebih segar.
+// Tanpa generateStaticParams: jangan prerender ratusan halaman provider saat
+// build. Halaman dibuat saat pertama dibuka, lalu di-cache 30 detik.
+export const revalidate = 30
 
 export async function generateMetadata({
   params,
@@ -54,7 +55,18 @@ export default async function TopupPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const game = await getDynamicGame(slug)
+
+  // Jalankan semua query independen bersamaan. Sebelumnya game, provider,
+  // ulasan, dan data blok rekomendasi dieksekusi berurutan.
+  const [game, rating, reviews, allGames, topUpJuga] = await Promise.all([
+    getDynamicGame(slug),
+    // Ulasan asli pembeli (hanya dari order SELESAI). Kalau DB bermasalah,
+    // sembunyikan section + schema — halaman jualan tetap jalan.
+    getGameRating(slug).catch(() => ({ average: 0, count: 0 })),
+    getGameReviews(slug, 6).catch((): Review[] => []),
+    getDynamicGames(),
+    getTopUpJugaConfig(),
+  ])
   if (!game) notFound()
 
   // Nominal live dari Gamestone (harga provider) kalau game terhubung.
@@ -62,17 +74,6 @@ export default async function TopupPage({
   const stoneVariants = stoneGame
     ? activeStoneVariants(stoneGame).map((v) => ({ id: String(v.id), label: v.name, price: v.price }))
     : undefined
-
-  // Ulasan asli pembeli (hanya dari order SELESAI). Kalau DB bermasalah,
-  // sembunyikan section + schema — halaman jualan tetap jalan.
-  let rating = { average: 0, count: 0 }
-  let reviews: Review[] = []
-  try {
-    ;[rating, reviews] = await Promise.all([getGameRating(slug), getGameReviews(slug, 6)])
-  } catch {
-    rating = { average: 0, count: 0 }
-    reviews = []
-  }
 
   // JSON-LD: Product + AggregateOffer — bantu Google paham kalau ini halaman
   // jualan top up (bisa muncul rich result harga di SERP).
@@ -181,6 +182,7 @@ export default async function TopupPage({
             >
               Riwayat
             </Link>
+            <SidebarMenuButton />
           </nav>
         </div>
       </header>
@@ -202,7 +204,7 @@ export default async function TopupPage({
         <TopupForm game={game} stoneVariants={stoneVariants} />
       </section>
 
-      <GameInfoBlock game={game} />
+      <GameInfoBlock game={game} allGames={allGames} topUpJuga={topUpJuga} />
 
       {rating.count > 0 && (
         <section className="px-4 md:px-8 lg:px-12 pb-8 md:pb-16 max-w-[1400px] mx-auto w-full">

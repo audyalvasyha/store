@@ -24,13 +24,19 @@ export default async function Page({
   const { q } = await searchParams
   // Konten live dari MongoDB (admin /admin ngatur ini) — fallback ke katalog statis.
   // ?q= ngering semua section game (featured, grid, price list).
-  const [allGames, heroEvent, latestReviews, ratings] = await Promise.all([
+  // Semua data publik diambil paralel. Sebelumnya social proof + popularitas
+  // nominal menunggu batch pertama selesai, jadi TTFB landing nambah satu RTT.
+  const [allGames, heroEvent, latestReviews, ratings, sold, popularDenoms] = await Promise.all([
     getDynamicGames(),
     getHeroEvent(),
     // Testimoni = ulasan asli pembeli. DB error → array kosong → section hidden.
     getLatestReviews(12).catch(() => []),
     // Rating per game buat badge bintang di kartu katalog.
     getRatingsByGame().catch(() => ({}) as Record<string, { average: number; count: number }>),
+    // Social proof "terjual" bulan ini + ranking nominal populer — gagal DB
+    // jangan pernah bikin landing down.
+    soldCountsByGame().catch(() => ({}) as Record<string, number>),
+    popularDenomsByGame().catch(() => ({})),
   ])
   const games = filterGames(allGames, String(q ?? ""))
   const shortBySlug = new Map(allGames.map((g) => [g.slug, g.short] as const))
@@ -40,13 +46,6 @@ export default async function Page({
     tag: shortBySlug.get(r.gameSlug) ?? r.gameSlug.toUpperCase(),
     rating: r.rating,
   }))
-  // Social proof "terjual" bulan ini + ranking nominal populer — gagal DB
-  // jangan pernah bikin landing down.
-  const [sold, popularDenoms] = await Promise.all([
-    soldCountsByGame().catch(() => ({}) as Record<string, number>),
-    popularDenomsByGame().catch(() => ({})),
-  ])
-
   return (
     <main className="relative">
       {/* Noise overlay for industrial texture */}

@@ -28,7 +28,7 @@ export default async function AdminPage() {
     <main className="relative min-h-screen py-5 md:py-8">
       <div className="noise-overlay" aria-hidden="true" />
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 w-full">
-        <div className="flex items-center justify-between mb-5 md:mb-8">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 md:mb-8">
           <Link href="/" className="flex items-center gap-2">
             <div className="relative w-8 h-8 flex items-center justify-center">
               <div className="absolute inset-0 bg-accent" />
@@ -36,16 +36,16 @@ export default async function AdminPage() {
             </div>
             <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <Link
               href="/admin/artikel"
-              className="font-mono text-[10px] tracking-[0.2em] text-accent hover:opacity-70 uppercase"
+              className="inline-flex min-h-[40px] items-center font-mono text-[9px] uppercase tracking-[0.18em] text-accent hover:opacity-70 md:text-[10px]"
             >
               Kelola Artikel &rarr;
             </Link>
             <Link
               href="/"
-              className="font-mono text-[10px] tracking-[0.2em] text-foreground/50 hover:text-foreground uppercase"
+              className="inline-flex min-h-[40px] items-center font-mono text-[9px] uppercase tracking-[0.18em] text-foreground/50 hover:text-foreground md:text-[10px]"
             >
               Lihat Site &rarr;
             </Link>

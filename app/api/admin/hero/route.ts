@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getAdminEmail, SESSION_COOKIE } from "@/lib/admin-auth";
 import { clearHeroEvent, getHeroEvent, saveHeroEvent } from "@/lib/content";
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
     // juga (bug UX) padahal clear tidak butuh URL sama sekali.
     if (body?.clear === true) {
       await clearHeroEvent();
+      revalidatePath("/");
       return NextResponse.json({ ok: true, cleared: true });
     }
 
@@ -55,6 +57,7 @@ export async function POST(request: Request) {
       note: String(body?.note ?? "").slice(0, 200),
       href,
     });
+    revalidatePath("/");
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Gagal menyimpan hero event" }, { status: 500 });

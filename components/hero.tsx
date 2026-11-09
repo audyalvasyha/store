@@ -52,15 +52,8 @@ const NAV_LINKS: Array<{ item: string; href: string }> = [
 ]
 
 export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | null }) {
-  const [go, setGo] = useState(false)
-
-  useEffect(() => {
-    const t = requestAnimationFrame(() => setGo(true))
-    return () => cancelAnimationFrame(t)
-  }, [])
-
-  if (!go) return <section className="min-h-screen bg-background" />
-
+  // Render langsung dari server. Sebelumnya seluruh hero ditahan sampai
+  // requestAnimationFrame jalan, jadi LCP dan konten utama ikut menunggu JS.
   return (
     <section className="relative h-[100svh] flex flex-col overflow-hidden bg-background select-none">
       {/* ── Background: foto event dari admin, fallback gradient ── */}
@@ -74,6 +67,9 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
             src={event.imageUrl}
             alt=""
             aria-hidden="true"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => {
               e.currentTarget.style.display = "none"

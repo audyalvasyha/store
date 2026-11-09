@@ -9,6 +9,7 @@ import { CopyOrderCode } from "@/app/orders/[code]/copy-code"
 import { ReviewForm } from "@/components/review-form"
 import { hasReviewed } from "@/lib/reviews"
 import { AuthNav } from "@/components/auth-nav"
+import { SidebarMenuButton } from "@/components/site-sidebar"
 
 /** Warna semantik badge status — biar user langsung nangkep kondisi order tanpa baca teks. */
 const STATUS_TONE: Record<string, string> = {
@@ -114,6 +115,7 @@ export default async function OrderPage({
               Riwayat &rarr;
             </Link>
             <AuthNav />
+            <SidebarMenuButton />
           </div>
         </div>
       </header>

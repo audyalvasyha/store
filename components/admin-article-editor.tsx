@@ -66,10 +66,10 @@ const EMPTY_CTA: ArticleCta = {
 }
 
 const INPUT =
-  "w-full border border-border bg-background p-2.5 font-mono text-[11px] text-foreground placeholder:text-foreground/25 focus:border-accent focus:outline-none"
+  "min-h-[44px] w-full border border-border bg-background p-2.5 font-mono text-[11px] text-foreground placeholder:text-foreground/25 focus:border-accent focus:outline-none"
 const LABEL = "mb-1.5 block font-mono text-[9px] uppercase tracking-[0.15em] text-foreground/45"
 const SMALL_BUTTON =
-  "inline-flex min-h-[32px] items-center justify-center border border-border px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-foreground/55 transition-colors hover:border-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-25"
+  "inline-flex min-h-[36px] items-center justify-center border border-border px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-foreground/55 transition-colors hover:border-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-25"
 
 function Panel({
   title,
@@ -84,7 +84,7 @@ function Panel({
 }) {
   return (
     <section className="border border-border bg-card p-4 md:p-5">
-      <div className="mb-3 flex items-start justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <span className="block font-mono text-[9px] uppercase tracking-[0.22em] text-accent">
             [{title}]
@@ -990,13 +990,13 @@ export function AdminArticleEditor({
 
       <div className="mx-auto w-full max-w-[1500px] px-4 py-4 md:px-8 md:py-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="grid w-full grid-cols-2 gap-1.5 sm:flex sm:w-auto sm:flex-wrap">
             {TABS.map((item) => (
               <button
                 key={item.value}
                 type="button"
                 onClick={() => setTab(item.value)}
-                className={`min-h-[38px] border px-3 font-mono text-[9px] uppercase tracking-[0.14em] transition-colors ${
+                className={`min-h-[44px] border px-3 font-mono text-[9px] uppercase tracking-[0.14em] transition-colors ${
                   tab === item.value
                     ? "border-accent text-accent"
                     : "border-border text-foreground/45 hover:text-foreground"

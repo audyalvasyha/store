@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { AuthNav } from "@/components/auth-nav"
+import { SidebarMenuButton } from "@/components/site-sidebar"
 
 const LINKS = [
   { label: "Games", href: "/games", key: "games" },
@@ -38,6 +39,7 @@ export function EditorialHeader({ active }: { active?: "games" | "artikel" | "or
             </Link>
           ))}
           <AuthNav />
+          <SidebarMenuButton />
         </nav>
       </div>
     </header>

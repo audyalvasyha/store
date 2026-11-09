@@ -135,7 +135,7 @@ export function AdminArticlesList({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="judul, slug, kategori, tag..."
-            className="min-h-[40px] w-full bg-transparent font-mono text-[11px] text-foreground placeholder:text-foreground/25 focus:outline-none"
+            className="min-h-[44px] w-full bg-transparent font-mono text-[11px] text-foreground placeholder:text-foreground/25 focus:outline-none"
           />
         </label>
         <div className="flex flex-wrap gap-1.5">
@@ -150,7 +150,7 @@ export function AdminArticlesList({
               key={item.value}
               type="button"
               onClick={() => setFilter(item.value)}
-              className={`min-h-[40px] border px-3 font-mono text-[9px] uppercase tracking-[0.14em] transition-colors ${
+              className={`min-h-[44px] border px-3 font-mono text-[9px] uppercase tracking-[0.14em] transition-colors ${
                 filter === item.value
                   ? "border-accent text-accent"
                   : "border-border text-foreground/45 hover:text-foreground"
@@ -224,20 +224,20 @@ export function AdminArticlesList({
                     </div>
                   </div>
 
-                  <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                  <div className="grid w-full grid-cols-2 gap-1.5 sm:flex sm:w-auto sm:shrink-0 sm:flex-wrap sm:items-center">
                     {article.status === "published" && (
                       <Link
                         href={`/artikel/${article.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex min-h-[38px] items-center justify-center border border-border px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-foreground/55 transition-colors hover:border-accent hover:text-foreground"
+                        className="inline-flex min-h-[40px] items-center justify-center border border-border px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-foreground/55 transition-colors hover:border-accent hover:text-foreground"
                       >
                         Lihat ↗
                       </Link>
                     )}
                     <Link
                       href={`/admin/artikel/${article.slug}`}
-                      className="inline-flex min-h-[38px] items-center justify-center bg-accent px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-accent-foreground transition-opacity hover:opacity-85"
+                      className="inline-flex min-h-[40px] items-center justify-center bg-accent px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-accent-foreground transition-opacity hover:opacity-85"
                     >
                       Edit
                     </Link>
@@ -246,7 +246,7 @@ export function AdminArticlesList({
                         type="button"
                         onClick={() => remove(article)}
                         disabled={busy === article.slug}
-                        className="inline-flex min-h-[38px] items-center justify-center border border-border px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-foreground/45 transition-colors hover:border-destructive hover:text-destructive disabled:opacity-40"
+                        className="inline-flex min-h-[40px] items-center justify-center border border-border px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-foreground/45 transition-colors hover:border-destructive hover:text-destructive disabled:opacity-40"
                       >
                         {busy === article.slug
                           ? "Memproses..."

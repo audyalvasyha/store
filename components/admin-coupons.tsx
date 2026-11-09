@@ -118,7 +118,7 @@ export function AdminCoupons() {
     await load()
   }
 
-  const inputCls = "bg-background border border-border p-2.5 font-mono text-xs text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent"
+  const inputCls = "min-h-[44px] w-full bg-background border border-border p-2.5 font-mono text-xs text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent"
   const labelCls = "font-mono text-[10px] text-foreground/60 tracking-[0.15em] uppercase"
 
   return (
@@ -128,7 +128,7 @@ export function AdminCoupons() {
           Kupon Promo
         </span>
         <form onSubmit={save} className="flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
               <span className={labelCls}>Kode *</span>
               <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="GASHEMAT" className={inputCls} />
@@ -170,7 +170,7 @@ export function AdminCoupons() {
           <button
             type="submit"
             disabled={saving || !code.trim()}
-            className="self-start inline-flex items-center justify-center bg-accent text-accent-foreground font-mono text-[11px] tracking-[0.2em] uppercase px-4 py-2.5 hover:scale-[1.02] transition-transform disabled:opacity-40"
+            className="inline-flex min-h-[44px] w-full items-center justify-center bg-accent px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.2em] text-accent-foreground transition-transform hover:scale-[1.02] disabled:opacity-40 sm:w-auto"
           >
             {saving ? "Menyimpan..." : "Simpan kupon"}
           </button>
@@ -190,7 +190,7 @@ export function AdminCoupons() {
         ) : (
           <div className="flex flex-col gap-2">
             {coupons.map((c) => (
-              <div key={c.code} className="flex items-center justify-between gap-3 border border-border bg-background p-2.5">
+              <div key={c.code} className="flex flex-col gap-2 border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <span className={`font-mono text-xs block truncate ${c.active ? "text-foreground" : "text-foreground/40 line-through"}`}>
                     {c.code} — {c.kind === "percent" ? `${c.value}%` : `Rp ${c.value.toLocaleString("id-ID")}`}
@@ -201,11 +201,11 @@ export function AdminCoupons() {
                     {c.expiresAt ? ` · exp ${new Date(c.expiresAt).toLocaleDateString("id-ID")}` : ""}
                   </span>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                  <button type="button" onClick={() => toggle(c)} className="border border-border px-2.5 py-1.5 font-mono text-[10px] uppercase text-foreground hover:border-accent hover:text-accent transition-colors">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+                  <button type="button" onClick={() => toggle(c)} className="min-h-[40px] border border-border px-3 py-2 font-mono text-[10px] uppercase text-foreground transition-colors hover:border-accent hover:text-accent">
                     {c.active ? "Nonaktifkan" : "Aktifkan"}
                   </button>
-                  <button type="button" onClick={() => remove(c.code)} className="border border-destructive/40 px-2.5 py-1.5 font-mono text-[10px] uppercase text-destructive hover:bg-destructive/10 transition-colors">
+                  <button type="button" onClick={() => remove(c.code)} className="min-h-[40px] border border-destructive/40 px-3 py-2 font-mono text-[10px] uppercase text-destructive transition-colors hover:bg-destructive/10">
                     Hapus
                   </button>
                 </div>
