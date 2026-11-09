@@ -115,6 +115,7 @@ export function Footer() {
             <nav className="flex flex-col gap-2 md:gap-3">
               {[
                 { label: "Semua Game", href: "/games" },
+                { label: "Artikel & Panduan", href: "/artikel" },
                 { label: "Price List", href: "/#harga" },
                 { label: "Cara Order", href: "/#cara" },
                 { label: "Top Up MLBB", href: "/top-up/mobile-legends" },

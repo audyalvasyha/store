@@ -47,22 +47,17 @@ const NAV_LINKS: Array<{ item: string; href: string }> = [
   { item: "Games", href: "#games" },
   { item: "Harga", href: "#harga" },
   { item: "Cara Order", href: "#cara" },
+  { item: "Artikel", href: "/artikel" },
   { item: "Riwayat", href: "/orders" },
 ]
 
 export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | null }) {
   const [go, setGo] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setGo(true))
     return () => cancelAnimationFrame(t)
   }, [])
-
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
-  }, [menuOpen])
 
   if (!go) return <section className="min-h-screen bg-background" />
 
@@ -149,7 +144,7 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
             <span className="font-mono text-[10px] md:text-[10px] tracking-[0.25em] md:tracking-[0.4em] text-foreground uppercase leading-none">
               Gastros
             </span>
-            <span className="font-mono text-[10px] md:text-[10px] tracking-[0.15em] text-foreground/40 uppercase">
+            <span className="hidden sm:block font-mono text-[10px] md:text-[10px] tracking-[0.15em] text-foreground/40 uppercase">
               Game Top Up Center
             </span>
           </div>
@@ -185,47 +180,19 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
             <span className="absolute inset-0 bg-foreground translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
           </Link>
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("gastros:open-sidebar"))}
             className="lg:hidden flex flex-col gap-1.5 p-2 min-h-[36px] min-w-[36px] items-center justify-center anim-cut-in"
             style={d(350)}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={menuOpen}
+            aria-label="Buka menu navigasi"
+            aria-haspopup="dialog"
           >
-            <span className={`w-5 h-[1.5px] bg-foreground transition-all duration-300 ${menuOpen ? "rotate-45 translate-y-[3.5px]" : ""}`} />
-            <span className={`w-5 h-[1.5px] bg-foreground transition-all duration-300 ${menuOpen ? "opacity-0" : ""}`} />
-            <span className={`w-5 h-[1.5px] bg-foreground transition-all duration-300 ${menuOpen ? "-rotate-45 -translate-y-[3.5px]" : ""}`} />
+            <span className="w-5 h-[1.5px] bg-foreground" />
+            <span className="w-5 h-[1.5px] bg-foreground" />
+            <span className="w-5 h-[1.5px] bg-foreground" />
           </button>
         </div>
       </nav>
-
-      {/* ── Mobile menu overlay ── */}
-      <div
-        className={`lg:hidden fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-6 transition-all duration-300 ${
-          menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
-      >
-        <button
-          onClick={() => setMenuOpen(false)}
-          className="absolute top-3 right-4 p-3 min-h-[44px] min-w-[44px] flex items-center justify-center"
-          aria-label="Close menu"
-        >
-          <span className="w-5 h-[1.5px] bg-foreground block rotate-45 absolute" />
-          <span className="w-5 h-[1.5px] bg-foreground block -rotate-45 absolute" />
-        </button>
-        {NAV_LINKS.map((link) => (
-          <Link
-            key={link.item}
-            href={link.href}
-            onClick={() => setMenuOpen(false)}
-            className="font-sans text-4xl tracking-tighter text-foreground uppercase hover:text-accent transition-colors min-h-[48px] flex items-center"
-          >
-            {link.item}
-          </Link>
-        ))}
-        <div className="pt-2 border-t border-border w-full max-w-xs flex justify-center">
-          <AuthNav menuAlign="center" />
-        </div>
-      </div>
 
       {/* ── CONTENT ── */}
       <div className="relative z-10 flex-1 flex flex-col justify-center md:justify-end md:pb-8">

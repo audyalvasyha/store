@@ -38,7 +38,7 @@ export function GamesSearchInput() {
   }, [])
 
   return (
-    <div className="relative flex items-center flex-1 min-w-0 max-w-md md:max-w-xl">
+    <div className="relative flex w-full min-w-0 max-w-none flex-1 items-center sm:max-w-md md:max-w-xl">
       {/* Ikon search */}
       <svg
         width="14"

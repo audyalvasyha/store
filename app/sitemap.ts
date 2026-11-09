@@ -6,6 +6,7 @@ import type { MetadataRoute } from "next"
 // statis kalau DB down — route ini gak akan bikin isi sitemap kosong/hilang.
 import { GAMES } from "@/lib/catalog"
 import { getDynamicGames } from "@/lib/content"
+import { getPublishedArticles } from "@/lib/articles-db"
 
 export const revalidate = 3600
 
@@ -14,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Basis: katalog statis (urutan stabil, selalu ada).
   let slugs = GAMES.map((g) => g.slug)
+  const articles = (await getPublishedArticles()).filter((article) => !article.noIndex)
 
   try {
     const all = await getDynamicGames()
@@ -28,6 +30,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: `${SITE_URL()}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
     { url: `${SITE_URL()}/games`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+    { url: `${SITE_URL()}/artikel`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    ...articles.map((article) => ({
+      url: `${SITE_URL()}/artikel/${article.slug}`,
+      lastModified: new Date(`${article.updated}T00:00:00+07:00`),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
     ...slugs.map((slug) => ({
       url: `${SITE_URL()}/top-up/${slug}`,
       lastModified: now,

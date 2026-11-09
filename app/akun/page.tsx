@@ -95,13 +95,13 @@ export default async function AccountPage({
           <nav className="flex items-center gap-3 md:gap-6">
             <Link
               href="/games"
-              className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+              className="hidden sm:block font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
             >
               Games
             </Link>
             <Link
               href="/orders"
-              className="font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
+              className="hidden sm:block font-mono text-[10px] md:text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground uppercase transition-colors"
             >
               Riwayat
             </Link>
