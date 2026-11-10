@@ -15,6 +15,7 @@ type Testimonial = {
 function StarRow({ rating }: { rating: number }) {
   return (
     <span
+      role="img"
       className="flex items-center gap-0.5 shrink-0"
       aria-label={`${rating} dari 5 bintang`}
     >
@@ -58,6 +59,8 @@ export function TestimonialStrip({ reviews }: { reviews: Testimonial[] }) {
           {items.map((t, i) => (
             <figure
               key={`${t.name}-${t.tag}-${i}`}
+              // Salinan kedua cuma buat animasi seamless; jangan dibaca dua kali.
+              aria-hidden={i >= reviews.length ? "true" : undefined}
               className="border border-border bg-card px-4 py-3 md:px-6 md:py-4 w-[280px] md:w-[340px] shrink-0 mr-2.5 md:mr-4 hover:border-accent transition-colors"
             >
               <div className="flex items-center justify-between mb-1.5 md:mb-2.5">
