@@ -42,20 +42,24 @@ export default async function Page() {
     rating: r.rating,
   }))
   return (
-    <main className="relative">
-      {/* Noise overlay for industrial texture */}
-      <div className="noise-overlay" aria-hidden="true" />
+    <>
+      {/* Footer sengaja di luar <main>: landmark main cuma berisi konten
+          utama, footer punya landmark-nya sendiri. */}
+      <main className="relative">
+        {/* Noise overlay for industrial texture */}
+        <div className="noise-overlay" aria-hidden="true" />
 
-      <Hero event={heroEvent} />
-      <FeaturedGames games={games} />
-      <MarqueeStrip />
-      <GameGrid games={games} sold={sold} ratings={ratings} />
-      <PriceList games={games} popularDenoms={popularDenoms} />
-      <WhyUs />
-      <TestimonialStrip reviews={testimonials} />
-      <FaqSection />
-      <FinalCta />
+        <Hero event={heroEvent} />
+        <FeaturedGames games={games} />
+        <MarqueeStrip />
+        <GameGrid games={games} sold={sold} ratings={ratings} />
+        <PriceList games={games} popularDenoms={popularDenoms} />
+        <WhyUs />
+        <TestimonialStrip reviews={testimonials} />
+        <FaqSection />
+        <FinalCta />
+      </main>
       <Footer />
-    </main>
+    </>
   )
 }

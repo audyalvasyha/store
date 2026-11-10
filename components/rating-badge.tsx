@@ -9,6 +9,7 @@ export function RatingBadge({
   if (!rating || rating.count === 0) return null
   return (
     <span
+      role="img"
       className={`inline-flex items-center gap-1 border border-border bg-background/80 px-1.5 py-0.5 font-mono text-[9px] md:text-[10px] text-foreground/70 tracking-[0.05em] tabular-nums ${className}`}
       aria-label={`Rating ${rating.average} dari 5, ${rating.count} ulasan`}
     >

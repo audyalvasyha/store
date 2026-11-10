@@ -13,11 +13,13 @@ export function MarqueeStrip() {
   ]
 
   return (
-    <div className="bg-accent overflow-hidden py-2.5 md:py-3 relative" role="marquee" aria-label="Daftar game">
+    <div className="bg-accent overflow-hidden py-2.5 md:py-3 relative">
       <div className="flex animate-marquee whitespace-nowrap">
         {[...words, ...words].map((word, i) => (
           <span
             key={`${word}-${i}`}
+            // Duplikat untuk animasi seamless disembunyikan dari screen reader.
+            aria-hidden={i >= words.length ? "true" : undefined}
             className="font-sans text-lg md:text-3xl text-accent-foreground mx-3 md:mx-10 tracking-wider uppercase"
           >
             {word}

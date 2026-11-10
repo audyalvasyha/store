@@ -86,11 +86,12 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
             WebkitMaskImage: "radial-gradient(ellipse at 60% 40%, black 35%, transparent 75%)",
           }}
         />
-        {/* Mobile: heavier gradient so text pops */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/30 md:hidden" />
-        {/* Desktop: side + bottom gradients */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-background/10 hidden md:block" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/40 to-transparent hidden md:block" />
+        {/* Mobile: scrim pekat di area teks — heading putih & kata merah harus
+            tetap kebaca walau foto event dari admin terang. */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-background/45 md:hidden" />
+        {/* Desktop: scrim bawah + kiri; foto tetap kelihatan di kanan-atas. */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-background/15 hidden md:block" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/80 to-transparent hidden md:block" />
       </div>
 
       {/* Event banner chip (dari admin) */}
@@ -130,7 +131,11 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
       ))}
 
       {/* ── NAV ── */}
-      <nav className="relative z-20 flex items-center justify-between px-4 md:px-8 lg:px-12 py-3 md:py-6 anim-cut-in" style={d(100)}>
+      <nav
+        aria-label="Navigasi utama"
+        className="relative z-20 flex items-center justify-between px-4 md:px-8 lg:px-12 py-3 md:py-6 bg-gradient-to-b from-background/95 via-background/70 to-transparent anim-cut-in"
+        style={d(100)}
+      >
         <Link href="/" className="flex items-center gap-2">
           <div className="relative w-7 h-7 md:w-8 md:h-8 flex items-center justify-center anim-snap-in" style={d(150)}>
             <div className="absolute inset-0 bg-accent" />
@@ -140,7 +145,7 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
             <span className="font-mono text-[10px] md:text-[10px] tracking-[0.25em] md:tracking-[0.4em] text-foreground uppercase leading-none">
               Gastros
             </span>
-            <span className="hidden sm:block font-mono text-[10px] md:text-[10px] tracking-[0.15em] text-foreground/40 uppercase">
+            <span className="hidden sm:block font-mono text-[10px] md:text-[10px] tracking-[0.15em] text-foreground/60 uppercase">
               Game Top Up Center
             </span>
           </div>
@@ -151,7 +156,7 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
             <Link
               key={link.item}
               href={link.href}
-              className="group relative font-mono text-[11px] tracking-[0.25em] text-foreground/50 hover:text-foreground transition-colors uppercase anim-cut-in"
+              className="group relative font-mono text-[11px] tracking-[0.25em] text-foreground/70 hover:text-foreground transition-colors uppercase anim-cut-in"
               style={d(200 + i * 60)}
             >
               {link.item}
@@ -161,7 +166,7 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          <span className="font-mono text-[10px] text-foreground/30 hidden md:block tracking-[0.15em] anim-cut-in" style={d(300)}>
+          <span className="font-mono text-[10px] text-foreground/70 hidden md:block tracking-[0.15em] anim-cut-in" style={d(300)}>
             ONLINE 24/7
           </span>
           <div className="anim-cut-in" style={d(320)}>
@@ -256,7 +261,7 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
                 <span className="font-sans text-[8vw] sm:text-[7vw] md:text-7xl lg:text-8xl text-foreground leading-none block">
                   <Counter target={stat.target} suffix={stat.suffix} go />
                 </span>
-                <span className="font-mono text-[10px] sm:text-[10px] md:text-[10px] text-foreground/40 block tracking-[0.12em] md:tracking-[0.25em] uppercase mt-0.5 md:mt-2">
+                <span className="font-mono text-[10px] sm:text-[10px] md:text-[10px] text-foreground/60 block tracking-[0.12em] md:tracking-[0.25em] uppercase mt-0.5 md:mt-2">
                   {stat.label}
                 </span>
                 {i < 2 && (
@@ -273,11 +278,11 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
         <div className="flex items-center justify-between max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 w-full anim-cut-in" style={d(1000)}>
           <div className="flex items-center gap-3">
             <div className="w-[1px] h-10 bg-accent" />
-            <span className="font-mono text-[10px] text-foreground/40 tracking-[0.3em] uppercase">Scroll</span>
+            <span className="font-mono text-[10px] text-foreground/55 tracking-[0.3em] uppercase">Scroll</span>
           </div>
           <div className="flex items-center gap-6">
             {["QRIS TERIMA", "E-WALLET & VA", "LAYANAN 24/7"].map((info, i) => (
-              <span key={info} className="font-mono text-[10px] text-foreground/40 tracking-[0.2em] uppercase">
+              <span key={info} className="font-mono text-[10px] text-foreground/55 tracking-[0.2em] uppercase">
                 {i > 0 && <span className="text-accent mr-6">/</span>}
                 {info}
               </span>

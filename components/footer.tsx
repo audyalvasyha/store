@@ -112,7 +112,7 @@ export function Footer() {
             <span className="font-mono text-[9px] md:text-[10px] text-accent tracking-[0.25em] md:tracking-[0.3em] uppercase block mb-2.5 md:mb-4">
               Navigasi
             </span>
-            <nav className="flex flex-col gap-2 md:gap-3">
+            <nav aria-label="Navigasi footer" className="flex flex-col gap-2 md:gap-3">
               {[
                 { label: "Semua Game", href: "/games" },
                 { label: "Artikel & Panduan", href: "/artikel" },
