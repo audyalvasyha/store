@@ -6,10 +6,12 @@ import { PAYMENT_METHODS, GAMES, formatIDR, type GameItem, type Denomination } f
 import type { HeroEvent, TopUpJugaConfig } from "@/lib/content"
 import { AdminStatsView } from "@/components/admin-stats"
 import { AdminEventCarousel } from "@/components/admin-event-carousel"
+import { AdminCashback } from "@/components/admin-cashback"
 import type { AdminStats } from "@/lib/analytics"
 import type { EventSlide } from "@/lib/event-carousel"
+import type { CashbackOrder } from "@/lib/orders"
 
-type Tab = "stats" | "hero" | "events" | "games" | "topupjuga"
+type Tab = "stats" | "hero" | "events" | "cashback" | "games" | "topupjuga"
 
 const EMPTY_GAME: GameItem = {
   slug: "",
@@ -149,6 +151,7 @@ export function AdminPanel({
   games,
   topUpJuga,
   stats,
+  cashbackOrders,
 }: {
   email: string
   hero: HeroEvent | null
@@ -156,10 +159,12 @@ export function AdminPanel({
   games: GameItem[]
   topUpJuga: TopUpJugaConfig | null
   stats: AdminStats | null
+  cashbackOrders: CashbackOrder[]
 }) {
   const router = useRouter()
   const gameEditorRef = useRef<HTMLDivElement>(null)
   const [tab, setTab] = useState<Tab>("stats")
+  const unpaidCashback = cashbackOrders.filter((order) => !order.cashbackPaidAt).length
 
   // ── Hero event state ──
   const [imageUrl, setImageUrl] = useState(hero?.imageUrl ?? "")
@@ -358,6 +363,12 @@ export function AdminPanel({
             Event Carousel
           </button>
           <button
+            onClick={() => setTab("cashback")}
+            className={`min-h-[44px] border border-border px-3 py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.12em] md:text-[10px] md:tracking-[0.15em] ${tab === "cashback" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
+          >
+            Cashback{unpaidCashback > 0 ? ` (${unpaidCashback})` : ""}
+          </button>
+          <button
             onClick={() => setTab("games")}
             className={`min-h-[44px] border border-border px-3 py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.12em] md:text-[10px] md:tracking-[0.15em] ${tab === "games" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
           >
@@ -450,6 +461,9 @@ export function AdminPanel({
 
       {/* EVENT CAROUSEL TAB */}
       {tab === "events" && <AdminEventCarousel initialSlides={eventSlides} />}
+
+      {/* CASHBACK TAB */}
+      {tab === "cashback" && <AdminCashback initialOrders={cashbackOrders} />}
 
       {/* GAMES TAB */}
       {tab === "games" && (
