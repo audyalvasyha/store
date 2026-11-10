@@ -107,6 +107,60 @@ export async function consumeCoupon(code: string): Promise<boolean> {
   return res.modifiedCount === 1
 }
 
+/** Data kupon aman untuk ditampilkan publik — tanpa kuota/pemakaian. */
+export type PublicCoupon = {
+  code: string
+  kind: CouponKind
+  value: number
+  minSpend: number
+  maxDiscount?: number
+  expiresAt?: string
+}
+
+/**
+ * Kupon global aktif terbaik buat banner promo landing. Cuma kupon tanpa
+ * batasan game yang dipertimbangkan; kalau nggak ada, banner nggak tampil.
+ */
+export async function getFeaturedCoupon(): Promise<PublicCoupon | null> {
+  try {
+    await ensureIndexes()
+    const db = await getDb()
+    const docs = await db
+      .collection<CouponDoc>("coupons")
+      .find({ active: true })
+      .limit(50)
+      .toArray()
+
+    const now = Date.now()
+    const usable = docs.filter(
+      (coupon) =>
+        !coupon.gameSlug &&
+        (!coupon.expiresAt || new Date(coupon.expiresAt).getTime() > now) &&
+        (coupon.usageLimit === undefined || coupon.usedCount < coupon.usageLimit)
+    )
+
+    // Bandingkan potongan pada nominal contoh yang memenuhi minSpend.
+    usable.sort((a, b) => {
+      const sample = (coupon: CouponDoc) => Math.max(coupon.minSpend, 50_000)
+      return calculateCouponDiscount(b, sample(b)) - calculateCouponDiscount(a, sample(a))
+    })
+
+    const best = usable[0]
+    if (!best) return null
+    return {
+      code: best.code,
+      kind: best.kind,
+      value: best.value,
+      minSpend: best.minSpend,
+      maxDiscount: best.maxDiscount,
+      expiresAt: best.expiresAt,
+    }
+  } catch {
+    // DB down: landing tetap jalan tanpa banner promo.
+    return null
+  }
+}
+
 export async function listCoupons(): Promise<CouponDoc[]> {
   await ensureIndexes()
   const db = await getDb()

@@ -92,6 +92,9 @@ export function TopupForm({
   const [couponDiscount, setCouponDiscount] = useState<number>(0)
   const [couponMsg, setCouponMsg] = useState<string | null>(null)
   const [couponBusy, setCouponBusy] = useState(false)
+  // Kupon dari link promo (?coupon=...) — diterapkan ulang tiap nominal
+  // berubah sampai berhasil (mis. kena minSpend di nominal awal).
+  const [couponIntent, setCouponIntent] = useState<string | null>(null)
 
   const denom = useMemo(
     () => depoms.find((d) => d.id === denomId) ?? depoms[0],
@@ -133,8 +136,8 @@ export function TopupForm({
   // Potongan kupon dihitung dari subtotal pilihan saat ini.
   const couponNet = Math.min(couponDiscount, total)
 
-  async function applyCoupon() {
-    const code = couponInput.trim().toUpperCase()
+  async function applyCoupon(codeOverride?: string) {
+    const code = (codeOverride ?? couponInput).trim().toUpperCase()
     if (!code || couponBusy) return
     setCouponBusy(true)
     setCouponMsg(null)
@@ -152,6 +155,8 @@ export function TopupForm({
       }
       setCouponCode(data.code)
       setCouponDiscount(data.discount ?? 0)
+      // Sudah kepakai — setelah ini re-check ikut jalur kupon normal.
+      setCouponIntent(null)
       setCouponMsg(
         stoneMode
           ? `Kupon ${data.code} OK — cashback Rp ${(data.discount ?? 0).toLocaleString("id-ID")} di-transfer CS setelah order selesai.`
@@ -171,11 +176,55 @@ export function TopupForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [denomId, quantity])
 
+  // Deep link dari Price List / banner promo: pilih nominal + pasang kupon
+  // otomatis. Dibaca dari window (bukan useSearchParams) supaya halaman game
+  // tetap ISR dan nggak kehilangan cache 30 detik.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+
+    const paramId = params.get("denom")
+    const paramLabel = params.get("label")
+    let nextDenomId: string | null = null
+    if (paramId && depoms.some((item) => item.id === paramId)) {
+      nextDenomId = paramId
+    } else if (paramLabel) {
+      const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "")
+      const target = normalize(paramLabel)
+      const exact = depoms.find((item) => normalize(item.label) === target)
+      // Provider suka beda label tipis ("86 Diamond" vs "86 Diamonds").
+      // Fallback ke angka pertama yang sama biar tetap kepilih nominalnya.
+      const byNumber = depoms.find(
+        (item) =>
+          item.label.match(/\d+/)?.[0] &&
+          item.label.match(/\d+/)?.[0] === paramLabel.match(/\d+/)?.[0]
+      )
+      nextDenomId = exact?.id ?? byNumber?.id ?? null
+    }
+    if (nextDenomId) setDenomId(nextDenomId)
+
+    const paramCoupon = params.get("coupon")?.trim().toUpperCase() ?? ""
+    if (/^[A-Z0-9_-]{3,24}$/.test(paramCoupon)) {
+      setCouponInput(paramCoupon)
+      setCouponIntent(paramCoupon)
+    }
+    // Cukup sekali saat halaman dibuka.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Terapkan kupon dari URL setiap nominal/qty berubah — total yang dipakai
+  // pasti sudah versi render terbaru, bukan nominal default.
+  useEffect(() => {
+    if (!couponIntent) return
+    void applyCoupon(couponIntent)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [couponIntent, denomId, quantity])
+
   function clearCoupon() {
     setCouponCode(null)
     setCouponDiscount(0)
     setCouponMsg(null)
     setCouponInput("")
+    setCouponIntent(null)
   }
 
   // Kalau pilihan saat ini ga ada di hasil filter, auto-pilih hasil pertama
@@ -227,7 +276,11 @@ export function TopupForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 md:gap-8 items-start">
+    <form
+      id="topup-form"
+      onSubmit={handleSubmit}
+      className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 md:gap-8 items-start scroll-mt-4 md:scroll-mt-6"
+    >
       <div className="flex flex-col gap-4 md:gap-6">
         {/* STEP 1: nominal */}
         <fieldset className="border border-border bg-card p-4 md:p-6">
@@ -539,6 +592,7 @@ export function TopupForm({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault()
+                    setCouponIntent(null)
                     void applyCoupon()
                   }
                 }}
@@ -547,7 +601,10 @@ export function TopupForm({
               />
               <button
                 type="button"
-                onClick={() => void applyCoupon()}
+                onClick={() => {
+                  setCouponIntent(null)
+                  void applyCoupon()
+                }}
                 disabled={couponBusy || !couponInput.trim()}
                 className="inline-flex min-h-[44px] shrink-0 items-center justify-center border border-border px-3 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground transition-colors hover:border-accent hover:text-accent disabled:opacity-40 md:text-xs"
               >
@@ -588,6 +645,14 @@ export function TopupForm({
         >
           {submitting ? "MEMPROSES..." : "Buat Order"}
         </button>
+
+        <p className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-center font-mono text-[9px] leading-relaxed text-foreground/40 md:text-[10px]">
+          <span>✓ Jalur resmi publisher</span>
+          <span aria-hidden="true">·</span>
+          <span>✓ Proses otomatis 24/7</span>
+          <span aria-hidden="true">·</span>
+          <span>✓ CS siaga kalau ada kendala</span>
+        </p>
 
         <Link
           href="/"

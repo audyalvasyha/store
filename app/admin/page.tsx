@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
 import { getAdminEmail, SESSION_COOKIE } from "@/lib/admin-auth"
 import { getHeroEvent, getDynamicGames, getTopUpJugaConfig } from "@/lib/content"
+import { getEventSlides } from "@/lib/event-carousel-db"
 import { getAdminStats, type AdminStats } from "@/lib/analytics"
 import { AdminPanel } from "@/components/admin-panel"
 import { AdminCoupons } from "@/components/admin-coupons"
@@ -16,8 +17,9 @@ export default async function AdminPage() {
   const email = await getAdminEmail(jar.get(SESSION_COOKIE)?.value)
   if (!email) redirect("/admin/login")
 
-  const [hero, games, topUpJuga, stats] = await Promise.all([
+  const [hero, eventSlides, games, topUpJuga, stats] = await Promise.all([
     getHeroEvent(),
+    getEventSlides(false),
     getDynamicGames(),
     getTopUpJugaConfig(),
     // Dashboard statistik: DB error jangan bikin halaman admin down.
@@ -55,6 +57,7 @@ export default async function AdminPage() {
         <AdminPanel
           email={email}
           hero={hero}
+          eventSlides={eventSlides}
           games={games}
           topUpJuga={topUpJuga}
           stats={stats}

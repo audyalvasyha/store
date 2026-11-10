@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation"
 import { PAYMENT_METHODS, GAMES, formatIDR, type GameItem, type Denomination } from "@/lib/catalog"
 import type { HeroEvent, TopUpJugaConfig } from "@/lib/content"
 import { AdminStatsView } from "@/components/admin-stats"
+import { AdminEventCarousel } from "@/components/admin-event-carousel"
 import type { AdminStats } from "@/lib/analytics"
+import type { EventSlide } from "@/lib/event-carousel"
 
-type Tab = "stats" | "hero" | "games" | "topupjuga"
+type Tab = "stats" | "hero" | "events" | "games" | "topupjuga"
 
 const EMPTY_GAME: GameItem = {
   slug: "",
@@ -143,12 +145,14 @@ function TjPicker({
 export function AdminPanel({
   email,
   hero,
+  eventSlides,
   games,
   topUpJuga,
   stats,
 }: {
   email: string
   hero: HeroEvent | null
+  eventSlides: EventSlide[]
   games: GameItem[]
   topUpJuga: TopUpJugaConfig | null
   stats: AdminStats | null
@@ -348,6 +352,12 @@ export function AdminPanel({
             Hero Event
           </button>
           <button
+            onClick={() => setTab("events")}
+            className={`min-h-[44px] border border-border px-3 py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.12em] md:text-[10px] md:tracking-[0.15em] ${tab === "events" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
+          >
+            Event Carousel
+          </button>
+          <button
             onClick={() => setTab("games")}
             className={`min-h-[44px] border border-border px-3 py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.12em] md:text-[10px] md:tracking-[0.15em] ${tab === "games" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
           >
@@ -437,6 +447,9 @@ export function AdminPanel({
           </div>
         </div>
       )}
+
+      {/* EVENT CAROUSEL TAB */}
+      {tab === "events" && <AdminEventCarousel initialSlides={eventSlides} />}
 
       {/* GAMES TAB */}
       {tab === "games" && (

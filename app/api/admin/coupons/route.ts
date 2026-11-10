@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 import { getAdminEmail, SESSION_COOKIE } from "@/lib/admin-auth"
 import {
   COUPON_CODE_EXP,
@@ -97,6 +98,8 @@ export async function POST(request: Request) {
       )
     }
     await upsertCoupon(coupon)
+    // Banner promo di landing dibaca dari kupon global aktif.
+    revalidatePath("/")
     return NextResponse.json({ ok: true, code: coupon.code })
   } catch {
     return NextResponse.json({ error: "Gagal menyimpan kupon" }, { status: 500 })
@@ -112,5 +115,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Kode kupon tidak valid" }, { status: 400 })
   }
   await deleteCoupon(code)
+  revalidatePath("/")
   return NextResponse.json({ ok: true })
 }

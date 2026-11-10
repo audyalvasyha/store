@@ -13,6 +13,8 @@ import {
 import { GameArtwork } from "@/components/game-artwork"
 import { GAMES_SEARCH_EVENT, GamesSearchInput } from "@/components/games-search-input"
 import { RatingBadge } from "@/components/rating-badge"
+import { EventCarousel } from "@/components/event-carousel"
+import type { EventSlide } from "@/lib/event-carousel"
 
 // Landing cuma render MAX_ROWS baris awal — sisanya via /games biar web ga berat.
 const MAX_ROWS = 12
@@ -21,12 +23,15 @@ export function GameGrid({
   games = GAMES,
   sold,
   ratings,
+  slides = [],
 }: {
   games?: GameItem[]
   /** Map slug -> total item terjual bulan ini (dari Mongo). Kosong = sembunyikan badge. */
   sold?: Record<string, number>
   /** Map slug -> rating rata-rata + jumlah ulasan asli. */
   ratings?: Record<string, { average: number; count: number }>
+  /** Slide carousel event dari admin; kosong = panel "Gas." bawaan. */
+  slides?: EventSlide[]
 }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
@@ -132,36 +137,9 @@ export function GameGrid({
             </div>
           </div>
 
-          {/* Right: Info panel (synthetic, no photo) */}
+          {/* Right: Carousel info event (gambar & teks dari /admin) */}
           <div className={`relative lg:pl-8 ${visible ? "anim-wipe-right" : "opacity-0"}`} style={{ animationDelay: "0.4s" }}>
-            <div className="relative aspect-[16/9] overflow-hidden">
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at 80% 20%, hsl(258 85% 30% / 0.5), transparent 60%), radial-gradient(ellipse at 20% 90%, hsl(0 100% 30% / 0.4), transparent 55%), linear-gradient(180deg, hsl(0 0% 7%), hsl(0 0% 3%))",
-                }}
-              />
-              <div
-                className="absolute inset-0 opacity-[0.12]"
-                aria-hidden="true"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(hsl(0 0% 95% / 1) 1px, transparent 1px), linear-gradient(90deg, hsl(0 0% 95% / 1) 1px, transparent 1px)",
-                  backgroundSize: "24px 24px",
-                }}
-              />
-              <span className="absolute inset-0 flex items-center justify-center font-sans text-[18vw] md:text-[8rem] text-foreground/25 tracking-tighter uppercase">
-                Gas.
-              </span>
-              <div className="absolute top-0 left-0 w-3 h-3 md:w-6 md:h-6 border-t-2 border-l-2 border-accent" />
-              <div className="absolute bottom-0 right-0 w-3 h-3 md:w-6 md:h-6 border-b-2 border-r-2 border-accent" />
-              <div className="absolute bottom-2 left-2 bg-background/90 px-1.5 py-0.5 md:px-2 md:py-1">
-                <span className="font-mono text-[9px] md:text-[10px] text-foreground/60 tracking-[0.12em] md:tracking-[0.2em] uppercase">
-                  Semua Server Aktif
-                </span>
-              </div>
-            </div>
+            <EventCarousel slides={slides} />
             <div className={`h-[2px] bg-accent mt-1 md:mt-2 ${visible ? "line-expand" : "w-0"}`} style={{ animationDelay: "0.8s" }} />
           </div>
         </div>
