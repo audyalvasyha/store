@@ -43,6 +43,24 @@ function d(ms: number): React.CSSProperties {
   return { animationDelay: `${ms}ms` }
 }
 
+/**
+ * Sebagian sumber (contoh: egw.news) memblokir URL optimizer /_next/image
+ * mereka saat di-hotlink dari domain lain (403). Kalau polanya ketemu,
+ * pakai URL asli dari query `url` supaya foto hero tetap tampil.
+ */
+function resolveHeroImage(raw: string): string {
+  try {
+    const parsed = new URL(raw)
+    if (parsed.pathname === "/_next/image") {
+      const original = parsed.searchParams.get("url")
+      if (original && /^https:\/\//.test(original)) return original
+    }
+  } catch {
+    // URL relatif / nggak valid — pakai apa adanya.
+  }
+  return raw
+}
+
 const NAV_LINKS: Array<{ item: string; href: string }> = [
   { item: "Games", href: "#games" },
   { item: "Harga", href: "#harga" },
@@ -52,6 +70,8 @@ const NAV_LINKS: Array<{ item: string; href: string }> = [
 ]
 
 export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | null }) {
+  const heroImage = event?.imageUrl ? resolveHeroImage(event.imageUrl) : null
+
   // Render langsung dari server. Sebelumnya seluruh hero ditahan sampai
   // requestAnimationFrame jalan, jadi LCP dan konten utama ikut menunggu JS.
   return (
@@ -61,15 +81,16 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
         {/* Gradient fallback selalu dirender sebagai base layer — supaya kalau
             gambar event gagal dimuat (CDN mati / 404) background TIDAK kosong. */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,hsl(258_85%_25%_/_0.35),transparent_55%),radial-gradient(ellipse_at_30%_80%,hsl(0_100%_30%_/_0.3),transparent_55%),linear-gradient(160deg,transparent_45%,hsl(45_90%_50%_/_0.08)_46%,transparent_47%)]" />
-        {event?.imageUrl && (
+        {heroImage && (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={event.imageUrl}
+            src={heroImage}
             alt=""
             aria-hidden="true"
             loading="eager"
             fetchPriority="high"
             decoding="async"
+            referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => {
               e.currentTarget.style.display = "none"
@@ -89,9 +110,11 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
         {/* Mobile: scrim pekat di area teks — heading putih & kata merah harus
             tetap kebaca walau foto event dari admin terang. */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-background/45 md:hidden" />
-        {/* Desktop: scrim bawah + kiri; foto tetap kelihatan di kanan-atas. */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-background/15 hidden md:block" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/80 to-transparent hidden md:block" />
+        {/* Desktop: scrim lokal saja — kiri buat heading, bawah buat stats.
+            Area kanan-atas dibiarkan terang supaya foto event nggak terlihat
+            seperti kotak hitam kosong. */}
+        <div className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-background via-background/60 to-transparent hidden md:block" />
+        <div className="absolute inset-y-0 left-0 w-[72%] lg:w-[60%] bg-gradient-to-r from-background/95 via-background/45 to-transparent hidden md:block" />
       </div>
 
       {/* Event banner chip (dari admin) */}

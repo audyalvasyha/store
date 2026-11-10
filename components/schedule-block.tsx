@@ -171,7 +171,7 @@ export function PriceList({
           {shownDenoms.map((denom, i) => (
             <Link
               key={`${activeSlug}-${denom.id}`}
-              href={`/top-up/${activeSlug}`}
+              href={`/top-up/${activeSlug}?denom=${encodeURIComponent(denom.id)}&label=${encodeURIComponent(denom.label)}#topup-form`}
               className={`flex items-center justify-between py-2.5 md:py-5 border-t border-foreground/5 group hover:bg-foreground/[0.02] transition-all px-0 md:px-4 ${
                 visible
                   ? "opacity-100 translate-y-0"

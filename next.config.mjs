@@ -27,6 +27,9 @@ const csp = [
 ].join("; ")
 
 const nextConfig = {
+  // Next 16 memblokir resource dev (HMR) yang datang dari origin proxy preview.
+  // Cuma berlaku saat dev — build & production tidak terpengaruh.
+  allowedDevOrigins: ["*.daytonaproxy01.net"],
   images: {
     // Optimizer aktif: gambar eksternal di-resize + dikompress per ukuran layar.
     remotePatterns: [
