@@ -73,8 +73,45 @@ export type Order = {
   discount?: number;
   /** Kode kupon yang dipakai, biar bisa diperiksa admin & anti double-apply. */
   couponCode?: string;
+  /** Kapan cashback kupon sudah ditransfer manual oleh admin (ISO). */
+  cashbackPaidAt?: string;
+  /** Email admin yang menandai cashback sudah ditransfer. */
+  cashbackPaidBy?: string;
+  /** Referensi transfer / catatan internal buat rekonsiliasi cashback. */
+  cashbackRef?: string;
   topupMessage?: string;
 };
+
+/** Data order yang aman dikirim ke client admin untuk antrean cashback. */
+export type CashbackOrder = {
+  code: string
+  gameName: string
+  denomLabel: string
+  quantity: number
+  amount: number
+  discount?: number
+  couponCode?: string
+  phone?: string
+  createdAt: string
+  cashbackPaidAt?: string
+  cashbackPaidBy?: string
+  cashbackRef?: string
+}
+
+const CASHBACK_PROJECTION = {
+  code: 1,
+  gameName: 1,
+  denomLabel: 1,
+  quantity: 1,
+  amount: 1,
+  discount: 1,
+  couponCode: 1,
+  phone: 1,
+  createdAt: 1,
+  cashbackPaidAt: 1,
+  cashbackPaidBy: 1,
+  cashbackRef: 1,
+} as const
 
 export function generateOrderCode(): string {
   // Kode order = satu-satunya "kunci" akses detail order (berisi PII email/HP),
@@ -149,6 +186,91 @@ export async function getOrdersByPhone(phones: string[], limit = 30): Promise<Or
     .sort({ createdAt: -1 })
     .limit(limit)
     .toArray();
+}
+
+/**
+ * Order Gamestone yang sudah SELESAI dan punya kupon = antrean cashback.
+ * Yang belum ditransfer selalu di atas, lalu urut waktu order terbaru.
+ */
+export async function listCashbackOrders(limit = 200): Promise<CashbackOrder[]> {
+  await ensureReady();
+  const db = await getDb();
+  return db
+    .collection<Order>("orders")
+    .aggregate<CashbackOrder>([
+      {
+        $match: {
+          status: "SELESAI",
+          stoneOrderId: { $exists: true },
+          discount: { $gt: 0 },
+          couponCode: { $exists: true, $ne: "" },
+        },
+      },
+      {
+        $addFields: {
+          _cashbackUnpaid: {
+            $cond: [{ $ifNull: ["$cashbackPaidAt", false] }, 0, 1],
+          },
+        },
+      },
+      { $sort: { _cashbackUnpaid: -1, createdAt: -1 } },
+      { $limit: limit },
+      { $unset: "_cashbackUnpaid" },
+      { $project: { _id: 0, ...CASHBACK_PROJECTION } },
+    ])
+    .toArray();
+}
+
+/**
+ * Tandai cashback sudah/belum ditransfer. Filter eligibility diulang di
+ * query supaya order manual, order gagal, atau order tanpa kupon nggak bisa
+ * diubah lewat endpoint admin.
+ */
+export async function setCashbackPaid({
+  code,
+  paid,
+  by,
+  ref,
+}: {
+  code: string
+  paid: boolean
+  by: string
+  ref?: string
+}): Promise<CashbackOrder | null> {
+  await ensureReady();
+  const db = await getDb();
+  const filter = {
+    code,
+    status: "SELESAI" as const,
+    stoneOrderId: { $exists: true },
+    discount: { $gt: 0 },
+    couponCode: { $exists: true, $ne: "" },
+  }
+  const options = {
+    returnDocument: "after" as const,
+    projection: { _id: 0, ...CASHBACK_PROJECTION },
+  }
+
+  if (!paid) {
+    return db.collection<Order>("orders").findOneAndUpdate(
+      filter,
+      { $unset: { cashbackPaidAt: "", cashbackPaidBy: "", cashbackRef: "" } },
+      options
+    )
+  }
+
+  const set: Partial<Order> = {
+    cashbackPaidAt: new Date().toISOString(),
+    cashbackPaidBy: by,
+  }
+  const cleanRef = ref?.trim().slice(0, 160)
+  if (cleanRef) set.cashbackRef = cleanRef
+
+  return db.collection<Order>("orders").findOneAndUpdate(
+    filter,
+    { $set: set },
+    options
+  )
 }
 
 /**

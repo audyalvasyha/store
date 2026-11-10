@@ -5,6 +5,7 @@ import { getAdminEmail, SESSION_COOKIE } from "@/lib/admin-auth"
 import { getHeroEvent, getDynamicGames, getTopUpJugaConfig } from "@/lib/content"
 import { getEventSlides } from "@/lib/event-carousel-db"
 import { getAdminStats, type AdminStats } from "@/lib/analytics"
+import { listCashbackOrders } from "@/lib/orders"
 import { AdminPanel } from "@/components/admin-panel"
 import { AdminCoupons } from "@/components/admin-coupons"
 
@@ -17,13 +18,15 @@ export default async function AdminPage() {
   const email = await getAdminEmail(jar.get(SESSION_COOKIE)?.value)
   if (!email) redirect("/admin/login")
 
-  const [hero, eventSlides, games, topUpJuga, stats] = await Promise.all([
+  const [hero, eventSlides, games, topUpJuga, stats, cashbackOrders] = await Promise.all([
     getHeroEvent(),
     getEventSlides(false),
     getDynamicGames(),
     getTopUpJugaConfig(),
     // Dashboard statistik: DB error jangan bikin halaman admin down.
     getAdminStats().catch((): AdminStats | null => null),
+    // Antrean cashback juga jangan menjatuhkan seluruh halaman admin.
+    listCashbackOrders().catch(() => []),
   ])
 
   return (
@@ -61,6 +64,7 @@ export default async function AdminPage() {
           games={games}
           topUpJuga={topUpJuga}
           stats={stats}
+          cashbackOrders={cashbackOrders}
         />
 
         <div className="mt-6 md:mt-8">

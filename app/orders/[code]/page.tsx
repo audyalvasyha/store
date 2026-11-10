@@ -181,7 +181,9 @@ export default async function OrderPage({
               </div>
               {order.discount && order.stoneOrderId ? (
                 <p className="font-mono text-[10px] md:text-xs text-accent mt-2 leading-relaxed">
-                  Kupon aktif: bayar penuh {formatIDR(order.amount)} ke provider — cashback {formatIDR(order.discount)} di-transfer CS ke nomor WA lu setelah status jadi SELESAI.
+                  {order.cashbackPaidAt
+                    ? `Cashback ${formatIDR(order.discount)} sudah ditransfer ke nomor WA lu pada ${new Date(order.cashbackPaidAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" })} WIB.`
+                    : `Kupon aktif: bayar penuh ${formatIDR(order.amount)} ke provider — cashback ${formatIDR(order.discount)} di-transfer CS ke nomor WA lu setelah status jadi SELESAI.`}
                 </p>
               ) : null}
             </div>
