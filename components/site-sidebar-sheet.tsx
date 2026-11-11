@@ -1,8 +1,11 @@
 "use client"
 
 import Link from "next/link"
+import { X } from "lucide-react"
+import { BrandMark } from "@/components/brand-mark"
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetTitle,
@@ -36,20 +39,25 @@ export function SiteSidebarSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
+        hideClose
         className="flex w-[82vw] max-w-[300px] flex-col gap-0 overflow-y-auto border-r border-border bg-background p-0 text-foreground"
       >
-        <div className="flex items-start justify-between border-b border-border px-4 pb-4 pr-12 pt-5">
-          <div>
-            <SheetTitle className="font-mono text-[11px] uppercase tracking-[0.22em] text-foreground">
-              Menu
-            </SheetTitle>
-            <SheetDescription className="sr-only">
-              Navigasi situs Gastros
-            </SheetDescription>
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <BrandMark className="h-7 w-7 shrink-0" />
+            <div className="min-w-0">
+              <SheetTitle className="font-mono text-[11px] uppercase tracking-[0.22em] text-foreground">
+                Menu
+              </SheetTitle>
+              <SheetDescription className="sr-only">
+                Navigasi situs Gastros
+              </SheetDescription>
+            </div>
           </div>
-          <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-foreground/25">
-            G$
-          </span>
+          <SheetClose className="flex h-11 w-11 shrink-0 items-center justify-center border border-border bg-card/40 text-foreground/60 transition-colors hover:border-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background">
+            <X className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only">Tutup menu</span>
+          </SheetClose>
         </div>
 
         <nav aria-label="Menu situs" className="flex flex-col p-2">

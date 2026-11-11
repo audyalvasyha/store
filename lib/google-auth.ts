@@ -18,8 +18,30 @@ export function getGoogleClientId(): string {
 }
 
 export type GoogleVerification =
-  | { ok: true; email: string }
+  | { ok: true; email: string; picture?: string }
   | { ok: false; status: number; error: string };
+
+/** Foto Google harus HTTPS dan berasal dari domain googleusercontent.com. */
+function normalizeGooglePicture(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const value = raw.trim();
+  if (!value || value.length > 2048) return undefined;
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      (host !== "googleusercontent.com" && !host.endsWith(".googleusercontent.com"))
+    ) {
+      return undefined;
+    }
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
 
 const INVALID: Omit<Extract<GoogleVerification, { ok: false }>, "status"> = {
   ok: false,
@@ -71,7 +93,11 @@ export async function verifyGoogleCredential(credential: string): Promise<Google
       return { ...INVALID, status: 401 };
     }
 
-    return { ok: true, email };
+    return {
+      ok: true,
+      email,
+      picture: normalizeGooglePicture(data.picture),
+    };
   } catch {
     return {
       ok: false,

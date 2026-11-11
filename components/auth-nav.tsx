@@ -3,12 +3,14 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
+import { UserAvatar } from "@/components/user-avatar"
 
 export type AuthUser = {
   kind: "email" | "phone"
   provider?: "otp" | "google" | "password" | null
   masked: string
   name?: string | null
+  avatarUrl?: string | null
 }
 
 type AuthState =
@@ -18,7 +20,7 @@ type AuthState =
 
 // Cache sesi antar-navigasi client. /api/akun/me menyentuh DB, jadi jangan
 // dipanggil ulang di setiap pindah halaman dalam waktu dekat.
-const SESSION_CACHE_KEY = "gas-auth-session-v1"
+const SESSION_CACHE_KEY = "gas-auth-session-v2"
 const SESSION_CACHE_TTL = 60_000
 
 function readCachedSession(): { user: AuthUser | null } | null {
@@ -71,7 +73,7 @@ function clearCachedSession() {
 /**
  * Navigasi auth di header:
  * - Tamu: tombol Masuk + Daftar.
- * - Login: chip nama/identitas + dropdown akun & keluar.
+ * - Login: chip foto/nama/identitas + dropdown akun & keluar.
  *
  * Sengaja client-side: halaman publik pakai ISR, jadi status sesi nggak boleh
  * ikut di-cache di HTML. Endpoint /api/akun/me cuma balikin versi tersamar.
@@ -97,7 +99,7 @@ export function AuthNav({
   const [version, setVersion] = useState(0)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  // Refetch saat login/logout/ganti nama dari komponen lain di halaman yang sama.
+  // Refetch saat login/logout/ganti profil dari komponen lain di halaman yang sama.
   useEffect(() => {
     function refresh() {
       clearCachedSession()
@@ -200,11 +202,7 @@ export function AuthNav({
   }
 
   const { user } = state
-  const displayName = user.name?.trim() || user.masked
-  const initial = (
-    user.name?.trim()?.[0] ??
-    (user.kind === "email" ? user.masked[0] : "W")
-  ).toUpperCase()
+  const displayName = (typeof user.name === "string" ? user.name.trim() : "") || user.masked
 
   return (
     <div ref={menuRef} className="relative">
@@ -216,9 +214,12 @@ export function AuthNav({
         aria-label="Menu akun"
         className="flex min-h-[36px] items-center gap-1.5 border border-border bg-card px-1.5 md:px-2 transition-colors hover:border-accent"
       >
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-accent font-sans text-xs leading-none text-accent-foreground">
-          {initial}
-        </span>
+        <UserAvatar
+          src={user.avatarUrl}
+          name={displayName}
+          className="h-6 w-6 shrink-0"
+          fallbackClassName="text-xs"
+        />
         <span className="hidden max-w-[96px] truncate font-mono text-[9px] uppercase tracking-[0.08em] text-foreground/75 md:text-[10px] sm:block">
           {displayName}
         </span>
@@ -238,13 +239,21 @@ export function AuthNav({
                 : "right-0"
           }`}
         >
-          <div className="border-b border-border px-3 py-2.5">
-            <p className="truncate font-mono text-[10px] uppercase tracking-[0.1em] text-foreground">
-              {displayName}
-            </p>
-            <p className="mt-0.5 truncate font-mono text-[9px] tracking-[0.08em] text-foreground/40">
-              {user.masked}
-            </p>
+          <div className="flex items-center gap-2.5 border-b border-border px-3 py-2.5">
+            <UserAvatar
+              src={user.avatarUrl}
+              name={displayName}
+              className="h-8 w-8 shrink-0"
+              fallbackClassName="text-sm"
+            />
+            <div className="min-w-0">
+              <p className="truncate font-mono text-[10px] uppercase tracking-[0.1em] text-foreground">
+                {displayName}
+              </p>
+              <p className="mt-0.5 truncate font-mono text-[9px] tracking-[0.08em] text-foreground/40">
+                {user.masked}
+              </p>
+            </div>
           </div>
           <Link
             href="/akun"

@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og"
+import { OgBrandMark } from "@/components/og-brand-mark"
 
 /**
  * OG image global (1200x630) — dipakai semua route yang gak punya
@@ -23,18 +24,7 @@ export default function OpengraphImage() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              background: "#ff0000",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <span style={{ fontSize: 44, color: "#080808", fontWeight: 700 }}>G</span>
-          </div>
+          <OgBrandMark size={72} />
           <span style={{ fontSize: 28, letterSpacing: 14, color: "#9ca3af" }}>GASTROS</span>
         </div>
 

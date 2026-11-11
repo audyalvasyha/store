@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { AdminArticlesList } from "@/components/admin-articles-list"
 import { getAdminEmail, SESSION_COOKIE } from "@/lib/admin-auth"
 import { getAdminArticles, type AdminArticle } from "@/lib/articles-db"
+import { BrandLogo } from "@/components/brand-logo"
 
 export const dynamic = "force-dynamic"
 
@@ -32,20 +33,13 @@ export default async function AdminArticlesPage() {
       <div className="noise-overlay" aria-hidden="true" />
       <div className="mx-auto w-full max-w-[1400px] px-4 md:px-8 lg:px-12">
         <header className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4 md:mb-8">
-          <Link href="/admin" className="flex items-center gap-2" aria-label="Kembali ke panel admin">
-            <div className="relative flex h-8 w-8 items-center justify-center">
-              <div className="absolute inset-0 bg-accent" />
-              <span className="relative font-sans text-lg leading-none text-accent-foreground">G$</span>
-            </div>
-            <div>
-              <span className="block font-mono text-[10px] uppercase tracking-[0.3em] text-foreground">
-                Gastros Admin
-              </span>
-              <span className="block font-mono text-[8px] uppercase tracking-[0.18em] text-foreground/35">
-                Editorial workspace
-              </span>
-            </div>
-          </Link>
+          <BrandLogo
+            href="/admin"
+            compact
+            subtitle="Editorial workspace"
+            ariaLabel="Kembali ke panel admin"
+            className="shrink-0"
+          />
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/artikel"

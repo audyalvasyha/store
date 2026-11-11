@@ -7,7 +7,7 @@ import { formatIDR } from "@/lib/catalog"
  * Box pembayaran order Gamestone (payment bawaan).
  * - qris  → QR code dari payment_code (EMV string Gamestone)
  * - lain  → kode bayar (nomor VA / voucher) + tombol copy
- * Styling ngikutin tema brutalist G$ (accent card + mono).
+ * Styling ngikutin tema brutalist GASTROS (accent card + mono).
  */
 export function StonePayBox({
   method,

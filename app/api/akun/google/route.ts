@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const token = await loginCustomerWithGoogle(verified.email)
+    const token = await loginCustomerWithGoogle(verified.email, verified.picture)
     const res = NextResponse.json({ ok: true }, { headers: NO_STORE })
     res.cookies.set(CUSTOMER_COOKIE, token, {
       httpOnly: true,

@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og"
 import { notFound } from "next/navigation"
 import { formatArticleDate } from "@/lib/article-index"
 import { getPublishedArticleMeta } from "@/lib/articles-db"
+import { OgBrandMark } from "@/components/og-brand-mark"
 
 export const alt = "Artikel dan panduan top up game dari GASTROS"
 export const size = { width: 1200, height: 630 }
@@ -46,18 +47,7 @@ export default async function ArticleOpengraphImage({
           }}
         />
         <div style={{ display: "flex", alignItems: "center", gap: 20, position: "relative" }}>
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              background: "#ff0000",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <span style={{ fontSize: 42, color: "#080808", fontWeight: 700 }}>G$</span>
-          </div>
+          <OgBrandMark size={72} />
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             <span style={{ fontSize: 27, letterSpacing: 10, color: "#f5f5f5" }}>GASTROS</span>
             <span style={{ fontSize: 18, letterSpacing: 4, color: "#8a8a8a" }}>

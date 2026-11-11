@@ -62,6 +62,12 @@ type CustomerDoc = {
   identifier: string;
   /** Nama tampilan opsional — diisi sendiri dari halaman Akun. */
   name?: string;
+  /** Foto profil: data URL hasil crop browser, atau URL foto Google. */
+  avatarUrl?: string;
+  /** Asal foto — foto custom nggak boleh ditimpa login Google berikutnya. */
+  avatarSource?: "google" | "custom";
+  /** Foto terakhir dari Google, buat fallback saat foto custom dihapus. */
+  googleAvatarUrl?: string;
   /** Hash scrypt password (kalau user sudah bikin password). */
   passwordHash?: string;
   createdAt: string;
@@ -428,21 +434,41 @@ async function createCustomerSession(
  * Login Google yang emailnya udah diverifikasi server. Diperlakukan sebagai
  * identitas email yang sama supaya profil + riwayat order OTP ikut kebawa.
  */
-export async function loginCustomerWithGoogle(email: string): Promise<string> {
+export async function loginCustomerWithGoogle(
+  email: string,
+  googleAvatarUrl?: string
+): Promise<string> {
   await ready();
   const db = await getDb();
   const identifier = normalizeEmail(email);
   if (!identifier) throw new Error("Email Google tidak valid.");
 
   const now = new Date().toISOString();
-  await db.collection<CustomerDoc>("customer_accounts").updateOne(
+  const accounts = db.collection<CustomerDoc>("customer_accounts");
+  const set: Partial<CustomerDoc> = { lastLoginAt: now };
+  if (googleAvatarUrl) set.googleAvatarUrl = googleAvatarUrl;
+
+  await accounts.updateOne(
     { kind: "email", identifier },
     {
       $setOnInsert: { kind: "email", identifier, createdAt: now },
-      $set: { lastLoginAt: now },
+      $set: set,
     },
     { upsert: true }
   );
+
+  // Foto Google jadi default, tapi foto yang sengaja di-upload user tetap
+  // dipertahankan. Kalau foto custom dihapus nanti, server balik ke foto ini.
+  if (googleAvatarUrl) {
+    // Foto cuma pelengkap: jangan bikin login Google gagal kalau update ini
+    // kena gangguan DB. Login tetap lanjut dan foto bisa sync di login berikutnya.
+    await accounts
+      .updateOne(
+        { kind: "email", identifier, avatarSource: { $ne: "custom" } },
+        { $set: { avatarUrl: googleAvatarUrl, avatarSource: "google" } }
+      )
+      .catch(() => null)
+  }
 
   return createCustomerSession({ kind: "email", identifier, provider: "google" }, "google");
 }
@@ -606,9 +632,12 @@ export async function logoutCustomerEverywhere(identity: CustomerIdentity): Prom
   await db.collection<SessionDoc>("customer_sessions").deleteMany(filter);
 }
 
-/** Profil akun pembeli (nama, tanggal daftar, login terakhir). */
+/** Profil akun pembeli (nama, foto, tanggal daftar, login terakhir). */
 export type CustomerProfile = {
   name?: string;
+  avatarUrl?: string;
+  avatarSource?: "google" | "custom";
+  hasGoogleAvatar: boolean;
   hasPassword: boolean;
   createdAt: string;
   lastLoginAt: string;
@@ -626,28 +655,76 @@ export async function getCustomerProfile(
   if (!doc) return null;
   return {
     name: typeof doc.name === "string" ? doc.name : undefined,
+    avatarUrl: typeof doc.avatarUrl === "string" ? doc.avatarUrl : undefined,
+    avatarSource:
+      doc.avatarSource === "google" || doc.avatarSource === "custom"
+        ? doc.avatarSource
+        : undefined,
+    hasGoogleAvatar:
+      typeof doc.googleAvatarUrl === "string" && doc.googleAvatarUrl.startsWith("https://"),
     hasPassword: typeof doc.passwordHash === "string" && doc.passwordHash.length > 0,
     createdAt: doc.createdAt,
     lastLoginAt: doc.lastLoginAt,
   };
 }
 
-/** Simpan nama tampilan. String kosong = hapus nama (balik ke identitas tersamar). */
-export async function updateCustomerName(
+/**
+ * Simpan profil. `undefined` = jangan ubah field itu, `null` = hapus.
+ * Saat foto custom dihapus, foto Google terakhir dipakai lagi kalau ada.
+ */
+export async function updateCustomerProfile(
   identity: CustomerIdentity,
-  name: string | undefined
-): Promise<void> {
+  patch: { name?: string | null; avatar?: string | null }
+): Promise<CustomerProfile> {
   await ready();
   const db = await getDb();
+  const accounts = db.collection<CustomerDoc>("customer_accounts");
   const now = new Date().toISOString();
-  await db.collection<CustomerDoc>("customer_accounts").updateOne(
+  const set: Partial<CustomerDoc> = {};
+  const unset: Partial<Record<keyof CustomerDoc, "">> = {};
+
+  if (patch.name !== undefined) {
+    if (patch.name) set.name = patch.name;
+    else unset.name = "";
+  }
+
+  if (patch.avatar !== undefined) {
+    if (patch.avatar) {
+      set.avatarUrl = patch.avatar;
+      set.avatarSource = "custom";
+    } else {
+      const account = await accounts.findOne(
+        { kind: identity.kind, identifier: identity.identifier },
+        { projection: { googleAvatarUrl: 1 } }
+      );
+      if (account?.googleAvatarUrl) {
+        set.avatarUrl = account.googleAvatarUrl;
+        set.avatarSource = "google";
+      } else {
+        unset.avatarUrl = "";
+        unset.avatarSource = "";
+      }
+    }
+  }
+
+  await accounts.updateOne(
     { kind: identity.kind, identifier: identity.identifier },
     {
-      $setOnInsert: { kind: identity.kind, identifier: identity.identifier, createdAt: now, lastLoginAt: now },
-      ...(name ? { $set: { name } } : { $unset: { name: "" } }),
+      $setOnInsert: {
+        kind: identity.kind,
+        identifier: identity.identifier,
+        createdAt: now,
+        lastLoginAt: now,
+      },
+      ...(Object.keys(set).length > 0 ? { $set: set } : {}),
+      ...(Object.keys(unset).length > 0 ? { $unset: unset } : {}),
     },
     { upsert: true }
   );
+
+  const profile = await getCustomerProfile(identity);
+  if (!profile) throw new Error("Profil tidak ditemukan setelah disimpan.");
+  return profile;
 }
 
 /** Riwayat order milik identitas ini (termasuk order lama sebelum punya akun). */

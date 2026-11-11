@@ -96,7 +96,7 @@ export default function RootLayout({
         '@id': `${SITE_URL}/#organization`,
         name: 'GASTROS',
         url: SITE_URL,
-        logo: `${SITE_URL}/icon.svg`,
+        logo: `${SITE_URL}/icons/icon-512.png`,
         description:
           'Layanan top up game dan produk digital untuk pemain Indonesia, dengan proses kilat lewat jalur resmi publisher.',
         email: 'cs@gastros.id',

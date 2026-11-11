@@ -13,6 +13,7 @@ import { getPublishedArticlesForGame } from "@/lib/articles-db"
 import { safeJsonLd } from "@/lib/jsonld"
 import { getGameRating, getGameReviews, type Review } from "@/lib/reviews"
 import { AuthNav } from "@/components/auth-nav"
+import { BrandLogo } from "@/components/brand-logo"
 import { SidebarMenuButton } from "@/components/site-sidebar"
 
 // Cache HTML 30 detik. Harga provider sendiri sudah di-cache 60 detik, jadi
@@ -158,13 +159,7 @@ export default async function TopupPage({
 
       <header className="border-b border-border">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-3 md:py-6 flex items-center justify-between w-full">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative w-8 h-8 flex items-center justify-center">
-              <div className="absolute inset-0 bg-accent" />
-              <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
-            </div>
-            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
-          </Link>
+          <BrandLogo compact className="shrink-0" />
           <nav className="flex items-center gap-4 md:gap-8">
             <Link
               href="/#games"
