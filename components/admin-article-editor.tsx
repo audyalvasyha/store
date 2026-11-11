@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState, type ReactNode } from "react"
 import { ArticleBody } from "@/components/article-body"
+import { RichTextEditor } from "@/components/rich-text-editor"
 import {
   ARTICLE_LAYOUTS,
   normalizeArticleSettings,
@@ -350,28 +351,33 @@ function BlockEditor({
 
       <div className="mt-3 flex flex-col gap-2">
         {block.type === "p" && (
-          <textarea
+          <RichTextEditor
             value={block.text}
-            onChange={(event) => onChange({ type: "p", text: event.target.value })}
+            onChange={(text) => onChange({ type: "p", text })}
             rows={4}
             placeholder="Tulis paragraf..."
             className={INPUT}
+            ariaLabel="Isi paragraf"
           />
         )}
 
         {(block.type === "ul" || block.type === "ol") && (
           <div className="flex flex-col gap-2">
             {block.items.map((item, itemIndex) => (
-              <div key={`${block.type}-${itemIndex}`} className="flex gap-2">
-                <input
+              <div key={`${block.type}-${itemIndex}`} className="flex items-start gap-2">
+                <RichTextEditor
                   value={item}
-                  onChange={(event) => {
+                  onChange={(next) => {
                     const items = [...block.items]
-                    items[itemIndex] = event.target.value
+                    items[itemIndex] = next
                     onChange({ type: block.type, items })
                   }}
+                  multiline={false}
+                  compact
                   placeholder={`Item ${itemIndex + 1}`}
                   className={INPUT}
+                  ariaLabel={`Item ${itemIndex + 1}`}
+                  wrapperClassName="flex-1"
                 />
                 <button
                   type="button"
@@ -410,12 +416,13 @@ function BlockEditor({
                 className={INPUT}
               />
             </div>
-            <textarea
+            <RichTextEditor
               value={block.text}
-              onChange={(event) => onChange({ type: "note", label: block.label, text: event.target.value })}
+              onChange={(text) => onChange({ type: "note", label: block.label, text })}
               rows={3}
               placeholder="Isi catatan..."
               className={INPUT}
+              ariaLabel="Isi catatan"
             />
           </>
         )}
@@ -453,18 +460,22 @@ function BlockEditor({
                   placeholder="Judul langkah"
                   className={`${INPUT} mt-2`}
                 />
-                <textarea
-                  value={item.text}
-                  onChange={(event) => {
-                    const items = block.items.map((entry, indexItem) =>
-                      indexItem === itemIndex ? { ...entry, text: event.target.value } : entry
-                    )
-                    onChange({ type: "steps", items })
-                  }}
-                  rows={2}
-                  placeholder="Penjelasan langkah"
-                  className={`${INPUT} mt-2`}
-                />
+                <div className="mt-2">
+                  <RichTextEditor
+                    value={item.text}
+                    onChange={(text) => {
+                      const items = block.items.map((entry, indexItem) =>
+                        indexItem === itemIndex ? { ...entry, text } : entry
+                      )
+                      onChange({ type: "steps", items })
+                    }}
+                    rows={2}
+                    placeholder="Penjelasan langkah"
+                    className={INPUT}
+                    ariaLabel={`Penjelasan langkah ${itemIndex + 1}`}
+                    compact
+                  />
+                </div>
               </div>
             ))}
             <button

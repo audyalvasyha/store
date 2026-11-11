@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Fragment, type ReactNode } from "react"
+import { RichText } from "@/components/rich-text"
 import { safeArticleHref } from "@/lib/article-index"
 import type { ArticleBlock, ArticleSection } from "@/lib/articles"
 
@@ -7,7 +8,7 @@ function Block({ block, preview = false }: { block: ArticleBlock; preview?: bool
   if (block.type === "p") {
     return (
       <p className="font-mono text-[11px] leading-[1.85] text-foreground/65 md:text-[13px]">
-        {block.text}
+        <RichText text={block.text} preview={preview} />
       </p>
     )
   }
@@ -22,7 +23,7 @@ function Block({ block, preview = false }: { block: ArticleBlock; preview?: bool
       >
         {block.items.map((item) => (
           <li key={item} className="pl-1 marker:text-accent">
-            {item}
+            <RichText text={item} preview={preview} />
           </li>
         ))}
       </Tag>
@@ -37,7 +38,7 @@ function Block({ block, preview = false }: { block: ArticleBlock; preview?: bool
           [{block.label}]
         </span>
         <p className="font-mono text-[10px] leading-relaxed text-foreground/70 md:text-xs">
-          {block.text}
+          <RichText text={block.text} preview={preview} />
         </p>
       </aside>
     )
@@ -53,10 +54,10 @@ function Block({ block, preview = false }: { block: ArticleBlock; preview?: bool
             </span>
             <div className="min-w-0">
               <span className="block font-sans text-lg uppercase leading-none tracking-tight text-foreground">
-                {item.title}
+                <RichText text={item.title} preview={preview} />
               </span>
               <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-foreground/55 md:text-xs">
-                {item.text}
+                <RichText text={item.text} preview={preview} />
               </p>
             </div>
           </li>
@@ -145,7 +146,7 @@ function Block({ block, preview = false }: { block: ArticleBlock; preview?: bool
                       cellIndex === 0 ? "text-foreground" : "text-foreground/55"
                     }`}
                   >
-                    {cell}
+                    <RichText text={cell} preview={preview} />
                   </td>
                 ))}
               </tr>
