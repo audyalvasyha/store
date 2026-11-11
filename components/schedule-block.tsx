@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import {
-  GAMES,
   denomLabelKey,
   formatIDR,
   formatPriceShort,
@@ -34,13 +33,13 @@ function StockIndicator({ index }: { index: number }) {
 }
 
 export function PriceList({
-  games = GAMES,
+  games,
   popularDenoms,
 }: {
-  games?: GameItem[];
+  games: GameItem[];
   popularDenoms?: PopularDenomsByGame;
 }) {
-  const [activeSlug, setActiveSlug] = useState<string>(games[0]?.slug ?? GAMES[0].slug);
+  const [activeSlug, setActiveSlug] = useState<string>(games[0]?.slug ?? "");
   const [visible, setVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 

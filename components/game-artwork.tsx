@@ -4,6 +4,8 @@ import { useState } from "react"
 import Image from "next/image"
 import type { GameItem } from "@/lib/catalog"
 
+type ArtworkGame = Pick<GameItem, "slug" | "name" | "short" | "glyph" | "hue" | "image">
+
 /**
  * Artwork game satu tempat:
  * - Ada URL + berhasil load -> gambar asli (dari Gamestone/admin).
@@ -18,7 +20,7 @@ export function GameArtwork({
   initialsClassName = "text-lg",
   priority = false,
 }: {
-  game: GameItem
+  game: ArtworkGame
   sizes: string
   /** Class untuk <Image> — biasanya object-cover + transform saat hover. */
   className?: string
@@ -66,7 +68,7 @@ export function GameArtwork({
 }
 
 /** Inisial nama game: 2 huruf, mis. "Mobile Legends" -> "ML". */
-function initialsOf(game: GameItem): string {
+function initialsOf(game: ArtworkGame): string {
   const source = (game.glyph || game.short || game.name || game.slug || "??").trim()
   const words = source.split(/[\s:•/.,-]+/).filter(Boolean)
   if (words.length >= 2) {

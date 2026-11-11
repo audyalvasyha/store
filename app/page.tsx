@@ -10,6 +10,7 @@ import { FaqSection } from "@/components/faq-section"
 import { FinalCta } from "@/components/cta-block"
 import { Footer } from "@/components/footer"
 import { getHeroEvent, getDynamicGames } from "@/lib/content"
+import { toCatalogGame } from "@/lib/catalog"
 import { getEventSlides } from "@/lib/event-carousel-db"
 import { getFeaturedCoupon } from "@/lib/coupons"
 import { getLatestReviews, getRatingsByGame } from "@/lib/reviews"
@@ -41,6 +42,15 @@ export default async function Page() {
     popularDenomsByGame().catch(() => ({})),
   ])
   const games = allGames
+  // Kirim data ringkas ke client: kartu katalog cuma butuh jumlah nominal +
+  // harga termurah, bukan seluruh array denomination tiap game.
+  const catalogGames = allGames.map(toCatalogGame)
+  const featuredGames = allGames.filter((game) => game.featured).map(toCatalogGame)
+  const priceListGames = allGames.slice(0, 5)
+  const priceListSlugs = new Set(priceListGames.map((game) => game.slug))
+  const priceListPopularDenoms = Object.fromEntries(
+    Object.entries(popularDenoms).filter(([slug]) => priceListSlugs.has(slug))
+  ) as typeof popularDenoms
   // CTA promo masuk ke game unggulan (fallback: game pertama).
   const promoGameSlug = (games.find((game) => game.featured) ?? games[0])?.slug ?? "mobile-legends"
   const shortBySlug = new Map(allGames.map((g) => [g.slug, g.short] as const))
@@ -60,10 +70,10 @@ export default async function Page() {
 
         <Hero event={heroEvent} />
         <PromoStrip coupon={featuredCoupon} gameSlug={promoGameSlug} />
-        <FeaturedGames games={games} />
+        <FeaturedGames games={featuredGames} />
         <MarqueeStrip />
-        <GameGrid games={games} sold={sold} ratings={ratings} slides={eventSlides} />
-        <PriceList games={games} popularDenoms={popularDenoms} />
+        <GameGrid games={catalogGames} sold={sold} ratings={ratings} slides={eventSlides} />
+        <PriceList games={priceListGames} popularDenoms={priceListPopularDenoms} />
         <WhyUs />
         <TestimonialStrip reviews={testimonials} />
         <FaqSection />

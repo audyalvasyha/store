@@ -6,7 +6,7 @@ import {
   resolveOrderDenom,
   stoneOrderAmount,
 } from "../lib/order-pricing"
-import { GAMES, filterGames } from "../lib/catalog"
+import { GAMES, filterGames, lowestPrice, toCatalogGame } from "../lib/catalog"
 import { resolveGameGenres } from "../lib/game-genres"
 import { normalizeAdsenseClient, normalizeAdSlot } from "../lib/ads"
 
@@ -99,6 +99,15 @@ test("fallback harga tidak dipakai untuk id katalog lokal", () => {
 test("search katalog case-insensitive dan aman untuk query kosong", () => {
   assert.equal(filterGames(GAMES, "VALORANT").length, 1)
   assert.equal(filterGames(GAMES, "  ").length, GAMES.length)
+})
+
+test("katalog ringkas tidak membawa denominations dan harga tetap sama", () => {
+  const full = GAMES[0]
+  const lean = toCatalogGame(full)
+  assert.equal(lean.denominationCount, full.denominations.length)
+  assert.equal(lean.lowestPrice, lowestPrice(full))
+  assert.equal("denominations" in lean, false)
+  assert.equal(filterGames([lean], "MOBILE").length, 1)
 })
 
 test("filter genre katalog memakai genre statis dan mapping slug", () => {

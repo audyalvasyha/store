@@ -36,7 +36,9 @@ export function ArticleCard({
             <img
               src={cover}
               alt=""
-              loading="lazy"
+              loading={featured ? "eager" : "lazy"}
+              fetchPriority={featured ? "high" : undefined}
+              decoding="async"
               className="absolute inset-0 h-full w-full object-cover opacity-70 transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/35 to-transparent" />

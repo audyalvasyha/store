@@ -72,6 +72,42 @@ export type GameItem = {
   denominations: Denomination[]
 }
 
+/**
+ * Bentuk ringkas untuk katalog publik. Jangan kirim seluruh denominations ke
+ * client kalau kartu cuma butuh jumlah item + harga termurah.
+ */
+export type CatalogGame = {
+  slug: string
+  short: string
+  name: string
+  publisher: string
+  category: string
+  genres?: GenreId[]
+  currency: string
+  glyph: string
+  hue: string
+  image?: string
+  denominationCount: number
+  lowestPrice: number
+}
+
+export function toCatalogGame(game: GameItem): CatalogGame {
+  return {
+    slug: game.slug,
+    short: game.short,
+    name: game.name,
+    publisher: game.publisher,
+    category: game.category,
+    ...(game.genres?.length ? { genres: game.genres } : {}),
+    currency: game.currency,
+    glyph: game.glyph,
+    hue: game.hue,
+    ...(game.image ? { image: game.image } : {}),
+    denominationCount: game.denominations.length,
+    lowestPrice: lowestPrice(game),
+  }
+}
+
 // logos = nama file SVG di /public/pay/ yang dirender sebagai row logo
 // di kartu metode bayar (aset asli dari idn-finlogos, kredit di NOTICE).
 export const PAYMENT_METHODS = [
@@ -273,11 +309,25 @@ export function getDenomination(game: GameItem, denomId: string): Denomination |
   return game.denominations.find((d) => d.id === denomId)
 }
 
+type SearchableGame = {
+  slug: string
+  short: string
+  name: string
+  publisher: string
+  category: string
+  genres?: unknown
+}
+
 /**
  * Filter katalog by genre + teks (nama, short, publisher, category, genre).
- * Genre undefined/"all" = tanpa filter genre.
+ * Genre undefined/"all" = tanpa filter genre. Generic supaya bisa dipakai
+ * untuk GameItem lengkap maupun CatalogGame ringkas.
  */
-export function filterGames(games: GameItem[], query: string, genre?: GenreId): GameItem[] {
+export function filterGames<T extends SearchableGame>(
+  games: T[],
+  query: string,
+  genre?: GenreId
+): T[] {
   const q = query.trim().toLowerCase();
   if (!q && !genre) return games;
   return games.filter((game) => {

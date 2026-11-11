@@ -16,6 +16,58 @@ type AuthState =
   | { status: "guest" }
   | { status: "user"; user: AuthUser }
 
+// Cache sesi antar-navigasi client. /api/akun/me menyentuh DB, jadi jangan
+// dipanggil ulang di setiap pindah halaman dalam waktu dekat.
+const SESSION_CACHE_KEY = "gas-auth-session-v1"
+const SESSION_CACHE_TTL = 60_000
+
+function readCachedSession(): { user: AuthUser | null } | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { user?: unknown; at?: unknown }
+    if (typeof parsed.at !== "number" || Date.now() - parsed.at > SESSION_CACHE_TTL) {
+      window.sessionStorage.removeItem(SESSION_CACHE_KEY)
+      return null
+    }
+    if (parsed.user === null) return { user: null }
+    const user = parsed.user as Partial<AuthUser> | null
+    if (
+      !user ||
+      (user.kind !== "email" && user.kind !== "phone") ||
+      typeof user.masked !== "string"
+    ) {
+      window.sessionStorage.removeItem(SESSION_CACHE_KEY)
+      return null
+    }
+    return { user: user as AuthUser }
+  } catch {
+    return null
+  }
+}
+
+function writeCachedSession(user: AuthUser | null) {
+  if (typeof window === "undefined") return
+  try {
+    window.sessionStorage.setItem(
+      SESSION_CACHE_KEY,
+      JSON.stringify({ user, at: Date.now() })
+    )
+  } catch {
+    // sessionStorage bisa diblokir di private mode — abaikan.
+  }
+}
+
+function clearCachedSession() {
+  if (typeof window === "undefined") return
+  try {
+    window.sessionStorage.removeItem(SESSION_CACHE_KEY)
+  } catch {
+    // abaikan
+  }
+}
+
 /**
  * Navigasi auth di header:
  * - Tamu: tombol Masuk + Daftar.
@@ -48,6 +100,7 @@ export function AuthNav({
   // Refetch saat login/logout/ganti nama dari komponen lain di halaman yang sama.
   useEffect(() => {
     function refresh() {
+      clearCachedSession()
       setVersion((v) => v + 1)
     }
     window.addEventListener("gas-auth-updated", refresh)
@@ -56,6 +109,22 @@ export function AuthNav({
 
   useEffect(() => {
     let active = true
+
+    // /akun sudah mengirim sesi dari server; jangan ulangi request yang sama.
+    if (version === 0 && initialUser !== undefined) {
+      writeCachedSession(initialUser)
+      return
+    }
+
+    // Pakai cache dulu supaya pindah halaman nggak memicu request DB lagi.
+    if (version === 0) {
+      const cached = readCachedSession()
+      if (cached) {
+        setState(cached.user ? { status: "user", user: cached.user } : { status: "guest" })
+        return
+      }
+    }
+
     fetch("/api/akun/me", { cache: "no-store" })
       .then(async (res) => {
         if (!res.ok) throw new Error("Gagal cek sesi")
@@ -63,6 +132,7 @@ export function AuthNav({
       })
       .then((data) => {
         if (!active) return
+        writeCachedSession(data.user)
         setState(data.user ? { status: "user", user: data.user } : { status: "guest" })
       })
       .catch(() => {
@@ -75,7 +145,7 @@ export function AuthNav({
     return () => {
       active = false
     }
-  }, [version])
+  }, [version, initialUser])
 
   // Tutup dropdown kalau klik di luar / tekan Escape.
   useEffect(() => {
@@ -98,6 +168,7 @@ export function AuthNav({
 
   async function logout() {
     setOpen(false)
+    clearCachedSession()
     setState({ status: "guest" })
     await fetch("/api/akun/logout", { method: "POST" }).catch(() => null)
     window.dispatchEvent(new Event("gas-auth-updated"))

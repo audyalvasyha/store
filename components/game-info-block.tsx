@@ -118,7 +118,14 @@ export function GameInfoBlock({
             >
               <div className="relative overflow-hidden border border-border group-hover:border-accent transition-colors aspect-[3/4]">
                 <GameArtwork
-                  game={r}
+                  game={{
+                    slug: r.slug,
+                    name: r.name,
+                    short: r.short,
+                    glyph: r.glyph,
+                    hue: r.hue,
+                    ...(r.image ? { image: r.image } : {}),
+                  }}
                   sizes="50vw, 220px"
                   className="object-cover"
                   initialsClassName="text-2xl"
