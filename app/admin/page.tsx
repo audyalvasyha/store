@@ -5,7 +5,7 @@ import { getAdminEmail, SESSION_COOKIE } from "@/lib/admin-auth"
 import { getHeroEvent, getDynamicGames, getTopUpJugaConfig } from "@/lib/content"
 import { getEventSlides } from "@/lib/event-carousel-db"
 import { getAdminStats, type AdminStats } from "@/lib/analytics"
-import { listCashbackOrders } from "@/lib/orders"
+import { listAdminOrders, listCashbackOrders, type AdminOrder } from "@/lib/orders"
 import { AdminPanel } from "@/components/admin-panel"
 import { AdminCoupons } from "@/components/admin-coupons"
 
@@ -18,7 +18,7 @@ export default async function AdminPage() {
   const email = await getAdminEmail(jar.get(SESSION_COOKIE)?.value)
   if (!email) redirect("/admin/login")
 
-  const [hero, eventSlides, games, topUpJuga, stats, cashbackOrders] = await Promise.all([
+  const [hero, eventSlides, games, topUpJuga, stats, cashbackOrders, orders] = await Promise.all([
     getHeroEvent(),
     getEventSlides(false),
     getDynamicGames(),
@@ -27,6 +27,8 @@ export default async function AdminPage() {
     getAdminStats().catch((): AdminStats | null => null),
     // Antrean cashback juga jangan menjatuhkan seluruh halaman admin.
     listCashbackOrders().catch(() => []),
+    // Order monitor read-only — DB error cukup tampil sebagai list kosong.
+    listAdminOrders().catch((): AdminOrder[] => []),
   ])
 
   return (
@@ -65,6 +67,7 @@ export default async function AdminPage() {
           topUpJuga={topUpJuga}
           stats={stats}
           cashbackOrders={cashbackOrders}
+          orders={orders}
         />
 
         <div className="mt-6 md:mt-8">
