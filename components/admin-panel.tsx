@@ -3,6 +3,7 @@
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { PAYMENT_METHODS, GAMES, formatIDR, type GameItem, type Denomination } from "@/lib/catalog"
+import { GAME_GENRES } from "@/lib/game-genres"
 import type { HeroEvent, TopUpJugaConfig } from "@/lib/content"
 import { AdminStatsView } from "@/components/admin-stats"
 import { AdminEventCarousel } from "@/components/admin-event-carousel"
@@ -19,6 +20,7 @@ const EMPTY_GAME: GameItem = {
   name: "",
   publisher: "",
   category: "",
+  genres: [],
   currency: "",
   glyph: "?",
   hue: "0 100% 45%",
@@ -530,7 +532,7 @@ export function AdminPanel({
               className="w-full bg-background border border-border p-3 font-mono text-[11px] text-foreground leading-relaxed focus:outline-none focus:border-accent"
             />
             <p className="font-mono text-[9px] text-foreground/40 leading-relaxed">
-              Slug cuma a-z/0-9/-, name harus diisi, minimal 1 denominasi {`{id, label, price}`}. `hue` buat warna tile (cth {"\""}258 85% 55%{"\""}), `image`/`stoneSlug` optional.
+              Slug cuma a-z/0-9/-, name harus diisi, minimal 1 denominasi {`{id, label, price}`}. `hue` buat warna tile (cth {"\""}258 85% 55%{"\""}), `image`/`stoneSlug` optional. `genres` optional: {GAME_GENRES.map((genre) => genre.id).join(", ")}.
             </p>
             {gamesMsg && <span className="font-mono text-[10px] text-accent">{gamesMsg}</span>}
             <button

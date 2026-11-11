@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Fragment, type ReactNode } from "react"
 import { safeArticleHref } from "@/lib/article-index"
 import type { ArticleBlock, ArticleSection } from "@/lib/articles"
 
@@ -162,28 +163,39 @@ export function ArticleBody({
   sections,
   faqs,
   preview = false,
+  inArticleAd,
+  adAfterSection = 2,
 }: {
   sections: ArticleSection[]
   faqs?: Array<{ q: string; a: string }>
   preview?: boolean
+  /** Slot iklan yang disisipkan setelah section tertentu. */
+  inArticleAd?: ReactNode
+  /** Section ke berapa iklan dipasang (1-based). */
+  adAfterSection?: number
 }) {
   return (
     <div className="flex flex-col gap-9 md:gap-12">
-      {sections.map((section) => (
-        <section key={section.id} id={section.id} className="scroll-mt-24">
-          <h2 className="mb-3 border-l-2 border-accent pl-3 font-sans text-2xl uppercase leading-none tracking-tight text-foreground md:mb-4 md:text-3xl">
-            {section.title}
-          </h2>
-          <div className="flex flex-col gap-4 md:gap-5">
-            {section.blocks.map((block, index) => (
-              <Block
-                key={`${section.id}-${block.type}-${index}`}
-                block={block}
-                preview={preview}
-              />
-            ))}
-          </div>
-        </section>
+      {sections.map((section, sectionIndex) => (
+        <Fragment key={section.id}>
+          <section id={section.id} className="scroll-mt-24">
+            <h2 className="mb-3 border-l-2 border-accent pl-3 font-sans text-2xl uppercase leading-none tracking-tight text-foreground md:mb-4 md:text-3xl">
+              {section.title}
+            </h2>
+            <div className="flex flex-col gap-4 md:gap-5">
+              {section.blocks.map((block, index) => (
+                <Block
+                  key={`${section.id}-${block.type}-${index}`}
+                  block={block}
+                  preview={preview}
+                />
+              ))}
+            </div>
+          </section>
+          {inArticleAd && sectionIndex + 1 === adAfterSection ? (
+            <div className="w-full">{inArticleAd}</div>
+          ) : null}
+        </Fragment>
       ))}
 
       {faqs && faqs.length > 0 && (

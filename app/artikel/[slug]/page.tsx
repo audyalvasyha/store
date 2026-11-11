@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArticleBody } from "@/components/article-body"
+import { AdSlot } from "@/components/ad-slot"
 import { ArticleCard } from "@/components/article-card"
 import { EditorialHeader } from "@/components/editorial-header"
 import { Footer } from "@/components/footer"
@@ -110,6 +111,8 @@ export default async function ArticlePage({
         ? "max-w-[1600px]"
         : "max-w-[1400px]"
   const showAside = settings.layout !== "minimal"
+  // Jangan tampilkan iklan di artikel yang sengaja noindex / halaman tipis.
+  const showAds = !article.noIndex
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -258,8 +261,30 @@ export default async function ArticlePage({
               </div>
             )}
 
+            {showAds && (
+              <AdSlot
+                slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_ARTICLE_TOP}
+                format="auto"
+                className="mt-6 md:mt-8"
+              />
+            )}
+
             <div className="mt-8 md:mt-11">
-              <ArticleBody sections={article.sections} faqs={faqs} />
+              <ArticleBody
+                sections={article.sections}
+                faqs={faqs}
+                adAfterSection={2}
+                inArticleAd={
+                  showAds && article.sections.length >= 3 ? (
+                    <AdSlot
+                      slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_ARTICLE_MID}
+                      format="fluid"
+                      layout="in-article"
+                      minHeightClassName="min-h-[250px]"
+                    />
+                  ) : undefined
+                }
+              />
             </div>
 
             <div className="mt-8 flex flex-wrap gap-1.5 md:mt-10">
@@ -362,6 +387,14 @@ export default async function ArticlePage({
                     ))}
                   </ol>
                 </nav>
+              )}
+
+              {showAds && (
+                <AdSlot
+                  slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_ARTICLE_SIDEBAR}
+                  format="rectangle"
+                  minHeightClassName="min-h-[250px]"
+                />
               )}
 
               <div className="border border-border bg-card p-4 md:p-5">

@@ -186,6 +186,16 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
+/* Scroll horizontal tanpa scrollbar kelihatan (tetap bisa digeser). */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Utility classes for hero animations */
 .anim-shutter-up     { animation: shutter-up 0.55s cubic-bezier(0.77, 0, 0.18, 1) both; }
 .anim-wipe-right     { animation: wipe-right 0.7s cubic-bezier(0.77, 0, 0.18, 1) both; }

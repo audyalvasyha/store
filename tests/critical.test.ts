@@ -7,6 +7,8 @@ import {
   stoneOrderAmount,
 } from "../lib/order-pricing"
 import { GAMES, filterGames } from "../lib/catalog"
+import { resolveGameGenres } from "../lib/game-genres"
+import { normalizeAdsenseClient, normalizeAdSlot } from "../lib/ads"
 
 test("kupon persen dihitung dari subtotal", () => {
   assert.equal(
@@ -97,4 +99,38 @@ test("fallback harga tidak dipakai untuk id katalog lokal", () => {
 test("search katalog case-insensitive dan aman untuk query kosong", () => {
   assert.equal(filterGames(GAMES, "VALORANT").length, 1)
   assert.equal(filterGames(GAMES, "  ").length, GAMES.length)
+})
+
+test("filter genre katalog memakai genre statis dan mapping slug", () => {
+  assert.equal(filterGames(GAMES, "", "action").length, 3)
+  assert.equal(filterGames(GAMES, "", "strategy").length, 2)
+  assert.equal(filterGames(GAMES, "", "sandbox").length, 1)
+  assert.deepEqual(resolveGameGenres({ slug: "honkai-impact-3" }), ["action", "rpg"])
+})
+
+test("genre fallback membaca nama/kategori dan tidak memaksa produk non-game", () => {
+  const racing = resolveGameGenres({
+    slug: "game-baru",
+    name: "Mystery Racing",
+    category: "TOP UP",
+  })
+  assert.deepEqual(racing, ["simulation"])
+  assert.deepEqual(
+    resolveGameGenres({ slug: "streaming-baru", name: "Streaming Baru", category: "VOUCHER" }),
+    []
+  )
+})
+
+test("id adsense dinormalisasi dan divalidasi sebelum dipakai", () => {
+  assert.equal(
+    normalizeAdsenseClient("pub-1234567890123456"),
+    "ca-pub-1234567890123456"
+  )
+  assert.equal(
+    normalizeAdsenseClient("ca-pub-1234567890123456"),
+    "ca-pub-1234567890123456"
+  )
+  assert.equal(normalizeAdsenseClient("pub-123"), null)
+  assert.equal(normalizeAdSlot("1234567890"), "1234567890")
+  assert.equal(normalizeAdSlot("bukan-slot"), null)
 })
