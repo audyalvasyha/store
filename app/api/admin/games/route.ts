@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { getAdminEmail, SESSION_COOKIE } from "@/lib/admin-auth";
 import { getDynamicGames, upsertGame, deleteGame } from "@/lib/content";
 import type { GameItem } from "@/lib/catalog";
+import { normalizeGenres } from "@/lib/game-genres";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,9 @@ function sanitizeGame(input: unknown): GameItem | null {
     featured: Boolean(raw.featured),
     denominations: sanitizeDenominations(raw.denominations),
   };
+
+  const genres = normalizeGenres(raw.genres);
+  if (genres.length > 0) game.genres = genres;
 
   if (!game.name) return null;
   if (game.denominations.length === 0) return null;

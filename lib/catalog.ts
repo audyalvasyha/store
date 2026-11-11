@@ -1,3 +1,5 @@
+import { genreLabel, resolveGameGenres, type GenreId } from "./game-genres"
+
 export type Denomination = {
   id: string
   label: string
@@ -56,6 +58,8 @@ export type GameItem = {
   name: string
   publisher: string
   category: string
+  /** Genre katalog. Kosong = resolve otomatis dari slug/kategori. */
+  genres?: GenreId[]
   currency: string
   glyph: string
   hue: string
@@ -106,6 +110,7 @@ export const GAMES: GameItem[] = [
     name: "Mobile Legends: Bang Bang",
     publisher: "Moonton",
     category: "MOBA",
+    genres: ["strategy"],
     currency: "Diamonds",
     glyph: "ML",
     hue: "258 85% 55%",
@@ -131,6 +136,7 @@ export const GAMES: GameItem[] = [
     name: "Free Fire",
     publisher: "Garena",
     category: "Battle Royale",
+    genres: ["action"],
     currency: "Diamonds",
     glyph: "FF",
     hue: "12 95% 50%",
@@ -155,6 +161,7 @@ export const GAMES: GameItem[] = [
     name: "Call of Duty Mobile",
     publisher: "Activision",
     category: "Battle Royale",
+    genres: ["action"],
     currency: "CP",
     glyph: "CODM",
     hue: "0 100% 50%",
@@ -176,6 +183,7 @@ export const GAMES: GameItem[] = [
     name: "League of Legends",
     publisher: "Riot Games",
     category: "MOBA",
+    genres: ["strategy"],
     currency: "Blue Essence",
     glyph: "LoL",
     hue: "205 85% 48%",
@@ -198,6 +206,7 @@ export const GAMES: GameItem[] = [
     name: "Valorant",
     publisher: "Riot Games",
     category: "FPS Tactical",
+    genres: ["action"],
     currency: "VP",
     glyph: "VA",
     hue: "0 85% 55%",
@@ -218,6 +227,7 @@ export const GAMES: GameItem[] = [
     name: "Honkai: Star Rail",
     publisher: "HoYoverse",
     category: "Turn-based RPG",
+    genres: ["rpg"],
     currency: "Oneiric Shards",
     glyph: "HS",
     hue: "190 80% 45%",
@@ -238,6 +248,7 @@ export const GAMES: GameItem[] = [
     name: "Roblox",
     publisher: "Roblox Corporation",
     category: "Sandbox",
+    genres: ["sandbox"],
     currency: "Robux",
     glyph: "RX",
     hue: "25 80% 45%",
@@ -262,15 +273,25 @@ export function getDenomination(game: GameItem, denomId: string): Denomination |
   return game.denominations.find((d) => d.id === denomId)
 }
 
-/** Filter katalog by nama game / short / publisher / category (case-insensitive). */
-export function filterGames(games: GameItem[], query: string): GameItem[] {
+/**
+ * Filter katalog by genre + teks (nama, short, publisher, category, genre).
+ * Genre undefined/"all" = tanpa filter genre.
+ */
+export function filterGames(games: GameItem[], query: string, genre?: GenreId): GameItem[] {
   const q = query.trim().toLowerCase();
-  if (!q) return games;
-  return games.filter((game) =>
-    [game.name, game.short, game.publisher, game.category].some((field) =>
-      String(field ?? "").toLowerCase().includes(q)
-    )
-  );
+  if (!q && !genre) return games;
+  return games.filter((game) => {
+    const genres = resolveGameGenres(game);
+    if (genre && !genres.includes(genre)) return false;
+    if (!q) return true;
+    return [
+      game.name,
+      game.short,
+      game.publisher,
+      game.category,
+      ...genres.flatMap((id) => [id, genreLabel(id)]),
+    ].some((field) => String(field ?? "").toLowerCase().includes(q));
+  });
 }
 
 export function lowestPrice(game: GameItem): number {

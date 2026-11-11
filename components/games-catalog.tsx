@@ -3,6 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { GAMES, filterGames, lowestPrice, formatIDR, type GameItem } from "@/lib/catalog"
+import {
+  GAME_GENRES,
+  genreLabel,
+  isGenreId,
+  resolveGameGenres,
+  type GenreId,
+} from "@/lib/game-genres"
 import { GameArtwork } from "@/components/game-artwork"
 import { RatingBadge } from "@/components/rating-badge"
 import { GAMES_SEARCH_EVENT } from "@/components/games-search-input"
@@ -30,11 +37,26 @@ export function GamesCatalog({
   const [visible, setVisible] = useState(false)
   const [showCount, setShowCount] = useState(BATCH)
   const [activeSort, setActiveSort] = useState(sort)
+  const [activeGenre, setActiveGenre] = useState<GenreId | "all">("all")
   const [query, setQuery] = useState("")
 
-  // Semua game sudah dikirim server, jadi cari + urutkan cukup di browser.
-  // Ini menghindari request RSC + query DB setiap kali user mengetik/menyortir.
-  const filteredGames = useMemo(() => filterGames(games, query), [games, query])
+  // Semua game sudah dikirim server, jadi cari + filter + urutkan cukup di
+  // browser. Ini menghindari request RSC + query DB tiap user mengetik/memilih.
+  const filteredGames = useMemo(
+    () => filterGames(games, query, activeGenre === "all" ? undefined : activeGenre),
+    [games, query, activeGenre]
+  )
+
+  const genreCounts = useMemo(() => {
+    const counts = Object.fromEntries(GAME_GENRES.map((genre) => [genre.id, 0])) as Record<
+      GenreId,
+      number
+    >
+    for (const game of games) {
+      for (const id of resolveGameGenres(game)) counts[id] += 1
+    }
+    return counts
+  }, [games])
   const sortedGames = useMemo(() => {
     const list = [...filteredGames]
     if (activeSort === "rating") {
@@ -65,6 +87,8 @@ export function GamesCatalog({
       setQuery(params.get("q") ?? "")
       const nextSort = params.get("sort")
       setActiveSort(nextSort === "rating" || nextSort === "terlaris" ? nextSort : "nama")
+      const nextGenre = params.get("genre")
+      setActiveGenre(isGenreId(nextGenre) ? nextGenre : "all")
       setShowCount(BATCH)
     }
     syncFromUrl()
@@ -104,6 +128,17 @@ export function GamesCatalog({
   }, [])
 
   const totalItems = sortedGames.reduce((sum, g) => sum + g.denominations.length, 0)
+
+  function applyGenre(next: GenreId | "all") {
+    setActiveGenre(next)
+    setShowCount(BATCH)
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    if (next === "all") params.delete("genre")
+    else params.set("genre", next)
+    const qs = params.toString()
+    window.history.replaceState(null, "", qs ? `/games?${qs}` : "/games")
+  }
 
   // URL tetap diperbarui supaya pilihan sort bisa di-refresh/dibagikan,
   // tapi tanpa memicu navigasi Next.js ke server.
@@ -166,6 +201,58 @@ export function GamesCatalog({
             </button>
           ))}
         </div>
+
+        {/* Filter genre — horizontal scroll di HP, wrap di layar lebar */}
+        <div
+          className={`mt-2.5 md:mt-4 ${visible ? "anim-cut-in" : "opacity-0"}`}
+          style={{ animationDelay: "0.55s" }}
+        >
+          <div className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible">
+            <span className="shrink-0 font-mono text-[9px] md:text-[10px] text-foreground/35 tracking-[0.15em] uppercase">
+              [Genre]
+            </span>
+            <button
+              type="button"
+              onClick={() => applyGenre("all")}
+              aria-pressed={activeGenre === "all"}
+              className={`shrink-0 border px-2.5 py-1.5 font-mono text-[9px] md:text-[10px] tracking-[0.15em] uppercase transition-colors cursor-pointer ${
+                activeGenre === "all"
+                  ? "border-accent bg-accent text-accent-foreground"
+                  : "border-border text-foreground/50 hover:text-foreground"
+              }`}
+            >
+              Semua
+            </button>
+            {GAME_GENRES.map((genre) => {
+              const count = genreCounts[genre.id] ?? 0
+              return (
+                <button
+                  key={genre.id}
+                  type="button"
+                  onClick={() => applyGenre(genre.id)}
+                  aria-pressed={activeGenre === genre.id}
+                  title={genre.detail}
+                  className={`shrink-0 inline-flex items-center gap-1.5 border px-2.5 py-1.5 font-mono text-[9px] md:text-[10px] tracking-[0.15em] uppercase transition-colors cursor-pointer ${
+                    activeGenre === genre.id
+                      ? "border-accent bg-accent text-accent-foreground"
+                      : "border-border text-foreground/50 hover:text-foreground"
+                  }`}
+                >
+                  {genre.label}
+                  <span className={activeGenre === genre.id ? "opacity-70" : "text-foreground/30"}>
+                    {count}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+          {activeGenre !== "all" && (
+            <p className="mt-1.5 font-mono text-[9px] md:text-[10px] text-foreground/40 tracking-[0.08em]">
+              {GAME_GENRES.find((genre) => genre.id === activeGenre)?.detail} &mdash;{" "}
+              {genreCounts[activeGenre] ?? 0} game
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Grid game cards */}
@@ -188,7 +275,9 @@ export function GamesCatalog({
             Ga ada game yang cocok<span className="text-accent">.</span>
           </p>
           <p className="font-mono text-[10px] md:text-xs text-foreground/50 leading-relaxed mt-2">
-            Coba kata kunci lain — misal &ldquo;diamond&rdquo;, &ldquo;valorant&rdquo;, atau nama publishernya.
+            {activeGenre !== "all"
+              ? "Coba genre lain, atau tekan Semua buat lihat seluruh katalog."
+              : "Coba kata kunci lain — misal “diamond”, “valorant”, atau nama publishernya."}
           </p>
         </div>
       )}
@@ -235,6 +324,8 @@ function GameCard({
   game: GameItem
   rating?: { average: number; count: number }
 }) {
+  const primaryGenre = resolveGameGenres(game)[0]
+
   return (
     <Link href={`/top-up/${game.slug}`} className="relative group block">
       {/* Artwork: gambar asli (Gamestone/admin), fallback gradient pakai hue game */}
@@ -254,8 +345,11 @@ function GameCard({
         <div className="absolute bottom-0 right-0 w-4 h-4 md:w-6 md:h-6 border-b-2 border-r-2 border-accent/0 group-hover:border-accent transition-colors duration-300" />
 
         {/* Badge kategori + jumlah nominal */}
-        <span className="absolute top-2 md:top-3 left-2 md:left-3 bg-background/85 px-1.5 py-0.5 font-mono text-[8px] md:text-[9px] text-foreground/70 tracking-[0.15em] uppercase">
-          {game.category}
+        <span
+          title={game.category}
+          className="absolute top-2 md:top-3 left-2 md:left-3 bg-background/85 px-1.5 py-0.5 font-mono text-[8px] md:text-[9px] text-foreground/70 tracking-[0.15em] uppercase"
+        >
+          {primaryGenre ? genreLabel(primaryGenre) : game.category}
         </span>
         <span className="absolute top-2 md:top-3 right-2 md:right-3 font-mono text-[8px] md:text-[9px] text-foreground/60 tracking-[0.1em] uppercase">
           {String(game.denominations.length).padStart(2, "0")} ITEM

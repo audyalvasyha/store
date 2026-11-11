@@ -121,6 +121,7 @@ export function Footer() {
                 { label: "Top Up MLBB", href: "/top-up/mobile-legends" },
                 { label: "Riwayat Order", href: "/orders" },
                 { label: "Akun Saya", href: "/akun" },
+                { label: "Kebijakan Privasi", href: "/privasi" },
               ].map((link) => (
                 <a key={link.label} href={link.href} className="font-mono text-[10px] md:text-xs text-muted-foreground hover:text-accent transition-colors tracking-[0.08em] md:tracking-[0.1em] py-0.5 min-h-[32px] flex items-center">
                   {link.label}

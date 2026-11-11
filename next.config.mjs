@@ -4,6 +4,14 @@
 // prod makin ketat (tanpa eval). 'unsafe-inline' di script tetap perlu
 // karena Next.js menulis payload/JSON inline di HTML langsung.
 const isDev = process.env.NODE_ENV !== "production"
+// CSP longgar khusus iklan hanya kalau publisher AdSense valid. Tanpa env ini
+// situs tetap memakai CSP ketat dan sama sekali tidak memuat script Google Ads.
+const adsenseEnabled = /^(ca-)?pub-\d{16}$/.test(
+  process.env.NEXT_PUBLIC_ADSENSE_CLIENT?.trim() ?? ""
+)
+const adOrigins = adsenseEnabled
+  ? " https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.googleadservices.com https://*.gstatic.com https://adservice.google.com https://www.googletagservices.com https://fundingchoicesmessages.google.com"
+  : ""
 // Preview sandbox menampilkan situs di dalam iframe (Freebuff Cloud). Di dev
 // saja frame itu diizinkan; production tetap 'none' + X-Frame-Options DENY
 // supaya situs publik nggak bisa di-embed / di-clickjack.
@@ -13,12 +21,12 @@ const frameAncestors = isDev
 const csp = [
   "default-src 'self'",
   // Google Identity Services: script + iframe tombol + stylesheet-nya.
-  `script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client${adOrigins}${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
-  "connect-src 'self' https://accounts.google.com/gsi/",
-  "frame-src https://accounts.google.com/gsi/",
+  `connect-src 'self' https://accounts.google.com/gsi/${adOrigins}`,
+  `frame-src https://accounts.google.com/gsi/${adOrigins}`,
   "media-src 'self'",
   "object-src 'none'",
   frameAncestors,
