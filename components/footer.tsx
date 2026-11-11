@@ -103,6 +103,7 @@ export function Footer() {
               {[
                 { label: "Semua Game", href: "/games" },
                 { label: "Artikel & Panduan", href: "/artikel" },
+                { label: "Tentang Gastros", href: "/tentang" },
                 { label: "Price List", href: "/#harga" },
                 { label: "Cara Order", href: "/#cara" },
                 { label: "Top Up MLBB", href: "/top-up/mobile-legends" },

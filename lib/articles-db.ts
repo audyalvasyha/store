@@ -132,6 +132,20 @@ export async function getRelatedPublishedArticles(
     .slice(0, limit)
 }
 
+/** Panduan untuk halaman top-up: artikel game terkait dulu, lalu panduan umum. */
+export async function getPublishedArticlesForGame(
+  gameSlug: string,
+  limit = 3
+): Promise<Article[]> {
+  const articles = (await getPublishedArticles()).filter((article) => !article.noIndex)
+  const gameSpecific = articles.filter((article) => article.gameSlug === gameSlug)
+  const general = articles.filter((article) => !article.gameSlug)
+  const otherGame = articles.filter(
+    (article) => article.gameSlug && article.gameSlug !== gameSlug
+  )
+  return [...gameSpecific, ...general, ...otherGame].slice(0, limit)
+}
+
 /** Daftar lengkap untuk dashboard admin: default + override DB. */
 export async function getAdminArticles(): Promise<AdminArticle[]> {
   await ready()

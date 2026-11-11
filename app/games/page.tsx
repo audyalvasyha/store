@@ -11,14 +11,21 @@ import { AuthNav } from "@/components/auth-nav"
 import { SidebarMenuButton } from "@/components/site-sidebar"
 import { Suspense } from "react"
 import { Footer } from "@/components/footer"
+import { safeJsonLd } from "@/lib/jsonld"
+
+const SITE_URL = process.env.APP_BASE_URL?.replace(/\/$/, "") ?? "https://gastros.id"
+const GAMES_DESCRIPTION =
+  "Katalog lengkap top up game di GASTROS: MLBB, Free Fire, CODM, LoL, Valorant dan lainnya. Diamond & currency masuk akun lewat jalur resmi publisher, proses kilat 24 jam."
+// JSON-LD cukup daftar game prioritas. Katalog lengkap tetap dirender di halaman,
+// tapi 157 item schema membuat HTML membengkak tanpa manfaat crawl yang sepadan.
+const JSONLD_GAME_LIMIT = 24
 
 // ISR: cache 30 detik — katalog tetap segar, ga nge-hit DB tiap request.
 export const revalidate = 30
 
 export const metadata: Metadata = {
   title: "Semua Game",
-  description:
-    "Katalog lengkap top up game di GASTROS: MLBB, Free Fire, CODM, LoL, Valorant dan lainnya. Diamond & currency masuk akun lewat jalur resmi publisher, proses kilat 24 jam.",
+  description: GAMES_DESCRIPTION,
   alternates: {
     canonical: "/games",
   },
@@ -41,10 +48,81 @@ export default async function GamesPage() {
     soldCountsByGame().catch(() => ({}) as Record<string, number>),
   ])
 
-  const catalogGames = (allGames.length > 0 ? allGames : GAMES).map(toCatalogGame)
+  const sourceGames = allGames.length > 0 ? allGames : GAMES
+  const catalogGames = sourceGames.map(toCatalogGame)
+  const coreOrder = new Map(GAMES.map((game, index) => [game.slug, index] as const))
+  const seenPriorityNames = new Set<string>()
+  const priorityGames = [...sourceGames]
+    .filter(
+      (game) =>
+        coreOrder.has(game.slug) ||
+        Boolean(game.featured) ||
+        (sold[game.slug] ?? 0) > 0 ||
+        (ratings[game.slug]?.count ?? 0) > 0
+    )
+    .sort((a, b) => {
+      const aCore = coreOrder.get(a.slug)
+      const bCore = coreOrder.get(b.slug)
+      if (aCore !== undefined || bCore !== undefined) {
+        if (aCore === undefined) return 1
+        if (bCore === undefined) return -1
+        return aCore - bCore
+      }
+      const featuredDiff = Number(Boolean(b.featured)) - Number(Boolean(a.featured))
+      if (featuredDiff) return featuredDiff
+      const soldDiff = (sold[b.slug] ?? 0) - (sold[a.slug] ?? 0)
+      if (soldDiff) return soldDiff
+      return (ratings[b.slug]?.average ?? 0) - (ratings[a.slug]?.average ?? 0)
+    })
+    .filter((game) => {
+      const key = game.name.trim().toLowerCase()
+      if (seenPriorityNames.has(key)) return false
+      seenPriorityNames.add(key)
+      return true
+    })
+    .slice(0, JSONLD_GAME_LIMIT)
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": `${SITE_URL}/games#collection`,
+        name: "Katalog Top Up Game",
+        description: GAMES_DESCRIPTION,
+        url: `${SITE_URL}/games`,
+        inLanguage: "id-ID",
+        isPartOf: { "@id": `${SITE_URL}/#website` },
+        mainEntity: {
+          "@type": "ItemList",
+          name: "Game prioritas GASTROS",
+          description:
+            "Pilihan game populer berdasarkan pilihan editor dan jumlah order.",
+          numberOfItems: priorityGames.length,
+          itemListElement: priorityGames.map((game, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            url: `${SITE_URL}/top-up/${game.slug}`,
+            name: `Top Up ${game.name}`,
+          })),
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: "Games", item: `${SITE_URL}/games` },
+        ],
+      },
+    ],
+  }
 
   return (
     <main className="relative min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
+      />
       <div className="noise-overlay" aria-hidden="true" />
 
       <header className="border-b border-border">

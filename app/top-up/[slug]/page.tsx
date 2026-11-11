@@ -7,7 +7,9 @@ import { getDynamicGame, getDynamicGames, getTopUpJugaConfig } from "@/lib/conte
 import { getStoneGame, activeStoneVariants } from "@/lib/gamestone"
 import { TopupForm } from "@/components/topup-form"
 import { GameInfoBlock } from "@/components/game-info-block"
+import { RelatedGuides } from "@/components/related-guides"
 import { Footer } from "@/components/footer"
+import { getPublishedArticlesForGame } from "@/lib/articles-db"
 import { safeJsonLd } from "@/lib/jsonld"
 import { getGameRating, getGameReviews, type Review } from "@/lib/reviews"
 import { AuthNav } from "@/components/auth-nav"
@@ -58,7 +60,7 @@ export default async function TopupPage({
 
   // Jalankan semua query independen bersamaan. Sebelumnya game, provider,
   // ulasan, dan data blok rekomendasi dieksekusi berurutan.
-  const [game, rating, reviews, allGames, topUpJuga] = await Promise.all([
+  const [game, rating, reviews, allGames, topUpJuga, relatedGuides] = await Promise.all([
     getDynamicGame(slug),
     // Ulasan asli pembeli (hanya dari order SELESAI). Kalau DB bermasalah,
     // sembunyikan section + schema — halaman jualan tetap jalan.
@@ -66,6 +68,7 @@ export default async function TopupPage({
     getGameReviews(slug, 6).catch((): Review[] => []),
     getDynamicGames(),
     getTopUpJugaConfig(),
+    getPublishedArticlesForGame(slug, 3).catch(() => []),
   ])
   if (!game) notFound()
 
@@ -205,6 +208,8 @@ export default async function TopupPage({
       </section>
 
       <GameInfoBlock game={game} allGames={allGames} topUpJuga={topUpJuga} />
+
+      <RelatedGuides articles={relatedGuides} />
 
       {rating.count > 0 && (
         <section className="px-4 md:px-8 lg:px-12 pb-8 md:pb-16 max-w-[1400px] mx-auto w-full">

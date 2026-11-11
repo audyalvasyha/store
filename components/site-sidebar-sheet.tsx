@@ -13,6 +13,7 @@ const MAIN_LINKS = [
   { label: "Beranda", href: "/" },
   { label: "Semua Game", href: "/games" },
   { label: "Artikel & Panduan", href: "/artikel" },
+  { label: "Tentang Gastros", href: "/tentang" },
   { label: "Riwayat Order", href: "/orders" },
   { label: "Akun Saya", href: "/akun" },
 ]
