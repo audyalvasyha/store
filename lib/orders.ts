@@ -98,6 +98,34 @@ export type CashbackOrder = {
   cashbackRef?: string
 }
 
+/** Data order yang aman dikirim ke dashboard admin (tanpa field internal Mongo). */
+export type AdminOrder = {
+  code: string
+  status: OrderStatus
+  createdAt: string
+  gameSlug: string
+  gameName: string
+  denomLabel: string
+  quantity: number
+  amount: number
+  method: string
+  userId: string
+  server?: string
+  email: string
+  phone?: string
+  provider?: Order["provider"]
+  topupStatus?: TopupStatus
+  paidAt?: string
+  paymentError?: string
+  fallbackReason?: string
+  topupMessage?: string
+  stoneOrderId?: string
+  couponCode?: string
+  discount?: number
+  cashbackPaidAt?: string
+  cashbackRef?: string
+}
+
 const CASHBACK_PROJECTION = {
   code: 1,
   gameName: 1,
@@ -110,6 +138,33 @@ const CASHBACK_PROJECTION = {
   createdAt: 1,
   cashbackPaidAt: 1,
   cashbackPaidBy: 1,
+  cashbackRef: 1,
+} as const
+
+const ADMIN_ORDER_PROJECTION = {
+  code: 1,
+  status: 1,
+  createdAt: 1,
+  gameSlug: 1,
+  gameName: 1,
+  denomLabel: 1,
+  quantity: 1,
+  amount: 1,
+  method: 1,
+  userId: 1,
+  server: 1,
+  email: 1,
+  phone: 1,
+  provider: 1,
+  topupStatus: 1,
+  paidAt: 1,
+  paymentError: 1,
+  fallbackReason: 1,
+  topupMessage: 1,
+  stoneOrderId: 1,
+  couponCode: 1,
+  discount: 1,
+  cashbackPaidAt: 1,
   cashbackRef: 1,
 } as const
 
@@ -219,6 +274,52 @@ export async function listCashbackOrders(limit = 200): Promise<CashbackOrder[]> 
       { $project: { _id: 0, ...CASHBACK_PROJECTION } },
     ])
     .toArray();
+}
+
+/**
+ * Daftar order untuk dashboard admin. Query pencarian dibatasi ke field yang
+ * aman dan relevan; hasil selalu diurutkan dari order terbaru.
+ */
+export async function listAdminOrders({
+  query = "",
+  status = "all",
+  limit = 100,
+}: {
+  query?: string
+  status?: OrderStatus | "all"
+  limit?: number
+} = {}): Promise<AdminOrder[]> {
+  await ensureReady()
+  const db = await getDb()
+  const filter: Record<string, unknown> = {}
+  if (status !== "all") filter.status = status
+
+  const q = query.trim().slice(0, 80)
+  if (q) {
+    // Regex di-escape supaya input admin diperlakukan sebagai teks, bukan pola.
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    const re = { $regex: escaped, $options: "i" }
+    filter.$or = [
+      { code: re },
+      { email: re },
+      { phone: re },
+      { gameName: re },
+      { gameSlug: re },
+      { denomLabel: re },
+      { userId: re },
+    ]
+  }
+
+  const safeLimit = Math.min(Math.max(Math.trunc(limit) || 100, 1), 200)
+  return db
+    .collection<Order>("orders")
+    .aggregate<AdminOrder>([
+      { $match: filter },
+      { $sort: { createdAt: -1 } },
+      { $limit: safeLimit },
+      { $project: { _id: 0, ...ADMIN_ORDER_PROJECTION } },
+    ])
+    .toArray()
 }
 
 /**

@@ -8,11 +8,12 @@ import type { HeroEvent, TopUpJugaConfig } from "@/lib/content"
 import { AdminStatsView } from "@/components/admin-stats"
 import { AdminEventCarousel } from "@/components/admin-event-carousel"
 import { AdminCashback } from "@/components/admin-cashback"
+import { AdminOrders } from "@/components/admin-orders"
 import type { AdminStats } from "@/lib/analytics"
 import type { EventSlide } from "@/lib/event-carousel"
-import type { CashbackOrder } from "@/lib/orders"
+import type { AdminOrder, CashbackOrder } from "@/lib/orders"
 
-type Tab = "stats" | "hero" | "events" | "cashback" | "games" | "topupjuga"
+type Tab = "stats" | "orders" | "hero" | "events" | "cashback" | "games" | "topupjuga"
 
 const EMPTY_GAME: GameItem = {
   slug: "",
@@ -154,6 +155,7 @@ export function AdminPanel({
   topUpJuga,
   stats,
   cashbackOrders,
+  orders,
 }: {
   email: string
   hero: HeroEvent | null
@@ -162,11 +164,18 @@ export function AdminPanel({
   topUpJuga: TopUpJugaConfig | null
   stats: AdminStats | null
   cashbackOrders: CashbackOrder[]
+  orders: AdminOrder[]
 }) {
   const router = useRouter()
   const gameEditorRef = useRef<HTMLDivElement>(null)
   const [tab, setTab] = useState<Tab>("stats")
   const unpaidCashback = cashbackOrders.filter((order) => !order.cashbackPaidAt).length
+  // Badge pakai hitungan all-time dari statistik, bukan cuma 100 order yang dimuat.
+  const ordersNeedingAttention = stats
+    ? (stats.statusCounts.MENUNGGU_PEMBAYARAN ?? 0) + (stats.statusCounts.DIPROSES ?? 0)
+    : orders.filter(
+        (order) => order.status === "MENUNGGU_PEMBAYARAN" || order.status === "DIPROSES"
+      ).length
 
   // ── Hero event state ──
   const [imageUrl, setImageUrl] = useState(hero?.imageUrl ?? "")
@@ -353,6 +362,12 @@ export function AdminPanel({
             Statistik
           </button>
           <button
+            onClick={() => setTab("orders")}
+            className={`min-h-[44px] border border-border px-3 py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.12em] md:text-[10px] md:tracking-[0.15em] ${tab === "orders" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
+          >
+            Order{ordersNeedingAttention > 0 ? ` (${ordersNeedingAttention})` : ""}
+          </button>
+          <button
             onClick={() => setTab("hero")}
             className={`min-h-[44px] border border-border px-3 py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.12em] md:text-[10px] md:tracking-[0.15em] ${tab === "hero" ? "text-accent border-accent" : "text-foreground/50 hover:text-foreground"}`}
           >
@@ -393,6 +408,9 @@ export function AdminPanel({
 
       {/* STATISTIK TAB — dashboard ringkas dari data order asli */}
       {tab === "stats" && <AdminStatsView stats={stats} />}
+
+      {/* ORDER TAB — pencarian & detail transaksi, read-only */}
+      {tab === "orders" && <AdminOrders initialOrders={orders} />}
 
       {/* HERO TAB */}
       {tab === "hero" && (
