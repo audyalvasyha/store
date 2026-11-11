@@ -8,6 +8,7 @@ import { getAdminStats, type AdminStats } from "@/lib/analytics"
 import { listAdminOrders, listCashbackOrders, type AdminOrder } from "@/lib/orders"
 import { AdminPanel } from "@/components/admin-panel"
 import { AdminCoupons } from "@/components/admin-coupons"
+import { BrandLogo } from "@/components/brand-logo"
 
 export const dynamic = "force-dynamic"
 
@@ -36,13 +37,7 @@ export default async function AdminPage() {
       <div className="noise-overlay" aria-hidden="true" />
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 w-full">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 md:mb-8">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative w-8 h-8 flex items-center justify-center">
-              <div className="absolute inset-0 bg-accent" />
-              <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
-            </div>
-            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
-          </Link>
+          <BrandLogo compact subtitle="Admin Panel" className="shrink-0" />
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <Link
               href="/admin/artikel"

@@ -8,6 +8,7 @@ import { getRatingsByGame } from "@/lib/reviews"
 import { soldCountsByGame } from "@/lib/orders"
 import { GamesSearchInput } from "@/components/games-search-input"
 import { AuthNav } from "@/components/auth-nav"
+import { BrandLogo } from "@/components/brand-logo"
 import { SidebarMenuButton } from "@/components/site-sidebar"
 import { Suspense } from "react"
 import { Footer } from "@/components/footer"
@@ -127,13 +128,7 @@ export default async function GamesPage() {
 
       <header className="border-b border-border">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-3 md:py-6 flex flex-wrap items-center gap-x-3 gap-y-2 w-full">
-          <Link href="/" className="order-1 flex shrink-0 items-center gap-2">
-            <div className="relative w-8 h-8 flex items-center justify-center">
-              <div className="absolute inset-0 bg-accent" />
-              <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
-            </div>
-            <span className="hidden sm:inline font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
-          </Link>
+          <BrandLogo compact className="order-1 shrink-0" />
           <nav className="order-2 sm:order-3 ml-auto sm:ml-0 flex min-w-0 items-center gap-2 sm:gap-4 md:gap-8">
             <Link
               href="/"

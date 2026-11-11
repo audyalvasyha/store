@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { AuthNav } from "@/components/auth-nav"
+import { BrandLogo } from "@/components/brand-logo"
 import { SidebarMenuButton } from "@/components/site-sidebar"
 
 const LINKS = [
@@ -14,15 +15,7 @@ export function EditorialHeader({ active }: { active?: "games" | "artikel" | "or
   return (
     <header className="border-b border-border">
       <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-6 lg:px-12">
-        <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="GASTROS — Beranda">
-          <div className="relative flex h-8 w-8 items-center justify-center">
-            <div className="absolute inset-0 bg-accent" />
-            <span className="relative font-sans text-lg leading-none text-accent-foreground">G$</span>
-          </div>
-          <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-foreground">
-            Gastros
-          </span>
-        </Link>
+        <BrandLogo compact className="shrink-0" />
         <nav className="flex items-center gap-3 sm:gap-4 md:gap-6" aria-label="Navigasi utama">
           {LINKS.map((link) => (
             <Link

@@ -1,7 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Favicon GASTROS: kotak merah brand + monogram G$ ala logo header.
-       Warna HARUS sama dengan --accent di app/globals.css (hsl(0 100% 50%)). -->
-  <rect width="64" height="64" rx="10" fill="#080808"/>
-  <rect x="10" y="10" width="44" height="44" fill="#ff0000"/>
-  <text x="32" y="43" font-family="ui-monospace, monospace" font-size="26" font-weight="700" fill="#080808" text-anchor="middle">G$</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Favicon GASTROS: kotak merah brand + G blok. Warna sama dengan
+       --accent/#ff0000 dan --background/#080808 di app/globals.css. -->
+  <rect width="64" height="64" fill="#ff0000"/>
+  <path d="M46 14H14v36h36V30H30" fill="none" stroke="#080808" stroke-width="8" stroke-linejoin="miter"/>
 </svg>

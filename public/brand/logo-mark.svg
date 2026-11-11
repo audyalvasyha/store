@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="brand-mark-title">
+  <title id="brand-mark-title">GASTROS</title>
+  <rect width="64" height="64" fill="#ff0000"/>
+  <path d="M46 14H14v36h36V30H30" fill="none" stroke="#080808" stroke-width="8" stroke-linejoin="miter"/>
+</svg>

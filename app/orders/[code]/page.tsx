@@ -9,6 +9,7 @@ import { CopyOrderCode } from "@/app/orders/[code]/copy-code"
 import { ReviewForm } from "@/components/review-form"
 import { hasReviewed } from "@/lib/reviews"
 import { AuthNav } from "@/components/auth-nav"
+import { BrandLogo } from "@/components/brand-logo"
 import { SidebarMenuButton } from "@/components/site-sidebar"
 
 /** Warna semantik badge status — biar user langsung nangkep kondisi order tanpa baca teks. */
@@ -100,13 +101,7 @@ export default async function OrderPage({
 
       <header className="border-b border-border">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-3 md:py-6 flex items-center justify-between w-full">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative w-8 h-8 flex items-center justify-center">
-              <div className="absolute inset-0 bg-accent" />
-              <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
-            </div>
-            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
-          </Link>
+          <BrandLogo compact className="shrink-0" />
           <div className="flex items-center gap-3 md:gap-5">
             <Link
               href="/orders"

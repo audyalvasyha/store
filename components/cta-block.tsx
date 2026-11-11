@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { BrandMark } from "@/components/brand-mark"
 
 export function FinalCta() {
   const [visible, setVisible] = useState(false)
@@ -19,7 +20,10 @@ export function FinalCta() {
   return (
     <section id="contact" ref={ref} className="relative py-8 md:py-32 overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none" aria-hidden="true">
-        <span className="font-sans text-[40vw] md:text-[35vw] text-foreground/[0.02] leading-none">G$</span>
+        <BrandMark
+          variant="ghost"
+          className="h-[40vw] w-[40vw] text-foreground/[0.02] md:h-[35vw] md:w-[35vw]"
+        />
       </div>
 
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 relative z-10 text-center">

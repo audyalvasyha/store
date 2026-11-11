@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation"
-import Link from "next/link"
 import { cookies } from "next/headers"
 import { countAdmins, getAdminEmail, SESSION_COOKIE } from "@/lib/admin-auth"
 import { AdminLoginForm } from "@/components/admin-login-form"
+import { BrandLogo } from "@/components/brand-logo"
 
 export const dynamic = "force-dynamic"
 
@@ -41,13 +41,7 @@ export default async function AdminLoginPage({
     <main className="relative min-h-screen flex items-center justify-center px-4">
       <div className="noise-overlay" aria-hidden="true" />
       <div className="flex flex-col items-center gap-6">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="relative w-8 h-8 flex items-center justify-center">
-            <div className="absolute inset-0 bg-accent" />
-            <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
-          </div>
-          <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
-        </Link>
+        <BrandLogo compact subtitle="Admin Panel" />
         {dbOk ? (
           <AdminLoginForm first={first} returnTo={target} />
         ) : (

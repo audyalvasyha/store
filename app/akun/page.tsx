@@ -18,6 +18,7 @@ import { PasswordRegister } from "@/components/password-register"
 import { PasswordEditor } from "@/components/password-editor"
 import { GoogleLoginButton } from "@/components/google-login-button"
 import { AuthNav } from "@/components/auth-nav"
+import { BrandLogo } from "@/components/brand-logo"
 import { SidebarMenuButton } from "@/components/site-sidebar"
 import { Footer } from "@/components/footer"
 import { getGoogleClientId } from "@/lib/google-auth"
@@ -65,7 +66,6 @@ export default async function AccountPage({
           ? "Email & password"
           : "Email (OTP)"
   const displayName = profile?.name?.trim() || "Pembeli Gastros"
-  const initial = (profile?.name?.trim()?.[0] ?? masked[0] ?? "G").toUpperCase()
   const joinedAt = profile?.createdAt
     ? new Date(profile.createdAt).toLocaleDateString("id-ID", {
         dateStyle: "long",
@@ -86,13 +86,7 @@ export default async function AccountPage({
 
       <header className="border-b border-border">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 py-3 md:py-6 flex items-center justify-between w-full">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative w-8 h-8 flex items-center justify-center">
-              <div className="absolute inset-0 bg-accent" />
-              <span className="relative font-sans text-lg text-accent-foreground leading-none">G$</span>
-            </div>
-            <span className="font-mono text-[10px] tracking-[0.3em] text-foreground uppercase">Gastros</span>
-          </Link>
+          <BrandLogo compact className="shrink-0" />
           <nav className="flex items-center gap-3 md:gap-6">
             <Link
               href="/games"
@@ -114,6 +108,7 @@ export default async function AccountPage({
                       provider: identity.provider,
                       masked,
                       name: profile?.name ?? null,
+                      avatarUrl: profile?.avatarUrl ?? null,
                     }
                   : null
               }
@@ -237,20 +232,13 @@ export default async function AccountPage({
                 <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase block mb-3">
                   [Profil]
                 </span>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-accent font-sans text-2xl leading-none text-accent-foreground">
-                    {initial}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-sans text-xl md:text-2xl uppercase tracking-tight text-foreground">
-                      {displayName}
-                    </p>
-                    <p className="truncate font-mono text-[10px] text-foreground/45">
-                      {masked} · {identity.kind === "email" ? "Email" : "WhatsApp"}
-                    </p>
-                  </div>
-                </div>
-                <ProfileEditor initialName={profile?.name} />
+                <ProfileEditor
+                  initialName={profile?.name}
+                  initialAvatarUrl={profile?.avatarUrl}
+                  initialAvatarSource={profile?.avatarSource}
+                  hasGoogleAvatar={Boolean(profile?.hasGoogleAvatar)}
+                  identityLabel={`${masked} · ${identity.kind === "email" ? "Email" : "WhatsApp"}`}
+                />
                 {joinedAt && (
                   <p className="mt-3 font-mono text-[9px] text-foreground/35">
                     Member sejak {joinedAt}

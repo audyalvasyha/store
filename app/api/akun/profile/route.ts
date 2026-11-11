@@ -3,10 +3,11 @@ import { cookies } from "next/headers"
 import {
   CUSTOMER_COOKIE,
   getCustomerIdentity,
-  updateCustomerName,
+  updateCustomerProfile,
   type CustomerIdentity,
 } from "@/lib/customer-auth"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
+import { validateAvatarDataUrl } from "@/lib/avatar-data"
 
 export const dynamic = "force-dynamic"
 
@@ -41,19 +42,77 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json()
-    const raw = typeof body?.name === "string" ? body.name : ""
-    // Rapikan spasi ganda + batasi panjang; kosong = hapus nama tampilan.
-    const name = raw.replace(/[\u0000-\u001f\u007f]/g, "").replace(/\s+/g, " ").trim()
-    if (name && !NAME_EXP.test(name)) {
+    const body = (await request.json().catch(() => null)) as Record<string, unknown> | null
+    if (!body || typeof body !== "object") {
       return NextResponse.json(
-        { error: "Nama 2–40 karakter: huruf, angka, spasi, titik, apostrof, _ atau -." },
+        { error: "Permintaan profil nggak valid." },
         { status: 400, headers: NO_STORE }
       )
     }
 
-    await updateCustomerName(identity, name || undefined)
-    return NextResponse.json({ ok: true, name: name || null }, { headers: NO_STORE })
+    const hasName = Object.prototype.hasOwnProperty.call(body, "name")
+    const hasAvatar = Object.prototype.hasOwnProperty.call(body, "avatar")
+    if (!hasName && !hasAvatar) {
+      return NextResponse.json(
+        { error: "Nggak ada perubahan profil yang dikirim." },
+        { status: 400, headers: NO_STORE }
+      )
+    }
+
+    const patch: { name?: string | null; avatar?: string | null } = {}
+
+    if (hasName) {
+      if (typeof body.name !== "string") {
+        return NextResponse.json(
+          { error: "Nama nggak valid." },
+          { status: 400, headers: NO_STORE }
+        )
+      }
+      // Rapikan spasi ganda + batasi panjang; kosong = hapus nama tampilan.
+      const name = body.name
+        .replace(/[\u0000-\u001f\u007f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+      if (name && !NAME_EXP.test(name)) {
+        return NextResponse.json(
+          { error: "Nama 2–40 karakter: huruf, angka, spasi, titik, apostrof, _ atau -." },
+          { status: 400, headers: NO_STORE }
+        )
+      }
+      patch.name = name || null
+    }
+
+    if (hasAvatar) {
+      if (body.avatar === null || body.avatar === "") {
+        patch.avatar = null
+      } else if (typeof body.avatar !== "string") {
+        return NextResponse.json(
+          { error: "Foto profil nggak valid." },
+          { status: 400, headers: NO_STORE }
+        )
+      } else {
+        const avatarError = validateAvatarDataUrl(body.avatar)
+        if (avatarError) {
+          return NextResponse.json(
+            { error: avatarError },
+            { status: 400, headers: NO_STORE }
+          )
+        }
+        patch.avatar = body.avatar
+      }
+    }
+
+    const profile = await updateCustomerProfile(identity, patch)
+    return NextResponse.json(
+      {
+        ok: true,
+        name: profile.name ?? null,
+        avatarUrl: profile.avatarUrl ?? null,
+        avatarSource: profile.avatarSource ?? null,
+        hasGoogleAvatar: profile.hasGoogleAvatar,
+      },
+      { headers: NO_STORE }
+    )
   } catch {
     return NextResponse.json(
       { error: "Gagal menyimpan profil. Coba lagi." },

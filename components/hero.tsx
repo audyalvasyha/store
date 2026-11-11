@@ -4,6 +4,7 @@ import React from "react"
 import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import { AuthNav } from "@/components/auth-nav"
+import { BrandLogo } from "@/components/brand-logo"
 
 function Counter({
   target,
@@ -159,20 +160,9 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
         className="relative z-20 flex items-center justify-between px-4 md:px-8 lg:px-12 py-3 md:py-6 bg-gradient-to-b from-background/95 via-background/70 to-transparent anim-cut-in"
         style={d(100)}
       >
-        <Link href="/" className="flex items-center gap-2">
-          <div className="relative w-7 h-7 md:w-8 md:h-8 flex items-center justify-center anim-snap-in" style={d(150)}>
-            <div className="absolute inset-0 bg-accent" />
-            <span className="relative font-sans text-sm md:text-lg text-accent-foreground leading-none">G$</span>
-          </div>
-          <div className="flex flex-col anim-slide-left" style={d(200)}>
-            <span className="font-mono text-[10px] md:text-[10px] tracking-[0.25em] md:tracking-[0.4em] text-foreground uppercase leading-none">
-              Gastros
-            </span>
-            <span className="hidden sm:block font-mono text-[10px] md:text-[10px] tracking-[0.15em] text-foreground/60 uppercase">
-              Game Top Up Center
-            </span>
-          </div>
-        </Link>
+        <div className="anim-cut-in" style={d(150)}>
+          <BrandLogo subtitle="Game Top Up Center" />
+        </div>
 
         <div className="hidden lg:flex items-center gap-10">
           {NAV_LINKS.map((link, i) => (

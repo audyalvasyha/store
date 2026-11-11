@@ -9,6 +9,10 @@ import {
 import { GAMES, filterGames, lowestPrice, toCatalogGame } from "../lib/catalog"
 import { resolveGameGenres } from "../lib/game-genres"
 import { normalizeAdsenseClient, normalizeAdSlot } from "../lib/ads"
+import {
+  MAX_AVATAR_BYTES,
+  validateAvatarDataUrl,
+} from "../lib/avatar-data"
 
 test("kupon persen dihitung dari subtotal", () => {
   assert.equal(
@@ -128,6 +132,33 @@ test("genre fallback membaca nama/kategori dan tidak memaksa produk non-game", (
     resolveGameGenres({ slug: "streaming-baru", name: "Streaming Baru", category: "VOUCHER" }),
     []
   )
+})
+
+test("foto profil hanya menerima data URL gambar dengan isi yang cocok", () => {
+  const png =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+  assert.equal(validateAvatarDataUrl(png), null)
+  assert.match(
+    validateAvatarDataUrl(png.replace("image/png", "image/jpeg")) ?? "",
+    /Isi foto/
+  )
+  assert.match(
+    validateAvatarDataUrl("https://contoh.com/foto.png") ?? "",
+    /Format foto/
+  )
+})
+
+test("foto profil menolak payload yang terlalu besar", () => {
+  assert.match(
+    validateAvatarDataUrl(`data:image/png;base64,${"A".repeat(300_001)}`) ?? "",
+    /terlalu besar/
+  )
+
+  const bytes = Buffer.alloc(MAX_AVATAR_BYTES + 1)
+  bytes.set([0x89, 0x50, 0x4e, 0x47])
+  const dataUrl = `data:image/png;base64,${bytes.toString("base64")}`
+  assert.ok(dataUrl.length < 300_000)
+  assert.match(validateAvatarDataUrl(dataUrl) ?? "", /terlalu besar/)
 })
 
 test("id adsense dinormalisasi dan divalidasi sebelum dipakai", () => {

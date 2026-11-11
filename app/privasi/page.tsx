@@ -73,8 +73,9 @@ export default function PrivacyPage() {
               </li>
               <li>
                 <strong className="text-foreground/80">Data akun:</strong> email
-                atau nomor WhatsApp yang kamu pakai untuk masuk, serta riwayat
-                order yang terhubung ke akun tersebut.
+                atau nomor WhatsApp yang kamu pakai untuk masuk, nama tampilan,
+                foto profil (bila kamu unggah atau masuk lewat Google), serta
+                riwayat order yang terhubung ke akun tersebut.
               </li>
               <li>
                 <strong className="text-foreground/80">Data teknis:</strong> alamat

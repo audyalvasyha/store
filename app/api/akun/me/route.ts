@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic"
 const NO_STORE = { "Cache-Control": "no-store" }
 
 /**
- * Info sesi buat header: cuma `{ kind, masked, name }`.
+ * Info sesi buat header: `{ kind, masked, name, avatarUrl }`.
  * Email/nomor asli TIDAK pernah dikirim ke client — cukup versi tersamar.
  */
 export async function GET(request: Request) {
@@ -35,6 +35,7 @@ export async function GET(request: Request) {
           provider: identity.provider ?? null,
           masked: maskIdentity(identity),
           name: profile?.name ?? null,
+          avatarUrl: profile?.avatarUrl ?? null,
         },
       },
       { headers: NO_STORE }

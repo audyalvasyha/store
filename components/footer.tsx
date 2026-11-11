@@ -1,5 +1,6 @@
 "use client"
 
+import { BrandLogo } from "@/components/brand-logo"
 import { WA_NUMBER } from "@/lib/catalog"
 
 /** 62xxx -> 0xxx terformat biar gak dobel sumber data (satu pintu dari katalog). */
@@ -79,11 +80,8 @@ export function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-3 md:mb-6">
-              <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-accent" />
-              <span className="font-mono text-[10px] md:text-xs tracking-[0.25em] md:tracking-[0.3em] text-foreground uppercase">
-                Gastros
-              </span>
+            <div className="mb-3 md:mb-6">
+              <BrandLogo compact subtitle="Top Up / Game Center" />
             </div>
             <p className="font-mono text-[10px] text-muted-foreground leading-relaxed">
               Top up instant.

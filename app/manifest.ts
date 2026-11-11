@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next"
 /**
  * Web app manifest (PWA): situs bisa Instal ke home screen HP user
  * (Chrome: "Add to Home screen", Android: banner instal otomatis).
- * Ikon di-generate dengan scripts/gen-icons.mjs (kotak merah brand + monogram G$).
+ * Ikon di-generate dengan scripts/gen-icons.mjs (kotak merah brand + G blok).
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
