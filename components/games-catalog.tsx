@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { GAMES, filterGames, lowestPrice, formatIDR, type GameItem } from "@/lib/catalog"
+import { filterGames, formatIDR, type CatalogGame } from "@/lib/catalog"
 import {
   GAME_GENRES,
   genreLabel,
@@ -23,12 +23,12 @@ import { GAMES_SEARCH_EVENT } from "@/components/games-search-input"
 const BATCH = 16
 
 export function GamesCatalog({
-  games = GAMES,
+  games,
   ratings,
   sold,
   sort = "nama",
 }: {
-  games?: GameItem[]
+  games: CatalogGame[]
   ratings?: Record<string, { average: number; count: number }>
   sold?: Record<string, number>
   sort?: string
@@ -127,7 +127,7 @@ export function GamesCatalog({
     return () => observer.disconnect()
   }, [])
 
-  const totalItems = sortedGames.reduce((sum, g) => sum + g.denominations.length, 0)
+  const totalItems = sortedGames.reduce((sum, g) => sum + g.denominationCount, 0)
 
   function applyGenre(next: GenreId | "all") {
     setActiveGenre(next)
@@ -321,7 +321,7 @@ function GameCard({
   game,
   rating,
 }: {
-  game: GameItem
+  game: CatalogGame
   rating?: { average: number; count: number }
 }) {
   const primaryGenre = resolveGameGenres(game)[0]
@@ -352,7 +352,7 @@ function GameCard({
           {primaryGenre ? genreLabel(primaryGenre) : game.category}
         </span>
         <span className="absolute top-2 md:top-3 right-2 md:right-3 font-mono text-[8px] md:text-[9px] text-foreground/60 tracking-[0.1em] uppercase">
-          {String(game.denominations.length).padStart(2, "0")} ITEM
+          {String(game.denominationCount).padStart(2, "0")} ITEM
         </span>
 
         {/* Nama panjang di dalam kartu (desktop) */}
@@ -369,7 +369,7 @@ function GameCard({
         <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
           <RatingBadge rating={rating} />
           <span className="font-mono text-[9px] md:text-[10px] text-muted-foreground">
-            {formatIDR(lowestPrice(game))}
+            {formatIDR(game.lowestPrice)}
           </span>
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-accent" aria-hidden="true">
             <path d="M1 11L11 1M11 1H3M11 1V9" stroke="currentColor" strokeWidth="1.5" />

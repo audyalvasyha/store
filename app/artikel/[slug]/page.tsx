@@ -3,6 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArticleBody } from "@/components/article-body"
 import { AdSlot } from "@/components/ad-slot"
+import { AdSenseScript } from "@/components/adsense-script"
 import { ArticleCard } from "@/components/article-card"
 import { EditorialHeader } from "@/components/editorial-header"
 import { Footer } from "@/components/footer"
@@ -168,6 +169,8 @@ export default async function ArticlePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
+      {/* Script AdSense cuma di halaman yang punya slot iklan. */}
+      <AdSenseScript />
       <div className="noise-overlay" aria-hidden="true" />
       <EditorialHeader active="artikel" />
 
@@ -195,6 +198,8 @@ export default async function ArticlePage({
               alt=""
               className="h-[220px] w-full object-cover md:h-[380px]"
               loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
             <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-end justify-between gap-3">

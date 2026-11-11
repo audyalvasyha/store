@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { GAMES, lowestPrice, formatIDR, type GameItem } from "@/lib/catalog"
+import { formatIDR, type CatalogGame } from "@/lib/catalog"
 import { GameArtwork } from "@/components/game-artwork"
 
-export function FeaturedGames({ games = GAMES }: { games?: GameItem[] }) {
+export function FeaturedGames({ games }: { games: CatalogGame[] }) {
   const sectionRef = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(false)
 
@@ -23,7 +23,7 @@ export function FeaturedGames({ games = GAMES }: { games?: GameItem[] }) {
     return () => observer.disconnect()
   }, [])
 
-  const featured = games.filter((g) => g.featured)
+  const featured = games
 
   return (
     <section
@@ -106,7 +106,7 @@ export function FeaturedGames({ games = GAMES }: { games?: GameItem[] }) {
                     </div>
                   </div>
                   <span className="font-mono text-[10px] md:text-[10px] text-muted-foreground block tracking-[0.1em] uppercase mt-1">
-                    mulai {formatIDR(lowestPrice(game))}
+                    mulai {formatIDR(game.lowestPrice)}
                   </span>
                 </div>
               </Link>

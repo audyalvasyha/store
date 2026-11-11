@@ -6,7 +6,6 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { FloatingWhatsApp } from '@/components/floating-whatsapp'
 import { SiteSidebar } from '@/components/site-sidebar'
-import { AdSenseScript } from '@/components/adsense-script'
 import { safeJsonLd } from '@/lib/jsonld'
 
 const _bebasNeue = Bebas_Neue({
@@ -121,7 +120,6 @@ export default function RootLayout({
         <SiteSidebar />
         <FloatingWhatsApp />
         <Analytics />
-        <AdSenseScript />
       </body>
     </html>
   )

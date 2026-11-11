@@ -1,7 +1,7 @@
 import Link from "next/link"
 import type { Metadata } from "next"
 import { BackButton } from "@/components/back-button"
-import { GAMES } from "@/lib/catalog"
+import { GAMES, toCatalogGame } from "@/lib/catalog"
 import { getDynamicGames } from "@/lib/content"
 import { GamesCatalog } from "@/components/games-catalog"
 import { getRatingsByGame } from "@/lib/reviews"
@@ -40,6 +40,8 @@ export default async function GamesPage() {
     getRatingsByGame().catch(() => ({}) as Record<string, { average: number; count: number }>),
     soldCountsByGame().catch(() => ({}) as Record<string, number>),
   ])
+
+  const catalogGames = (allGames.length > 0 ? allGames : GAMES).map(toCatalogGame)
 
   return (
     <main className="relative min-h-screen">
@@ -84,7 +86,7 @@ export default async function GamesPage() {
         </div>
       </section>
 
-      <GamesCatalog games={allGames.length > 0 ? allGames : GAMES} ratings={ratings} sold={sold} />
+      <GamesCatalog games={catalogGames} ratings={ratings} sold={sold} />
       <Footer />
     </main>
   )

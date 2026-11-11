@@ -1,24 +1,11 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
 import { WA_NUMBER } from "@/lib/catalog"
 
 /** 62xxx -> 0xxx terformat biar gak dobel sumber data (satu pintu dari katalog). */
 const WA_DISPLAY = `0${WA_NUMBER.slice(2).replace(/(\d{4})(\d{4})(\d{4})/, "$1-$2-$3")}`
 
 export function Footer() {
-  const marqueeRef = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true) },
-      { threshold: 0.1 }
-    )
-    if (marqueeRef.current) observer.observe(marqueeRef.current)
-    return () => observer.disconnect()
-  }, [])
-
   const marqueeText = "GASTROS / TOP UP GAME / "
 
   // Logo metode pembayaran — self-hosted di /public/images/payments
@@ -69,8 +56,8 @@ export function Footer() {
       </div>
 
       {/* Marquee */}
-      <div ref={marqueeRef} className="overflow-hidden border-b border-border py-3 md:py-8">
-        <div className={`flex whitespace-nowrap transition-opacity duration-700 ${visible ? "opacity-100" : "opacity-0"}`}>
+      <div className="overflow-hidden border-b border-border py-3 md:py-8">
+        <div className="flex whitespace-nowrap">
           <div className="flex animate-marquee-footer shrink-0">
             {Array.from({ length: 4 }).map((_, i) => (
               <span key={`a-${i}`} className="font-sans text-[10vw] md:text-[7vw] tracking-tighter uppercase footer-stroke-text">

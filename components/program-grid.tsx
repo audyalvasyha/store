@@ -3,12 +3,10 @@
 import { Suspense, useState, useEffect, useRef, useMemo } from "react"
 import Link from "next/link"
 import {
-  GAMES,
   filterGames,
-  lowestPrice,
   formatIDR,
   formatPriceShort,
-  type GameItem,
+  type CatalogGame,
 } from "@/lib/catalog"
 import { GameArtwork } from "@/components/game-artwork"
 import { GAMES_SEARCH_EVENT, GamesSearchInput } from "@/components/games-search-input"
@@ -20,12 +18,12 @@ import type { EventSlide } from "@/lib/event-carousel"
 const MAX_ROWS = 12
 
 export function GameGrid({
-  games = GAMES,
+  games,
   sold,
   ratings,
   slides = [],
 }: {
-  games?: GameItem[]
+  games: CatalogGame[]
   /** Map slug -> total item terjual bulan ini (dari Mongo). Kosong = sembunyikan badge. */
   sold?: Record<string, number>
   /** Map slug -> rating rata-rata + jumlah ulasan asli. */
@@ -73,7 +71,7 @@ export function GameGrid({
     }
   }, [])
 
-  const totalItems = filteredGames.reduce((sum, g) => sum + g.denominations.length, 0)
+  const totalItems = filteredGames.reduce((sum, g) => sum + g.denominationCount, 0)
 
   return (
     <section
@@ -186,7 +184,7 @@ export function GameGrid({
 
                 {/* Description - desktop only, lebar tetap biar jarak antar-baris konsisten */}
                 <p className={`font-mono text-xs w-48 lg:w-64 shrink-0 leading-relaxed text-foreground/60 transition-all duration-300 hidden lg:block ${hoveredId === game.slug ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"}`}>
-                  {game.denominations.length} nominal {game.currency.toLowerCase()} siap kirim. Proses otomatis, jalur resmi.
+                  {game.denominationCount} nominal {game.currency.toLowerCase()} siap kirim. Proses otomatis, jalur resmi.
                 </p>
 
                 {/* Meta */}
@@ -207,7 +205,7 @@ export function GameGrid({
                   <div className="text-right">
                     <span className="font-mono text-[9px] md:text-[11px] text-foreground/35 block tracking-[0.08em] md:tracking-[0.2em] uppercase mb-0.5">Mulai dari</span>
                     <span className={`font-mono text-[10px] md:text-xs ${hoveredId === game.slug ? "text-accent" : "text-foreground/75"}`}>
-                      {formatIDR(lowestPrice(game))} <span className="text-foreground/35">({formatPriceShort(lowestPrice(game))})</span>
+                      {formatIDR(game.lowestPrice)} <span className="text-foreground/35">({formatPriceShort(game.lowestPrice)})</span>
                     </span>
                   </div>
                 </div>
