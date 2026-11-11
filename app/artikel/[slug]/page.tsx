@@ -45,7 +45,7 @@ export async function generateMetadata({
     title,
     description,
     keywords: article.tags,
-    authors: [{ name: "Tim Gastros" }],
+    authors: [{ name: "Tim Gastros", url: `${SITE_URL}/tentang` }],
     alternates: {
       canonical: `/artikel/${article.slug}`,
     },
@@ -131,7 +131,7 @@ export default async function ArticlePage({
         author: {
           "@type": "Organization",
           name: "Tim Gastros",
-          url: SITE_URL,
+          url: `${SITE_URL}/tentang`,
         },
         publisher: {
           "@type": "Organization",
@@ -237,7 +237,12 @@ export default async function ArticlePage({
                 {article.description}
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[9px] uppercase tracking-[0.13em] text-foreground/35">
-                <span>Oleh Tim Gastros</span>
+                <Link
+                  href="/tentang"
+                  className="transition-colors hover:text-foreground"
+                >
+                  Oleh Tim Gastros
+                </Link>
                 <span className="h-px w-6 bg-accent" aria-hidden="true" />
                 <span>
                   {article.updated !== article.date

@@ -97,6 +97,24 @@ export default function RootLayout({
         name: 'GASTROS',
         url: SITE_URL,
         logo: `${SITE_URL}/icon.svg`,
+        description:
+          'Layanan top up game dan produk digital untuk pemain Indonesia, dengan proses kilat lewat jalur resmi publisher.',
+        email: 'cs@gastros.id',
+        sameAs: [
+          'https://www.instagram.com/gastros.id_',
+          'https://www.tiktok.com/@gastros.id_',
+        ],
+        contactPoint: [
+          {
+            '@type': 'ContactPoint',
+            contactType: 'customer support',
+            email: 'cs@gastros.id',
+            telephone: '+6281373634190',
+            areaServed: 'ID',
+            availableLanguage: ['id'],
+            url: `${SITE_URL}/tentang`,
+          },
+        ],
       },
       {
         '@type': 'WebSite',
