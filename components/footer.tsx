@@ -100,6 +100,7 @@ export function Footer() {
             <nav aria-label="Navigasi footer" className="flex flex-col gap-2 md:gap-3">
               {[
                 { label: "Semua Game", href: "/games" },
+                { label: "Promo & Link Bio", href: "/promo" },
                 { label: "Artikel & Panduan", href: "/artikel" },
                 { label: "Tentang Gastros", href: "/tentang" },
                 { label: "Price List", href: "/#harga" },

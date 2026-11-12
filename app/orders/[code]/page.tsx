@@ -7,6 +7,7 @@ import { StatusPoller } from "@/app/orders/[code]/status-poller"
 import { StonePayBox } from "@/app/orders/[code]/stone-pay-box"
 import { CopyOrderCode } from "@/app/orders/[code]/copy-code"
 import { ReviewForm } from "@/components/review-form"
+import { OrderConversionTracker } from "@/components/order-conversion-tracker"
 import { hasReviewed } from "@/lib/reviews"
 import { AuthNav } from "@/components/auth-nav"
 import { BrandLogo } from "@/components/brand-logo"
@@ -137,6 +138,14 @@ export default async function OrderPage({
           </span>
         </div>
         <StatusPoller code={order.code} />
+        {order.status === "SELESAI" ? (
+          <OrderConversionTracker
+            code={order.code}
+            amount={order.amount}
+            quantity={order.quantity}
+            gameName={order.gameName}
+          />
+        ) : null}
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4 md:gap-8 mt-6 md:mt-12 items-start">
           {/* Detail order */}

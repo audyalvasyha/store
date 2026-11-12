@@ -147,6 +147,19 @@ function OrderDetail({ order, onClose }: { order: AdminOrder; onClose: () => voi
         <Field label="Dibayar">{formatDate(order.paidAt)}</Field>
         {order.couponCode && <Field label="Kupon">{order.couponCode}</Field>}
         {order.discount ? <Field label="Cashback / diskon">{formatIDR(order.discount)}</Field> : null}
+        {order.attribution && (
+          <Field label="Sumber campaign">
+            {[
+              order.attribution.source,
+              order.attribution.medium,
+              order.attribution.campaign,
+              order.attribution.content,
+              order.attribution.term,
+            ]
+              .filter(Boolean)
+              .join(" / ")}
+          </Field>
+        )}
         {order.stoneOrderId && <Field label="ID provider">{order.stoneOrderId}</Field>}
         {order.cashbackPaidAt && (
           <Field label="Cashback ditransfer">{formatDate(order.cashbackPaidAt)}</Field>

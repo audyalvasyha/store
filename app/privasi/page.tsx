@@ -6,13 +6,13 @@ import { Footer } from "@/components/footer"
 export const metadata: Metadata = {
   title: "Kebijakan Privasi",
   description:
-    "Kebijakan privasi GASTROS: data yang kami proses, penggunaan cookie, analytics, dan iklan Google AdSense.",
+    "Kebijakan privasi GASTROS: data yang kami proses, penggunaan cookie, analytics, pixel iklan, dan iklan Google AdSense.",
   alternates: {
     canonical: "/privasi",
   },
 }
 
-const UPDATED = "11 November 2026"
+const UPDATED = "12 November 2026"
 
 export default function PrivacyPage() {
   return (
@@ -148,6 +148,13 @@ export default function PrivacyPage() {
               GASTROS.
             </p>
             <p className="mt-3">
+              Jika kami menjalankan kampanye di Meta atau TikTok, platform tersebut
+              dapat menerima data teknis dan event kunjungan/checkout lewat pixel
+              untuk mengukur performa iklan. Kamu dapat membatasi cookie/pixel
+              lewat pengaturan browser atau alat opt-out yang disediakan platform
+              masing-masing.
+            </p>
+            <p className="mt-3">
               Jika iklan diaktifkan untuk pengunjung di EEA, Inggris, atau Swiss,
               kami akan menampilkan permintaan consent yang dikelola penyedia
               consent management yang sesuai dengan ketentuan Google. Kamu bisa
@@ -161,9 +168,18 @@ export default function PrivacyPage() {
             </h2>
             <p>
               Kami memakai analytics untuk melihat statistik kunjungan secara
-              agregat, seperti halaman yang banyak dibuka dan performa perangkat.
-              Data ini dipakai untuk memperbaiki situs dan tidak digunakan untuk
-              mengidentifikasi kamu secara pribadi.
+              agregat, seperti halaman yang banyak dibuka, performa perangkat, dan
+              sumber campaign. Penyedia yang dapat kami gunakan antara lain Vercel
+              Analytics, Google Analytics 4, dan Microsoft Clarity untuk heatmap /
+              rekaman sesi. Data ini dipakai untuk memperbaiki situs dan tidak
+              digunakan untuk mengidentifikasi kamu secara pribadi.
+            </p>
+            <p className="mt-3">
+              Untuk mengetahui campaign mana yang menghasilkan order, kami
+              menyimpan parameter UTM (source, medium, campaign, content, term) di
+              browser selama maksimal 30 hari dan mengaitkannya dengan order saat
+              checkout. Kami tidak menyimpan password atau data pembayaran di
+              parameter tersebut.
             </p>
           </section>
 

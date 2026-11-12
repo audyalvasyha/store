@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { getDb, ensureIndexes } from "./mongodb";
 import { denomLabelKey, type PopularDenomsByGame } from "./catalog";
+import type { Attribution } from "./attribution";
 
 let initPromise: Promise<void> | null = null;
 
@@ -73,6 +74,8 @@ export type Order = {
   discount?: number;
   /** Kode kupon yang dipakai, biar bisa diperiksa admin & anti double-apply. */
   couponCode?: string;
+  /** UTM campaign yang membawa pembeli sampai checkout. */
+  attribution?: Attribution;
   /** Kapan cashback kupon sudah ditransfer manual oleh admin (ISO). */
   cashbackPaidAt?: string;
   /** Email admin yang menandai cashback sudah ditransfer. */
@@ -122,6 +125,7 @@ export type AdminOrder = {
   stoneOrderId?: string
   couponCode?: string
   discount?: number
+  attribution?: Attribution
   cashbackPaidAt?: string
   cashbackRef?: string
 }
@@ -164,6 +168,7 @@ const ADMIN_ORDER_PROJECTION = {
   stoneOrderId: 1,
   couponCode: 1,
   discount: 1,
+  attribution: 1,
   cashbackPaidAt: 1,
   cashbackRef: 1,
 } as const
@@ -307,6 +312,9 @@ export async function listAdminOrders({
       { gameSlug: re },
       { denomLabel: re },
       { userId: re },
+      { "attribution.source": re },
+      { "attribution.medium": re },
+      { "attribution.campaign": re },
     ]
   }
 

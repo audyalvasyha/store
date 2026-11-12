@@ -5,6 +5,7 @@ import { generateOrderCode, getOrder, saveOrder, updateOrder, type Order } from 
 import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gamestoneConfigured, stoneFetchLastError, type StoneOrder, type StonePaymentMethod } from "@/lib/gamestone"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
 import { checkCoupon, consumeCoupon, normalizeCouponCode } from "@/lib/coupons"
+import { hasAttribution, sanitizeAttribution } from "@/lib/attribution"
 import { sendOrderStatusNotifications } from "@/lib/notify"
 import {
   manualOrderAmount,
@@ -58,6 +59,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { gameSlug, denomId, quantity, userId, server, phone, email, method } = body ?? {}
+    // UTM cuma boleh berisi field yang dikenal; jangan simpan query mentah.
+    const attribution = sanitizeAttribution(body?.attribution)
 
     const game = await getDynamicGame(String(gameSlug ?? ""))
     if (!game) {
@@ -146,6 +149,7 @@ export async function POST(request: Request) {
       phone: phoneRaw,
       email: String(email).trim(),
       topupStatus: "BELUM",
+      ...(hasAttribution(attribution) ? { attribution } : {}),
     }
 
     // ── Kupon promo: validasi server-side (client gak dipercaya untuk harga).
