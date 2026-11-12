@@ -13,6 +13,12 @@ import {
   MAX_AVATAR_BYTES,
   validateAvatarDataUrl,
 } from "../lib/avatar-data"
+import {
+  appendAttribution,
+  attributionFromSearchParams,
+  hasAttribution,
+  sanitizeAttribution,
+} from "../lib/attribution"
 
 test("kupon persen dihitung dari subtotal", () => {
   assert.equal(
@@ -173,4 +179,66 @@ test("id adsense dinormalisasi dan divalidasi sebelum dipakai", () => {
   assert.equal(normalizeAdsenseClient("pub-123"), null)
   assert.equal(normalizeAdSlot("1234567890"), "1234567890")
   assert.equal(normalizeAdSlot("bukan-slot"), null)
+})
+
+test("atribusi UTM hanya menyimpan field yang dikenal", () => {
+  const attribution = sanitizeAttribution({
+    source: "Instagram",
+    medium: "Social",
+    campaign: "Gas Pertama",
+    content: "Reel 1",
+    term: "top up mlbb",
+    email: "jangan-disimpan@example.com",
+    utm_source: "harus-diabaikan",
+  })
+
+  assert.deepEqual(attribution, {
+    source: "instagram",
+    medium: "social",
+    campaign: "gas pertama",
+    content: "Reel 1",
+    term: "top up mlbb",
+  })
+  assert.equal(hasAttribution(attribution), true)
+  assert.equal(hasAttribution({}), false)
+})
+
+test("atribusi membaca parameter utm dari URL", () => {
+  const attribution = attributionFromSearchParams(
+    new URLSearchParams(
+      "utm_source=IG&utm_medium=Social&utm_campaign=Gas%20Pertama&utm_content=Reel%201"
+    )
+  )
+
+  assert.deepEqual(attribution, {
+    source: "ig",
+    medium: "social",
+    campaign: "gas pertama",
+    content: "Reel 1",
+  })
+})
+
+test("link promo meneruskan UTM tanpa merusak query lama", () => {
+  assert.equal(
+    appendAttribution("/top-up/mobile-legends?coupon=GASBARU#form", {
+      source: "tiktok",
+      medium: "social",
+      campaign: "gas-pertama",
+    }),
+    "/top-up/mobile-legends?coupon=GASBARU&utm_source=tiktok&utm_medium=social&utm_campaign=gas-pertama#form"
+  )
+  assert.equal(
+    appendAttribution("https://example.com", { source: "tiktok" }),
+    "https://example.com"
+  )
+  assert.equal(appendAttribution("/games", {}), "/games")
+})
+
+test("nilai atribusi dibatasi dan karakter kontrol dibersihkan", () => {
+  const attribution = sanitizeAttribution({
+    campaign: `  ${"a".repeat(100)}\u0000  `,
+  })
+
+  assert.equal(attribution.campaign?.length, 80)
+  assert.equal(attribution.campaign?.includes("\u0000"), false)
 })

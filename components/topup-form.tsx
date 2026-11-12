@@ -6,6 +6,8 @@ import Link from "next/link"
 import type { GameItem } from "@/lib/catalog"
 import { PAYMENT_METHODS, STONE_PAYMENT_METHODS, denomKind, formatIDR } from "@/lib/catalog"
 import { GameArtwork } from "@/components/game-artwork"
+import { getCurrentAttribution, hasAttribution } from "@/lib/attribution"
+import { trackBeginCheckout } from "@/lib/marketing-events"
 
 export type StoneVariantDenom = {
   /** Gamestone variant id (string form untuk key/button). */
@@ -246,6 +248,20 @@ export function TopupForm({
     if (!canSubmit) return
     setSubmitting(true)
     setError(null)
+
+    const attribution = getCurrentAttribution()
+    const checkoutValue = stoneMode ? total : total - couponNet
+    trackBeginCheckout({
+      value: checkoutValue,
+      item: {
+        id: denom.id,
+        name: `${game.name} — ${denom.label}`,
+        price: denom.price,
+        quantity: stoneMode ? 1 : quantity,
+      },
+      coupon: couponCode,
+    })
+
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -260,6 +276,7 @@ export function TopupForm({
           email: email.trim(),
           method,
           couponCode: couponCode ?? undefined,
+          attribution: hasAttribution(attribution) ? attribution : undefined,
         }),
       })
       const data = await res.json()

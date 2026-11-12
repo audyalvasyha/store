@@ -12,6 +12,41 @@ const adsenseEnabled = /^(ca-)?pub-\d{16}$/.test(
 const adOrigins = adsenseEnabled
   ? " https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.googleadservices.com https://*.gstatic.com https://adservice.google.com https://www.googletagservices.com https://fundingchoicesmessages.google.com"
   : ""
+
+// Marketing scripts cuma diizinkan kalau ID-nya diisi. Tanpa env, CSP tetap
+// ketat dan tidak ada origin analytics tambahan yang dibuka.
+const marketingScriptOrigins = [
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()
+    ? "https://www.googletagmanager.com"
+    : "",
+  process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID?.trim()
+    ? "https://www.clarity.ms https://scripts.clarity.ms"
+    : "",
+  process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim()
+    ? "https://connect.facebook.net"
+    : "",
+  process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID?.trim()
+    ? "https://analytics.tiktok.com"
+    : "",
+]
+  .filter(Boolean)
+  .join(" ")
+const marketingConnectOrigins = [
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()
+    ? "https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com"
+    : "",
+  process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID?.trim()
+    ? "https://*.clarity.ms https://c.clarity.ms"
+    : "",
+  process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim()
+    ? "https://www.facebook.com https://connect.facebook.net"
+    : "",
+  process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID?.trim()
+    ? "https://analytics.tiktok.com"
+    : "",
+]
+  .filter(Boolean)
+  .join(" ")
 // Preview sandbox menampilkan situs di dalam iframe (Freebuff Cloud). Di dev
 // saja frame itu diizinkan; production tetap 'none' + X-Frame-Options DENY
 // supaya situs publik nggak bisa di-embed / di-clickjack.
@@ -21,11 +56,11 @@ const frameAncestors = isDev
 const csp = [
   "default-src 'self'",
   // Google Identity Services: script + iframe tombol + stylesheet-nya.
-  `script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client${adOrigins}${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client${adOrigins}${marketingScriptOrigins ? ` ${marketingScriptOrigins}` : ""}${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
-  `connect-src 'self' https://accounts.google.com/gsi/${adOrigins}`,
+  `connect-src 'self' https://accounts.google.com/gsi/${adOrigins}${marketingConnectOrigins ? ` ${marketingConnectOrigins}` : ""}`,
   `frame-src https://accounts.google.com/gsi/${adOrigins}`,
   "media-src 'self'",
   "object-src 'none'",
