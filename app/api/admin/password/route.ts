@@ -4,6 +4,7 @@ import {
   changePassword,
   getAdminEmail,
   SESSION_COOKIE,
+  revokeOtherAdminSessions,
   validateCredentials,
 } from "@/lib/admin-auth"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
@@ -19,7 +20,8 @@ export const dynamic = "force-dynamic"
  */
 export async function POST(request: Request) {
   const jar = await cookies()
-  const email = await getAdminEmail(jar.get(SESSION_COOKIE)?.value)
+  const token = jar.get(SESSION_COOKIE)?.value
+  const email = await getAdminEmail(token)
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   // Brute-force password lama: 5 percobaan per menit cukup buat manusia.
@@ -51,6 +53,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: invalid }, { status: 400 })
     }
     await changePassword(email, currentPassword, newPassword)
+    // Password baru = kunci baru; sesi lama di perangkat lain harus mati.
+    if (token) await revokeOtherAdminSessions(email, token)
     return NextResponse.json({ ok: true })
   } catch (err) {
     return NextResponse.json(

@@ -10,6 +10,7 @@ import { sendOrderStatusNotifications } from "@/lib/notify"
 import {
   manualOrderAmount,
   resolveOrderDenom,
+  resolveOrderQuantity,
   stoneOrderAmount,
 } from "@/lib/order-pricing"
 import { logOpsError } from "@/lib/ops-alert"
@@ -99,15 +100,32 @@ export async function POST(request: Request) {
     if (!Number.isInteger(qtyRaw) || qtyRaw < 1 || qtyRaw > 5) {
       return NextResponse.json({ error: "Jumlah tidak valid (1-5)" }, { status: 400 })
     }
+    // Varian Gamestone = 1 item per order. Tolak quantity lain SEBELUM kupon
+    // dihitung, soalnya kupon persen memakai subtotal (harga x quantity).
+    const qty = resolveOrderQuantity(qtyRaw, Boolean(stoneVariant))
+    if (qty === null) {
+      return NextResponse.json(
+        { error: "Jumlah untuk game ini otomatis 1." },
+        { status: 400 }
+      )
+    }
 
     const uid = String(userId ?? "").trim()
     if (!/^[A-Za-z0-9._:\-]{4,24}$/.test(uid)) {
       return NextResponse.json({ error: "User ID tidak valid" }, { status: 400 })
     }
+    // MLBB/Free Fire memakai User ID numerik; APIGames juga hanya bisa
+    // mengecek angka. Tolak lebih awal supaya order sampah tidak masuk.
+    if (game.apigamesCode && !/^\d{4,24}$/.test(uid)) {
+      return NextResponse.json({ error: "User ID harus berupa angka" }, { status: 400 })
+    }
 
     const serverId = String(server ?? "").trim()
     if (game.needsServer && !/^[A-Za-z0-9]{1,16}$/.test(serverId)) {
       return NextResponse.json({ error: "Server tidak valid" }, { status: 400 })
+    }
+    if (game.needsServer && game.apigamesCode && !/^\d{1,16}$/.test(serverId)) {
+      return NextResponse.json({ error: "Zone ID harus berupa angka" }, { status: 400 })
     }
 
     const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email ?? ""))
@@ -141,8 +159,8 @@ export async function POST(request: Request) {
       currency: game.currency,
       denomId: denom.id,
       denomLabel: denom.label,
-      quantity: qtyRaw,
-      amount: denom.price * qtyRaw,
+      quantity: qty,
+      amount: denom.price * qty,
       method: String(method),
       userId: uid,
       server: game.needsServer ? serverId : undefined,

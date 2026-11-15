@@ -67,9 +67,30 @@ export type GameItem = {
   image?: string
   /** Slug di Gamestone Merchant API untuk game yg terhubung provider. */
   stoneSlug?: string
+  /**
+   * Kode game APIGames untuk fitur cek ID (saat ini: mobilelegend, freefire).
+   * Kosong = tombol cek ID nggak ditampilkan untuk game tersebut.
+   */
+  apigamesCode?: string
   needsServer: boolean
   featured?: boolean
   denominations: Denomination[]
+}
+
+/**
+ * Kode cek ID APIGames untuk slug yang datang dari DB/provider. Katalog
+ * statis menyimpan field ini langsung; dokumen DB lama belum punya, jadi
+ * slug provider MLBB (`mobile-legends-bang-bang`) ikut dipetakan di sini.
+ */
+export function apigamesCodeForSlug(slug: string): string | undefined {
+  if (
+    slug === "mobile-legends" ||
+    slug === "mobile-legends-bang-bang" ||
+    slug === "mobile-legends-bang-bang-partner"
+  )
+    return "mobilelegend"
+  if (slug === "free-fire") return "freefire"
+  return undefined
 }
 
 /**
@@ -153,6 +174,7 @@ export const GAMES: GameItem[] = [
     image: "https://static-src.vocagame.com/BisnisVocagame/mlbbmy-12f6-original-50ca-original.webp",
     // Slug varian global di provider Gamestone (bukan varian Malaysia/My).
     stoneSlug: "mobile-legends-bang-bang",
+    apigamesCode: "mobilelegend",
     needsServer: true,
     featured: true,
     denominations: [
@@ -179,6 +201,7 @@ export const GAMES: GameItem[] = [
     image: "https://static-src.vocagame.com/BisnisVocagame/THUMBNAILSfree_fire%20my-ab9c-original.webp",
     // Satu-satunya slug Free Fire non-MY di provider Gamestone.
     stoneSlug: "free-fire-partner",
+    apigamesCode: "freefire",
     needsServer: false,
     featured: true,
     denominations: [

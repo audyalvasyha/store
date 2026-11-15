@@ -108,6 +108,18 @@ const nextConfig = {
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
         ],
       },
+      // Endpoint sesi/order mengembalikan PII. Jangan biarkan browser, CDN,
+      // atau proxy menyimpan responsnya. Endpoint gambar event tetap immutable.
+      ...[
+        "/api/akun/:path*",
+        "/api/admin/:path*",
+        "/api/orders/:path*",
+        "/api/games/check-id",
+        "/orders/:path*",
+      ].map((source) => ({
+        source,
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
+      })),
       // Asset statis di /public — cache panjang, aman karena nama file stabil.
       {
         source: "/:assetDir(images|pay)/:file*",

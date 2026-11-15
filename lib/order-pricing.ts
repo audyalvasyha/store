@@ -74,6 +74,16 @@ export function resolveOrderDenom({
   }
 }
 
+/**
+ * Gamestone selalu membuat order untuk SATU item. Quantity >1 di mode
+ * Gamestone nggak pernah dikirim ke provider, jadi kalau dibiarkan kupon
+ * persen dihitung dari subtotal palsu (mis. qty 5 = cashback 5x lipat).
+ * Null = quantity ditolak; angka = quantity yang boleh dipakai.
+ */
+export function resolveOrderQuantity(quantity: number, hasStoneVariant: boolean): number | null {
+  return hasStoneVariant && quantity !== 1 ? null : quantity
+}
+
 /** Order manual: kupon benar-benar mengurangi nominal yang dibayar. */
 export function manualOrderAmount(subtotal: number, discount = 0): number {
   return Math.max(0, subtotal - Math.max(0, discount))

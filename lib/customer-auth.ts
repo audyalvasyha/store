@@ -536,6 +536,12 @@ export async function registerCustomerWithPassword(
     { upsert: true }
   );
 
+  // Password baru (termasuk reset via OTP) mencabut semua sesi lama akun ini
+  // setelah password benar-benar tersimpan.
+  await db
+    .collection<SessionDoc>("customer_sessions")
+    .deleteMany({ kind: "email", identifier });
+
   return createCustomerSession(
     { kind: "email", identifier, provider: "password" },
     "password"
@@ -630,6 +636,28 @@ export async function logoutCustomerEverywhere(identity: CustomerIdentity): Prom
         }
       : { kind: identity.kind, identifier: identity.identifier };
   await db.collection<SessionDoc>("customer_sessions").deleteMany(filter);
+}
+
+/** Cabut sesi lain setelah password berubah; sesi yang sedang dipakai tetap hidup. */
+export async function revokeOtherCustomerSessions(
+  identity: CustomerIdentity,
+  keepToken: string
+): Promise<void> {
+  await ready();
+  const db = await getDb();
+  const owner =
+    identity.kind === "phone"
+      ? {
+          $or: [
+            { kind: identity.kind, identifier: identity.identifier },
+            { phone: { $in: phoneVariants(identity.identifier) } },
+          ],
+        }
+      : { kind: identity.kind, identifier: identity.identifier }
+  await db.collection<SessionDoc>("customer_sessions").deleteMany({
+    ...owner,
+    ...(keepToken ? { token: { $ne: keepToken } } : {}),
+  });
 }
 
 /** Profil akun pembeli (nama, foto, tanggal daftar, login terakhir). */

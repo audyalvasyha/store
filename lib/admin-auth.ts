@@ -12,6 +12,7 @@ const SESSION_TTL_DAYS = 7;
 
 const ADMIN_EXPRESS = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD = 8;
+const MAX_PASSWORD = 128;
 
 export type AdminDoc = {
   email: string;
@@ -33,6 +34,8 @@ export function hashPassword(password: string): string {
 }
 
 export function verifyPassword(password: string, stored: string): boolean {
+  // Batasi input sebelum scrypt supaya password raksasa tidak jadi DoS CPU.
+  if (password.length > MAX_PASSWORD) return false;
   const [scheme, salt, hash] = stored.split(":");
   if (scheme !== "scrypt" || !salt || !hash) return false;
   const candidate = crypto.scryptSync(password, salt, 64).toString("hex");
@@ -128,6 +131,9 @@ export async function changePassword(
   currentPassword: string,
   newPassword: string
 ): Promise<void> {
+  if (newPassword.length > MAX_PASSWORD) {
+    throw new Error(`Password maksimal ${MAX_PASSWORD} karakter`)
+  }
   await ready();
   const db = await getDb();
   const admin = await db
@@ -148,7 +154,18 @@ export async function changePassword(
 export function validateCredentials(email: string, password: string): string | null {
   if (!ADMIN_EXPRESS.test(email)) return "Email tidak valid";
   if (password.length < MIN_PASSWORD) return `Password minimal ${MIN_PASSWORD} karakter`;
+  if (password.length > MAX_PASSWORD) return `Password maksimal ${MAX_PASSWORD} karakter`;
   return null;
+}
+
+/** Cabut sesi admin lain setelah password berubah; sesi yang sedang dipakai tetap hidup. */
+export async function revokeOtherAdminSessions(email: string, keepToken: string): Promise<void> {
+  await ready();
+  const db = await getDb();
+  await db.collection<SessionDoc>("admin_sessions").deleteMany({
+    email: email.toLowerCase(),
+    ...(keepToken ? { token: { $ne: keepToken } } : {}),
+  });
 }
 
 export const COOKIE_MAX_AGE = SESSION_TTL_DAYS * 24 * 60 * 60;

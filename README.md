@@ -40,6 +40,18 @@ Error checkout dicatat sebagai JSON di log server. Untuk mengaktifkan email aler
 4. Bayar dan lanjutkan
 5. Cek status pembayaran di halaman order
 
+## Cek ID game (APIGames)
+
+Form checkout punya tombol **Cek ID Game** untuk Mobile Legends dan Free Fire.
+Pengecekan memanggil APIGames dan biayanya **Rp5/cek**, dipotong dari saldo
+deposit APIGames — bukan dari pembayaran customer. Hasil di-cache 10 menit dan
+endpoint dibatasi 8 cek/menit per IP supaya biaya tidak boros.
+
+Cek ID bersifat opsional: checkout tetap diproses Gamestone (butuh
+`GAMESTONE_API_KEY`) walaupun user tidak menekan tombol cek. Kalau
+`APIGAMES_MERCHANT_ID` / `APIGAMES_SECRET_KEY` kosong, tombol akan menampilkan
+pesan bahwa cek ID belum aktif.
+
 ## Kontribusi
 
 Fork dan buat pull request ke branch `main`.

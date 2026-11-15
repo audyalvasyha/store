@@ -4,10 +4,13 @@ import { calculateCouponDiscount } from "../lib/coupon-math"
 import {
   manualOrderAmount,
   resolveOrderDenom,
+  resolveOrderQuantity,
   stoneOrderAmount,
 } from "../lib/order-pricing"
-import { GAMES, filterGames, lowestPrice, toCatalogGame } from "../lib/catalog"
+import { GAMES, apigamesCodeForSlug, filterGames, lowestPrice, toCatalogGame } from "../lib/catalog"
+import { isApigamesGameCode, isApigamesInvalidAccountMessage } from "../lib/apigames"
 import { resolveGameGenres } from "../lib/game-genres"
+import { validateCredentials } from "../lib/admin-auth"
 import { normalizeAdsenseClient, normalizeAdSlot } from "../lib/ads"
 import {
   MAX_AVATAR_BYTES,
@@ -241,4 +244,37 @@ test("nilai atribusi dibatasi dan karakter kontrol dibersihkan", () => {
 
   assert.equal(attribution.campaign?.length, 80)
   assert.equal(attribution.campaign?.includes("\u0000"), false)
+})
+
+test("cek ID APIGames cuma untuk game yang didukung", () => {
+  assert.equal(isApigamesGameCode("mobilelegend"), true)
+  assert.equal(isApigamesGameCode("freefire"), true)
+  assert.equal(isApigamesGameCode("valorant"), false)
+
+  const ml = GAMES.find((g) => g.slug === "mobile-legends")
+  const ff = GAMES.find((g) => g.slug === "free-fire")
+  assert.equal(ml?.apigamesCode, "mobilelegend")
+  assert.equal(ff?.apigamesCode, "freefire")
+  // Slug provider DB untuk MLBB juga harus dapat tombol cek ID.
+  assert.equal(apigamesCodeForSlug("mobile-legends-bang-bang"), "mobilelegend")
+  assert.equal(apigamesCodeForSlug("mobile-legends-bang-bang-partner"), "mobilelegend")
+  assert.equal(apigamesCodeForSlug("mobile-legends-bang-bang-my"), undefined)
+})
+
+test("quantity Gamestone wajib 1 supaya kupon tidak dihitung dari subtotal palsu", () => {
+  assert.equal(resolveOrderQuantity(1, true), 1)
+  assert.equal(resolveOrderQuantity(5, true), null)
+  assert.equal(resolveOrderQuantity(5, false), 5)
+})
+
+test("password admin dibatasi supaya scrypt tidak bisa dipakai DoS", () => {
+  assert.equal(validateCredentials("admin@example.com", "x".repeat(129)), "Password maksimal 128 karakter")
+  assert.equal(validateCredentials("admin@example.com", "x".repeat(128)), null)
+})
+
+test("pesan akun APIGames tidak ditemukan bukan error kredensial", () => {
+  assert.equal(isApigamesInvalidAccountMessage("Invalid User ID Or Zone ID"), true)
+  assert.equal(isApigamesInvalidAccountMessage("Data not found"), true)
+  assert.equal(isApigamesInvalidAccountMessage("Signature not valid"), false)
+  assert.equal(isApigamesInvalidAccountMessage("Insufficient balance"), false)
 })

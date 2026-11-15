@@ -87,6 +87,14 @@ export function TopupForm({
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  // ── Cek ID game via APIGames (biaya Rp5/cek dipotong dari saldo APIGames).
+  const idCheckSupported = Boolean(game.apigamesCode)
+  const [idCheck, setIdCheck] = useState<{
+    state: "idle" | "busy" | "ok" | "error"
+    username?: string
+    message?: string
+  }>({ state: "idle" })
+
   // ── Kupon promo: cek kode → preview potongan → ikut di-POST ke /api/orders.
   // Nimppuk di order jadi cashback (Gamestone) atau diskon (manual).
   const [couponInput, setCouponInput] = useState("")
@@ -237,11 +245,54 @@ export function TopupForm({
     }
   }, [filterQ, filteredDepoms, denomId, cat])
 
-  const uidValid = /^[A-Za-z0-9._:\-]{4,24}$/.test(userId.trim())
-  const serverValid = !game.needsServer || /^[A-Za-z0-9]{1,16}$/.test(server.trim())
+  // Game dengan cek APIGames (MLBB/Free Fire) memakai User ID numerik.
+  const uidValid = idCheckSupported
+    ? /^\d{4,24}$/.test(userId.trim())
+    : /^[A-Za-z0-9._:\-]{4,24}$/.test(userId.trim())
+  const serverValid =
+    !game.needsServer ||
+    (idCheckSupported
+      ? /^\d{1,16}$/.test(server.trim())
+      : /^[A-Za-z0-9]{1,16}$/.test(server.trim()))
+  // APIGames cuma bisa cek User ID/Zone ID numerik.
+  const idCheckUidValid = uidValid
+  const idCheckServerValid = serverValid
   const phoneValid = /^(62|0)\d{8,13}$/.test(phone.trim())
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
   const canSubmit = uidValid && serverValid && phoneValid && emailValid && agree && !submitting
+
+  // Hasil cek ID basi kalau User ID / Zone ID diganti — reset biar nggak salah orang.
+  useEffect(() => {
+    setIdCheck({ state: "idle" })
+  }, [userId, server])
+
+  async function checkGameId() {
+    if (!idCheckSupported || !idCheckUidValid || idCheck.state === "busy") return
+    if (!idCheckServerValid) return
+    setIdCheck({ state: "busy" })
+    try {
+      const zoneQuery =
+        game.needsServer && server.trim()
+          ? `&server=${encodeURIComponent(server.trim())}`
+          : ""
+      const res = await fetch(
+        `/api/games/check-id?game=${encodeURIComponent(game.slug)}&userId=${encodeURIComponent(userId.trim())}${zoneQuery}`,
+        { cache: "no-store" }
+      )
+      const data = (await res.json()) as {
+        valid?: boolean
+        username?: string | null
+        error?: string
+      }
+      if (res.ok && data.valid) {
+        setIdCheck({ state: "ok", username: data.username ?? undefined })
+      } else {
+        setIdCheck({ state: "error", message: data.error ?? "ID game nggak ditemukan" })
+      }
+    } catch {
+      setIdCheck({ state: "error", message: "Koneksi bermasalah, coba lagi." })
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -422,7 +473,42 @@ export function TopupForm({
                 className={`bg-background border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${userId && !uidValid ? "border-destructive" : "border-border"}`}
               />
               {userId && !uidValid && (
-                <span className="font-mono text-[9px] md:text-[10px] text-destructive">4-24 karakter, huruf/angka/._:-</span>
+                <span className="font-mono text-[9px] md:text-[10px] text-destructive">
+                  {idCheckSupported ? "4-24 angka" : "4-24 karakter, huruf/angka/._:-"}
+                </span>
+              )}
+              {idCheckSupported && (
+                <div className="flex flex-col gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => void checkGameId()}
+                    disabled={
+                      !idCheckUidValid ||
+                      !idCheckServerValid ||
+                      idCheck.state === "busy"
+                    }
+                    className="inline-flex min-h-[40px] w-full items-center justify-center border border-border px-3 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/70 transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {idCheck.state === "busy" ? "Mengecek..." : "Cek ID Game"}
+                  </button>
+                  {idCheckSupported &&
+                    ((userId && !idCheckUidValid) ||
+                      (game.needsServer && server && !idCheckServerValid)) && (
+                      <span className="font-mono text-[9px] md:text-[10px] text-foreground/50 leading-relaxed">
+                        Cek ID butuh User ID{game.needsServer ? " & Zone ID" : ""} berupa angka.
+                      </span>
+                    )}
+                  {idCheck.state === "ok" && (
+                    <span className="font-mono text-[9px] md:text-[10px] text-accent break-all">
+                      ✓ {idCheck.username ? `Nickname: ${idCheck.username}` : "ID valid"}
+                    </span>
+                  )}
+                  {idCheck.state === "error" && (
+                    <span className="font-mono text-[9px] md:text-[10px] text-destructive leading-relaxed">
+                      {idCheck.message}
+                    </span>
+                  )}
+                </div>
               )}
             </label>
             {game.needsServer && (
@@ -438,7 +524,9 @@ export function TopupForm({
                   className={`bg-background border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${server && !serverValid ? "border-destructive" : "border-border"}`}
                 />
                 {server && !serverValid && (
-                  <span className="font-mono text-[9px] md:text-[10px] text-destructive">Angka/huruf tanpa spasi</span>
+                  <span className="font-mono text-[9px] md:text-[10px] text-destructive">
+                    {idCheckSupported ? "Angka tanpa spasi" : "Angka/huruf tanpa spasi"}
+                  </span>
                 )}
               </label>
             )}
@@ -494,15 +582,17 @@ export function TopupForm({
                 </span>
                 <span className="block font-mono text-[9px] md:text-[10px] text-foreground/40 mt-0.5">{m.detail}</span>
                 {/* Logo pembayaran asli dari brand-nya (SVG di /public/pay). */}
-                <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <span className="mt-2 flex flex-wrap items-center gap-1.5">
                   {m.logos.map((lg) => (
                     <img
                       key={lg}
-                      src={`/pay/${lg}.svg`}
+                      src={`/pay/${lg}.svg?v=2`}
                       alt={""}
                       aria-hidden="true"
                       loading="lazy"
-                      className="h-3.5 md:h-4 w-auto max-w-12 object-contain"
+                      width={72}
+                      height={36}
+                      className="h-9 md:h-10 w-auto max-w-[72px] object-contain bg-white px-1.5 py-1 border border-black/10"
                     />
                   ))}
                 </span>

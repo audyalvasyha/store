@@ -8,7 +8,7 @@
  */
 import { cache } from "react";
 import { getDb, ensureIndexes } from "./mongodb";
-import { GAMES, getGame, type GameItem } from "./catalog";
+import { GAMES, apigamesCodeForSlug, getGame, type GameItem } from "./catalog";
 
 export type HeroEvent = {
   imageUrl: string;
@@ -158,7 +158,17 @@ export const getDynamicGames = cache(async (): Promise<GameItem[]> => {
         const bySlug = new Map<string, GameItem>(GAMES.map((g) => [g.slug, g]));
         for (const { _id, ...game } of docs) {
           void _id;
-          bySlug.set(game.slug, game as GameItem);
+          const base = bySlug.get(game.slug);
+          const apigamesCode =
+            (game as GameItem).apigamesCode ||
+            base?.apigamesCode ||
+            apigamesCodeForSlug(game.slug);
+          bySlug.set(game.slug, {
+            ...(game as GameItem),
+            // Field kurasi (kode cek ID APIGames) dipertahankan/diturunkan
+            // kalau dokumen DB lama belum punya — admin nggak perlu re-save.
+            ...(apigamesCode ? { apigamesCode } : {}),
+          });
         }
         value = [...bySlug.values()];
       }
@@ -218,7 +228,17 @@ export const getDynamicGame = cache(async (slug: string): Promise<GameItem | und
     if (!doc) return getGame(slug);
     const { _id, ...game } = doc;
     void _id;
-    return game as GameItem;
+    const base = getGame(slug);
+    const apigamesCode =
+      (game as GameItem).apigamesCode ||
+      base?.apigamesCode ||
+      apigamesCodeForSlug(slug);
+    return {
+      ...(game as GameItem),
+      // Dokumen DB lama belum punya apigamesCode — ambil dari katalog statis
+      // atau mapping slug provider supaya tombol Cek ID tetap muncul.
+      ...(apigamesCode ? { apigamesCode } : {}),
+    };
   } catch {
     return getGame(slug);
   }
