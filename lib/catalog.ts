@@ -80,22 +80,71 @@ export type GameItem = {
 /**
  * Kode cek ID APIGames untuk slug yang datang dari DB/provider. Katalog
  * statis menyimpan field ini langsung; dokumen DB lama belum punya, jadi
- * slug provider MLBB (`mobile-legends-bang-bang`) ikut dipetakan di sini.
+ * semua varian MLBB dan Free Fire (global/region/partner) ikut dipetakan di sini.
  */
+/**
+ * Deteksi varian region dari slug, mis. `mobile-legends-bang-bang-my` atau
+ * `free-fire-malaysia`. Dipakai katalog untuk menaruh versi global/non-region
+ * di atas varian region.
+ */
+const REGION_SLUG_TOKENS = new Set([
+  "my",
+  "ph",
+  "id",
+  "sg",
+  "th",
+  "vn",
+  "malaysia",
+  "philippines",
+  "indonesia",
+  "singapore",
+  "thailand",
+  "vietnam",
+  "sea",
+  "asia",
+])
+
+export function isRegionalGameSlug(slug: string): boolean {
+  return slug.toLowerCase().split("-").some((part) => REGION_SLUG_TOKENS.has(part))
+}
+
+// Data lama dari provider memakai artwork varian MY untuk game global/ID.
+// Ganti hanya kalau gambar yang tersimpan memang artwork MY, supaya gambar
+// kustom dari admin tetap dihormati.
+const GLOBAL_GAME_ARTWORK: Record<string, string> = {
+  "mobile-legends":
+    "https://static-src.vocagame.com/BisnisVocagame/mobilelegends-2998-original.webp",
+  "free-fire":
+    "https://static-src.vocagame.com/BisnisVocagame/free_fire-d967-original.webp",
+  "league-of-legends-pc":
+    "https://static-src.vocagame.com/BisnisVocagame/league_of_legends-e410-original-1acf-original-3a82-original.webp",
+}
+
+const REGIONAL_ARTWORK_PATTERN = /mlbbmy|free[_ ]fire(?:%20| )my|league[_ ]of[_ ]legends(?:%20| )my/i
+
+export function preferGlobalGameImage(slug: string, image?: string): string | undefined {
+  const globalImage = GLOBAL_GAME_ARTWORK[slug]
+  if (!globalImage) return image
+  if (!image) return globalImage
+  return REGIONAL_ARTWORK_PATTERN.test(image) ? globalImage : image
+}
+
 export function apigamesCodeForSlug(slug: string): string | undefined {
-  if (
-    slug === "mobile-legends" ||
-    slug === "mobile-legends-bang-bang" ||
-    slug === "mobile-legends-bang-bang-partner" ||
-    // Varian region yang checker APIGames-nya tidak mengenali akun MY/PH.
-    // Kode ini dipakai sebagai penanda tombol Cek ID; route memakai fallback
-    // MLBB untuk varian-varian ini, bukan APIGames.
-    slug === "mobile-legends-bang-bang-my" ||
-    slug === "mobile-legends-bang-bang-my-partner" ||
-    slug === "mobile-legends-bang-bang-ph"
-  )
+  // Semua varian MLBB (global, ID, MY, PH, partner) memakai kode yang sama.
+  // Route cek ID yang menentukan apakah varian region perlu fallback MLBB.
+  if (slug === "mobile-legends" || slug.startsWith("mobile-legends-bang-bang")) {
     return "mobilelegend"
-  if (slug === "free-fire") return "freefire"
+  }
+  // Semua varian Free Fire: free-fire, free-fire-malaysia, free-fire-partner,
+  // ff, ff-max, dan varian region/partner lain yang ditambahkan nanti.
+  if (
+    slug === "free-fire" ||
+    slug.startsWith("free-fire-") ||
+    slug === "ff" ||
+    slug === "ff-max"
+  ) {
+    return "freefire"
+  }
   return undefined
 }
 
@@ -177,7 +226,7 @@ export const GAMES: GameItem[] = [
     currency: "Diamonds",
     glyph: "ML",
     hue: "258 85% 55%",
-    image: "https://static-src.vocagame.com/BisnisVocagame/mlbbmy-12f6-original-50ca-original.webp",
+    image: "https://static-src.vocagame.com/BisnisVocagame/mobilelegends-2998-original.webp",
     // Slug varian global di provider Gamestone (bukan varian Malaysia/My).
     stoneSlug: "mobile-legends-bang-bang",
     apigamesCode: "mobilelegend",
@@ -204,7 +253,7 @@ export const GAMES: GameItem[] = [
     currency: "Diamonds",
     glyph: "FF",
     hue: "12 95% 50%",
-    image: "https://static-src.vocagame.com/BisnisVocagame/THUMBNAILSfree_fire%20my-ab9c-original.webp",
+    image: "https://static-src.vocagame.com/BisnisVocagame/free_fire-d967-original.webp",
     // Satu-satunya slug Free Fire non-MY di provider Gamestone.
     stoneSlug: "free-fire-partner",
     apigamesCode: "freefire",
@@ -252,7 +301,7 @@ export const GAMES: GameItem[] = [
     currency: "Blue Essence",
     glyph: "LoL",
     hue: "205 85% 48%",
-    image: "https://static-src.vocagame.com/BisnisVocagame/league_of_legends%20my-4a6c-original.webp",
+    image: "https://static-src.vocagame.com/BisnisVocagame/league_of_legends-e410-original-1acf-original-3a82-original.webp",
     // Slug varian global di provider Gamestone (bukan varian Malaysia/My).
     stoneSlug: "league-of-legends-pc",
     needsServer: true,

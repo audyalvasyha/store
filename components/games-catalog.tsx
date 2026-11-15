@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { filterGames, formatIDR, type CatalogGame } from "@/lib/catalog"
+import { filterGames, formatIDR, isRegionalGameSlug, type CatalogGame } from "@/lib/catalog"
 import {
   GAME_GENRES,
   genreLabel,
@@ -75,6 +75,12 @@ export function GamesCatalog({
         (a, b) =>
           (sold?.[b.slug] ?? 0) - (sold?.[a.slug] ?? 0) ||
           a.short.localeCompare(b.short)
+      )
+    } else {
+      // Default: versi global/non-region dulu, varian region setelahnya.
+      // Sort stabil, jadi urutan sumber tetap dipertahankan di tiap kelompok.
+      list.sort(
+        (a, b) => Number(isRegionalGameSlug(a.slug)) - Number(isRegionalGameSlug(b.slug))
       )
     }
     return list

@@ -8,7 +8,13 @@
  */
 import { cache } from "react";
 import { getDb, ensureIndexes } from "./mongodb";
-import { GAMES, apigamesCodeForSlug, getGame, type GameItem } from "./catalog";
+import {
+  GAMES,
+  apigamesCodeForSlug,
+  getGame,
+  preferGlobalGameImage,
+  type GameItem,
+} from "./catalog";
 
 export type HeroEvent = {
   imageUrl: string;
@@ -170,7 +176,7 @@ export const getDynamicGames = cache(async (): Promise<GameItem[]> => {
             ...(apigamesCode ? { apigamesCode } : {}),
           });
         }
-        value = [...bySlug.values()];
+        value = [...bySlug.values()].map(normalizeArtwork);
       }
 
       // Jangan timpa cache kalau admin menyimpan perubahan saat query ini jalan.
@@ -225,7 +231,10 @@ export const getDynamicGame = cache(async (slug: string): Promise<GameItem | und
     await ready();
     const db = await getDb();
     const doc = await db.collection("games").findOne({ slug });
-    if (!doc) return getGame(slug);
+    if (!doc) {
+      const fallback = getGame(slug);
+      return fallback ? normalizeArtwork(fallback) : undefined;
+    }
     const { _id, ...game } = doc;
     void _id;
     const base = getGame(slug);
@@ -233,16 +242,22 @@ export const getDynamicGame = cache(async (slug: string): Promise<GameItem | und
       (game as GameItem).apigamesCode ||
       base?.apigamesCode ||
       apigamesCodeForSlug(slug);
-    return {
+    return normalizeArtwork({
       ...(game as GameItem),
       // Dokumen DB lama belum punya apigamesCode — ambil dari katalog statis
       // atau mapping slug provider supaya tombol Cek ID tetap muncul.
       ...(apigamesCode ? { apigamesCode } : {}),
-    };
+    });
   } catch {
-    return getGame(slug);
+    const fallback = getGame(slug);
+    return fallback ? normalizeArtwork(fallback) : fallback;
   }
 })
+
+function normalizeArtwork(game: GameItem): GameItem {
+  const image = preferGlobalGameImage(game.slug, game.image)
+  return image === game.image ? game : { ...game, image }
+}
 
 export async function upsertGame(game: GameItem): Promise<void> {
   await ready();

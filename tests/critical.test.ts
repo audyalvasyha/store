@@ -7,7 +7,7 @@ import {
   resolveOrderQuantity,
   stoneOrderAmount,
 } from "../lib/order-pricing"
-import { GAMES, apigamesCodeForSlug, filterGames, lowestPrice, toCatalogGame } from "../lib/catalog"
+import { GAMES, apigamesCodeForSlug, filterGames, isRegionalGameSlug, lowestPrice, preferGlobalGameImage, toCatalogGame } from "../lib/catalog"
 import { isApigamesGameCode, isApigamesInvalidAccountMessage } from "../lib/apigames"
 import { mlbbCountryMatches, parseMlbbCheckPayload } from "../lib/mlbb-check"
 import { resolveGameGenres } from "../lib/game-genres"
@@ -265,6 +265,46 @@ test("cek ID APIGames cuma untuk game yang didukung", () => {
   assert.equal(apigamesCodeForSlug("mobile-legends-bang-bang-my"), "mobilelegend")
   assert.equal(apigamesCodeForSlug("mobile-legends-bang-bang-my-partner"), "mobilelegend")
   assert.equal(apigamesCodeForSlug("mobile-legends-bang-bang-ph"), "mobilelegend")
+  // Semua varian Free Fire, termasuk region/partner, harus dapat cek ID.
+  assert.equal(apigamesCodeForSlug("free-fire"), "freefire")
+  assert.equal(apigamesCodeForSlug("free-fire-malaysia"), "freefire")
+  assert.equal(apigamesCodeForSlug("free-fire-partner"), "freefire")
+  assert.equal(apigamesCodeForSlug("ff"), "freefire")
+  assert.equal(apigamesCodeForSlug("ff-max"), "freefire")
+  assert.equal(apigamesCodeForSlug("free-fire-ph"), "freefire")
+})
+
+test("katalog membedakan varian global dan region", () => {
+  assert.equal(isRegionalGameSlug("mobile-legends-bang-bang"), false)
+  assert.equal(isRegionalGameSlug("mobile-legends-bang-bang-partner"), false)
+  assert.equal(isRegionalGameSlug("mobile-legends-bang-bang-my"), true)
+  assert.equal(isRegionalGameSlug("mobile-legends-bang-bang-my-partner"), true)
+  assert.equal(isRegionalGameSlug("free-fire"), false)
+  assert.equal(isRegionalGameSlug("free-fire-malaysia"), true)
+  assert.equal(isRegionalGameSlug("free-fire-partner"), false)
+  assert.equal(isRegionalGameSlug("valorant-ph"), true)
+})
+
+test("artwork game global tidak memakai gambar MY", () => {
+  assert.match(
+    preferGlobalGameImage(
+      "mobile-legends",
+      "https://static-src.vocagame.com/BisnisVocagame/mlbbmy-12f6-original-50ca-original.webp"
+    ) ?? "",
+    /mobilelegends-2998/
+  )
+  assert.match(
+    preferGlobalGameImage(
+      "free-fire",
+      "https://static-src.vocagame.com/BisnisVocagame/THUMBNAILSfree_fire%20my-ab9c-original.webp"
+    ) ?? "",
+    /free_fire-d967/
+  )
+  // Gambar kustom admin yang bukan artwork MY tetap dipakai.
+  assert.equal(
+    preferGlobalGameImage("mobile-legends", "https://cdn.example.com/custom.webp"),
+    "https://cdn.example.com/custom.webp"
+  )
 })
 
 test("fallback checker MLBB memvalidasi nickname dengan aman", () => {
