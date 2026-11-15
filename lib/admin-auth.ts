@@ -158,6 +158,19 @@ export function validateCredentials(email: string, password: string): string | n
   return null;
 }
 
+/** Bootstrap admin pertama wajib pakai token server, bukan endpoint publik terbuka. */
+export function bootstrapConfigured(): boolean {
+  return Boolean(process.env.ADMIN_BOOTSTRAP_TOKEN?.trim());
+}
+
+export function bootstrapTokenMatches(input: string): boolean {
+  const expected = process.env.ADMIN_BOOTSTRAP_TOKEN?.trim() ?? "";
+  if (!expected) return false;
+  const a = Buffer.from(expected);
+  const b = Buffer.from(input);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 /** Cabut sesi admin lain setelah password berubah; sesi yang sedang dipakai tetap hidup. */
 export async function revokeOtherAdminSessions(email: string, keepToken: string): Promise<void> {
   await ready();

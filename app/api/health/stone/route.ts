@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
+import { healthAuthorized, healthTokenConfigured } from "@/lib/health-auth"
 
 export const dynamic = "force-dynamic"
 
@@ -12,6 +13,16 @@ export const dynamic = "force-dynamic"
  * (GET /games?limit=1) dan melihat status/sumber responsnya.
  */
 export async function GET(request: Request) {
+  if (!healthTokenConfigured()) {
+    return NextResponse.json(
+      { error: "Health check belum dikonfigurasi (HEALTH_CHECK_TOKEN kosong)." },
+      { status: 503 }
+    )
+  }
+  if (!healthAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   const proxyUrl = (process.env.STONE_PROXY_URL ?? "").replace(/\/$/, "")
   let host = ""
   try {

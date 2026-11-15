@@ -7,6 +7,7 @@ export function AdminLoginForm({ first, returnTo = "/admin" }: { first: boolean;
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [bootstrapToken, setBootstrapToken] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -22,6 +23,7 @@ export function AdminLoginForm({ first, returnTo = "/admin" }: { first: boolean;
           email: email.trim(),
           password,
           action: first ? "register" : "login",
+          ...(first ? { bootstrapToken } : {}),
         }),
       })
       const data = await res.json()
@@ -71,6 +73,21 @@ export function AdminLoginForm({ first, returnTo = "/admin" }: { first: boolean;
           className="bg-background border border-border p-3 font-mono text-sm text-foreground focus:outline-none focus:border-accent transition-colors"
         />
       </label>
+      {first && (
+        <label className="flex flex-col gap-1.5">
+          <span className="font-mono text-[10px] text-foreground/60 tracking-[0.15em] uppercase">
+            Bootstrap Token
+          </span>
+          <input
+            type="password"
+            value={bootstrapToken}
+            onChange={(e) => setBootstrapToken(e.target.value)}
+            autoComplete="off"
+            required
+            className="bg-background border border-border p-3 font-mono text-sm text-foreground focus:outline-none focus:border-accent transition-colors"
+          />
+        </label>
+      )}
       {error && (
         <p className="font-mono text-[10px] text-destructive border border-destructive/40 p-2 leading-relaxed">
           {error}
@@ -88,7 +105,7 @@ export function AdminLoginForm({ first, returnTo = "/admin" }: { first: boolean;
         {busy ? "Memproses..." : first ? "Buat Akun & Masuk" : "Masuk"}
       </button>
       <p className="font-mono text-[9px] text-foreground/30 leading-relaxed">
-        Password di-hash (scrypt) & session pakai httpOnly cookie. Akun admin pertama cuma bisa dibuat pas database belum punya admin.
+        Password di-hash (scrypt) & session pakai httpOnly cookie. Akun admin pertama butuh Bootstrap Token dari env ADMIN_BOOTSTRAP_TOKEN.
       </p>
     </form>
   )

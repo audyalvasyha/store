@@ -15,6 +15,7 @@
  * Semua endpoint publik yang pakai ini harus `await` hasilnya.
  */
 
+import { isIP } from "node:net"
 import { getDb } from "./mongodb"
 
 type Bucket = { count: number; resetAt: number }
@@ -115,12 +116,38 @@ export async function rateLimit(
   return memoryLimit(slotKey, limit, windowMs)
 }
 
-/** IP caller: proxy di depan (Vercel/CDN) memasukkan IP asli di header ini. */
+/**
+ * Ambil IP yang valid dari satu header. Nilai mentah tidak pernah dipakai
+ * langsung sebagai key rate-limit (biar header sampah tidak bikin key aneh).
+ */
+function validIp(value: string | null | undefined): string | null {
+  if (!value) return null
+  let candidate = value.trim().slice(0, 64)
+  // Sebagian proxy mengirim IPv6 dalam bracket.
+  if (candidate.startsWith("[") && candidate.includes("]")) {
+    candidate = candidate.slice(1, candidate.indexOf("]"))
+  }
+  return isIP(candidate) ? candidate : null
+}
+
+/**
+ * IP caller. Prioritas header yang di-set platform (Cloudflare/Vercel), lalu
+ * hop TERAKHIR X-Forwarded-For. Hop terakhir dipilih karena proxy yang paling
+ * dekat dengan app menambahkan IP asli di akhir; kalau memakai hop pertama,
+ * client bisa memalsukan X-Forwarded-For dan membypass rate limit.
+ */
 export function clientIp(request: Request): string {
+  const platform =
+    validIp(request.headers.get("cf-connecting-ip")) ??
+    validIp(request.headers.get("x-real-ip"))
+  if (platform) return platform
+
   const fwd = request.headers.get("x-forwarded-for")
   if (fwd) {
-    const first = fwd.split(",")[0].trim()
-    if (first) return first
+    const hops = fwd.split(",").map((part) => validIp(part))
+    for (let i = hops.length - 1; i >= 0; i--) {
+      if (hops[i]) return hops[i] as string
+    }
   }
-  return request.headers.get("x-real-ip") ?? "unknown"
+  return "unknown"
 }

@@ -52,6 +52,21 @@ Cek ID bersifat opsional: checkout tetap diproses Gamestone (butuh
 `APIGAMES_MERCHANT_ID` / `APIGAMES_SECRET_KEY` kosong, tombol akan menampilkan
 pesan bahwa cek ID belum aktif.
 
+## Setup admin pertama
+
+Saat database belum punya admin, form `/admin/login` menampilkan field
+**Bootstrap Token**. Isi env `ADMIN_BOOTSTRAP_TOKEN` dengan string acak panjang
+(contoh: hasil `openssl rand -hex 32`) sebelum membuat admin pertama. Tanpa env
+ini, pendaftaran admin pertama ditolak — endpoint bootstrap tidak terbuka untuk
+publik.
+
+## Health check provider
+
+`/api/health/stone` dan `/api/health/stone-sg` sekarang butuh auth. Set env
+`HEALTH_CHECK_TOKEN`, lalu kirim header `x-health-token: <token>` atau
+`Authorization: Bearer <token>`. Tanpa token, endpoint mengembalikan 503 dan
+probe provider tidak dijalankan.
+
 ## Kontribusi
 
 Fork dan buat pull request ke branch `main`.

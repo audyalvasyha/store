@@ -4,6 +4,8 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
 import {
   COOKIE_MAX_AGE,
   SESSION_COOKIE,
+  bootstrapConfigured,
+  bootstrapTokenMatches,
   countAdmins,
   createAdmin,
   login,
@@ -30,12 +32,23 @@ export async function POST(request: Request) {
     const action = body?.action === "register" ? "register" : "login";
 
     if (action === "register") {
-      // Bootstrap: bikin akun admin pertama cuma boleh pas belum ada admin.
+      // Bootstrap: bikin akun admin pertama cuma boleh pas belum ada admin
+      // DAN request membawa token server. Tanpa token, siapa pun yang menemukan
+      // endpoint ini bisa mengklaim instalasi yang DB-nya masih kosong.
       if ((await countAdmins()) > 0) {
         return NextResponse.json(
           { error: "Admin sudah ada, buat akun dari dashboard." },
           { status: 403 }
         );
+      }
+      if (!bootstrapConfigured()) {
+        return NextResponse.json(
+          { error: "Bootstrap admin belum dikonfigurasi (ADMIN_BOOTSTRAP_TOKEN kosong)." },
+          { status: 503 }
+        );
+      }
+      if (!bootstrapTokenMatches(String(body?.bootstrapToken ?? ""))) {
+        return NextResponse.json({ error: "Bootstrap token salah." }, { status: 403 });
       }
     }
 

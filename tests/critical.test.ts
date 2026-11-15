@@ -11,6 +11,7 @@ import { GAMES, apigamesCodeForSlug, filterGames, lowestPrice, toCatalogGame } f
 import { isApigamesGameCode, isApigamesInvalidAccountMessage } from "../lib/apigames"
 import { resolveGameGenres } from "../lib/game-genres"
 import { validateCredentials } from "../lib/admin-auth"
+import { clientIp } from "../lib/rate-limit"
 import { normalizeAdsenseClient, normalizeAdSlot } from "../lib/ads"
 import {
   MAX_AVATAR_BYTES,
@@ -270,6 +271,23 @@ test("quantity Gamestone wajib 1 supaya kupon tidak dihitung dari subtotal palsu
 test("password admin dibatasi supaya scrypt tidak bisa dipakai DoS", () => {
   assert.equal(validateCredentials("admin@example.com", "x".repeat(129)), "Password maksimal 128 karakter")
   assert.equal(validateCredentials("admin@example.com", "x".repeat(128)), null)
+})
+
+test("rate limit tidak memakai hop X-Forwarded-For pertama yang bisa dipalsukan", () => {
+  const req = new Request("https://example.com", {
+    headers: { "x-forwarded-for": "1.2.3.4, 5.6.7.8" },
+  })
+  assert.equal(clientIp(req), "5.6.7.8")
+
+  const platform = new Request("https://example.com", {
+    headers: { "cf-connecting-ip": "9.9.9.9", "x-forwarded-for": "1.2.3.4" },
+  })
+  assert.equal(clientIp(platform), "9.9.9.9")
+
+  const junk = new Request("https://example.com", {
+    headers: { "x-forwarded-for": "not-an-ip, also-not-an-ip" },
+  })
+  assert.equal(clientIp(junk), "unknown")
 })
 
 test("pesan akun APIGames tidak ditemukan bukan error kredensial", () => {

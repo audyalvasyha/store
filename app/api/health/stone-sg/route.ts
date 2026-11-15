@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
+import { healthAuthorized, healthTokenConfigured } from "@/lib/health-auth"
 
 // Probe dijalankan dari Singapore — buat ngisolasi apakah penolakan provider
 // bergantung pada region/edge pemanggil (Vercel US East vs Asia).
@@ -7,6 +8,16 @@ export const dynamic = "force-dynamic"
 export const preferredRegion = "sin1"
 
 export async function GET(request: Request) {
+  if (!healthTokenConfigured()) {
+    return NextResponse.json(
+      { error: "Health check belum dikonfigurasi (HEALTH_CHECK_TOKEN kosong)." },
+      { status: 503 }
+    )
+  }
+  if (!healthAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   // Langsung nembak provider dengan API key kita tiap GET → tanpa limit,
   // siapa aja bisa buat spam provider + bikin key gua di-flag.
   const limit = await rateLimit("stone-probe-sg", clientIp(request), 6, 60_000)

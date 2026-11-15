@@ -27,6 +27,12 @@ export async function POST(request: Request) {
 
   const order = await getOrder(refId)
   if (!order) return NextResponse.json({ error: "Order tidak ditemukan" }, { status: 404 })
+  // Webhook APIGames cuma boleh menyentuh order yang memang dikirim ke
+  // APIGames. Tanpa guard ini, callback bertanda tangan valid bisa menutup
+  // order Gamestone/manual yang kebetulan punya kode sama.
+  if (order.provider !== "apigames") {
+    return NextResponse.json({ ok: true, ignored: true })
+  }
 
   const status = (payload.status ?? "").toLowerCase()
   const success = status === "sukses"
