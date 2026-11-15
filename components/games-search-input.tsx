@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { replaceLocalUrl } from "@/lib/browser-url"
 
 /** Event lokal: header search -> katalog, tanpa request RSC/server. */
 export const GAMES_SEARCH_EVENT = "gastros:games-search"
@@ -31,7 +32,7 @@ export function GamesSearchInput() {
     // Tetap di halaman sekarang (homepage atau /games); jangan paksa pindah
     // URL ke /games saat search dipakai di landing.
     const path = window.location.pathname
-    window.history.replaceState(null, "", qs ? `${path}?${qs}` : path)
+    replaceLocalUrl(qs ? `${path}?${qs}` : path)
     window.dispatchEvent(new CustomEvent(GAMES_SEARCH_EVENT, { detail: next }))
   }
 

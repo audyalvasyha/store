@@ -13,6 +13,7 @@ import {
 import { GameArtwork } from "@/components/game-artwork"
 import { RatingBadge } from "@/components/rating-badge"
 import { GAMES_SEARCH_EVENT } from "@/components/games-search-input"
+import { replaceLocalUrl } from "@/lib/browser-url"
 
 /**
  * Halaman katalog lengkap: SEMUA game beserta artwork-nya.
@@ -137,7 +138,7 @@ export function GamesCatalog({
     if (next === "all") params.delete("genre")
     else params.set("genre", next)
     const qs = params.toString()
-    window.history.replaceState(null, "", qs ? `/games?${qs}` : "/games")
+    replaceLocalUrl(qs ? `/games?${qs}` : "/games")
   }
 
   // URL tetap diperbarui supaya pilihan sort bisa di-refresh/dibagikan,
@@ -150,7 +151,7 @@ export function GamesCatalog({
     if (key === "nama") params.delete("sort")
     else params.set("sort", key)
     const qs = params.toString()
-    window.history.replaceState(null, "", qs ? `/games?${qs}` : "/games")
+    replaceLocalUrl(qs ? `/games?${qs}` : "/games")
   }
 
   return (
