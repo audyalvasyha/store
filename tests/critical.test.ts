@@ -7,7 +7,7 @@ import {
   resolveOrderQuantity,
   stoneOrderAmount,
 } from "../lib/order-pricing"
-import { GAMES, apigamesCodeForSlug, filterGames, isRegionalGameSlug, lowestPrice, preferGlobalGameImage, toCatalogGame } from "../lib/catalog"
+import { GAMES, apigamesCodeForSlug, filterGames, isCatalogVisibleGame, isRegionalGameSlug, lowestPrice, preferGlobalGameImage, toCatalogGame } from "../lib/catalog"
 import { isApigamesGameCode, isApigamesInvalidAccountMessage } from "../lib/apigames"
 import { mlbbCountryMatches, parseMlbbCheckPayload } from "../lib/mlbb-check"
 import { resolveGameGenres } from "../lib/game-genres"
@@ -283,6 +283,9 @@ test("katalog membedakan varian global dan region", () => {
   assert.equal(isRegionalGameSlug("free-fire-malaysia"), true)
   assert.equal(isRegionalGameSlug("free-fire-partner"), false)
   assert.equal(isRegionalGameSlug("valorant-ph"), true)
+  // `ff` adalah entry Free Fire lengkap; duplikat statis free-fire disembunyikan.
+  assert.equal(isCatalogVisibleGame("ff"), true)
+  assert.equal(isCatalogVisibleGame("free-fire"), false)
 })
 
 test("artwork game global tidak memakai gambar MY", () => {

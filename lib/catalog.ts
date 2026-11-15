@@ -108,6 +108,15 @@ export function isRegionalGameSlug(slug: string): boolean {
   return slug.toLowerCase().split("-").some((part) => REGION_SLUG_TOKENS.has(part))
 }
 
+// `free-fire` adalah entry statis lama (7 nominal). Katalog Gamestone yang
+// lengkap—termasuk pass dan member—ada di slug `ff`. Sembunyikan duplikat ini
+// dari daftar katalog, tapi halaman /top-up/free-fire tetap bisa dibuka.
+const HIDDEN_CATALOG_SLUGS = new Set(["free-fire"])
+
+export function isCatalogVisibleGame(slug: string): boolean {
+  return !HIDDEN_CATALOG_SLUGS.has(slug)
+}
+
 // Data lama dari provider memakai artwork varian MY untuk game global/ID.
 // Ganti hanya kalau gambar yang tersimpan memang artwork MY, supaya gambar
 // kustom dari admin tetap dihormati.

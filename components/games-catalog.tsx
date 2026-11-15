@@ -77,10 +77,13 @@ export function GamesCatalog({
           a.short.localeCompare(b.short)
       )
     } else {
-      // Default: versi global/non-region dulu, varian region setelahnya.
-      // Sort stabil, jadi urutan sumber tetap dipertahankan di tiap kelompok.
+      // Default: ff (Free Fire lengkap: pass + member) dipin paling atas,
+      // lalu global/non-region, baru varian region.
+      const pin = (slug: string) => (slug === "ff" ? 0 : 1)
       list.sort(
-        (a, b) => Number(isRegionalGameSlug(a.slug)) - Number(isRegionalGameSlug(b.slug))
+        (a, b) =>
+          pin(a.slug) - pin(b.slug) ||
+          Number(isRegionalGameSlug(a.slug)) - Number(isRegionalGameSlug(b.slug))
       )
     }
     return list

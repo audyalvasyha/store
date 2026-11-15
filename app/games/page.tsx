@@ -1,7 +1,7 @@
 import Link from "next/link"
 import type { Metadata } from "next"
 import { BackButton } from "@/components/back-button"
-import { GAMES, toCatalogGame } from "@/lib/catalog"
+import { GAMES, isCatalogVisibleGame, toCatalogGame } from "@/lib/catalog"
 import { getDynamicGames } from "@/lib/content"
 import { GamesCatalog } from "@/components/games-catalog"
 import { getRatingsByGame } from "@/lib/reviews"
@@ -50,7 +50,9 @@ export default async function GamesPage() {
   ])
 
   const sourceGames = allGames.length > 0 ? allGames : GAMES
-  const catalogGames = sourceGames.map(toCatalogGame)
+  const catalogGames = sourceGames
+    .filter((game) => isCatalogVisibleGame(game.slug))
+    .map(toCatalogGame)
   const coreOrder = new Map(GAMES.map((game, index) => [game.slug, index] as const))
   const seenPriorityNames = new Set<string>()
   const priorityGames = [...sourceGames]
