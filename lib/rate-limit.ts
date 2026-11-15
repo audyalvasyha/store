@@ -65,37 +65,43 @@ async function distributedLimit(
     const db = await getDb()
     const col = db.collection<LimitDoc>("rate_limits")
     const now = Date.now()
+    const nowDate = new Date(now)
+    const nextExpiry = new Date(now + windowMs)
 
-    // Naikkan counter di window yang masih hidup (atomic $inc).
-    const live = await col.findOneAndUpdate(
-      { _id: key, expiresAt: { $gt: new Date(now) } },
-      { $inc: { count: 1 } },
-      { returnDocument: "after" }
-    )
-
-    if (live) {
-      const retryAfter = Math.max(
-        1,
-        Math.ceil((live.expiresAt.getTime() - now) / 1000)
-      )
-      if (live.count > limit) return { ok: false, retryAfter }
-      return { ok: true, retryAfter: 0 }
-    }
-
-    // Window belum ada / sudah kadaluarsa. Hapus sisa lama (opsional, TTL
-    // index bakal nyapu juga) lalu mulai window baru.
-    await col.deleteOne({ _id: key, expiresAt: { $lte: new Date(now) } })
-    const fresh = await col.findOneAndUpdate(
+    // Satu operasi atomik: naikkan counter kalau window masih hidup, atau
+    // mulai window baru kalau dokumennya sudah kedaluwarsa. Versi lama
+    // melakukan find + delete + upsert (3 round-trip) untuk window baru.
+    const updated = await col.findOneAndUpdate(
       { _id: key },
-      { $set: { count: 1, expiresAt: new Date(now + windowMs) } },
+      [
+        {
+          $set: {
+            count: {
+              $cond: [
+                { $gt: [{ $ifNull: ["$expiresAt", new Date(0)] }, nowDate] },
+                { $add: [{ $ifNull: ["$count", 0] }, 1] },
+                1,
+              ],
+            },
+            expiresAt: {
+              $cond: [
+                { $gt: [{ $ifNull: ["$expiresAt", new Date(0)] }, nowDate] },
+                "$expiresAt",
+                nextExpiry,
+              ],
+            },
+          },
+        },
+      ],
       { upsert: true, returnDocument: "after" }
     )
-    if (fresh && fresh.count > limit) {
-      return {
-        ok: false,
-        retryAfter: Math.max(1, Math.ceil((fresh.expiresAt.getTime() - now) / 1000)),
-      }
-    }
+
+    if (!updated) return null
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((updated.expiresAt.getTime() - now) / 1000)
+    )
+    if (updated.count > limit) return { ok: false, retryAfter }
     return { ok: true, retryAfter: 0 }
   } catch {
     // DB bermasalah → limiter tidak boleh bikin down. Balikin null supaya

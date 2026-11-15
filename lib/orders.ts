@@ -62,6 +62,8 @@ export type Order = {
   stoneSnapshot?: { price?: number; fee?: number; paymentFee?: number; total?: number };
   /** Flag supaya sync Gamestone nggak di-poll terus kalau statusnya final. */
   stoneSynced?: boolean;
+  /** Waktu terakhir status dicek; dipakai throttle lintas request/instance. */
+  stoneLastSyncedAt?: string;
   /** Provider yang nge-handle order ini: Gamestone (payment bawaan). */
   provider?: "gamestone" | "apigames";
   /** Kalau Gamestone gagal dan order jalan manual via CS, alasannya dicatat di sini. */
@@ -217,6 +219,35 @@ export async function updateOrder(code: string, patch: Partial<Order>): Promise<
   return db
     .collection<Order>("orders")
     .findOneAndUpdate({ code }, { $set: patch }, { returnDocument: "after" });
+}
+
+/**
+ * Klaim satu slot sync status Gamestone. Request polling yang datang
+ * bersamaan hanya satu yang boleh memanggil provider; sisanya membaca
+ * status terakhir dari DB. Ini mencegah lonjakan request saat banyak user
+ * membuka halaman order yang sama atau membuka beberapa tab.
+ */
+export async function claimStoneStatusSync(
+  code: string,
+  minIntervalMs = 15_000
+): Promise<Order | null> {
+  await ensureReady();
+  const db = await getDb();
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - minIntervalMs).toISOString();
+  return db.collection<Order>("orders").findOneAndUpdate(
+    {
+      code,
+      stoneOrderId: { $exists: true },
+      stoneSynced: { $ne: true },
+      $or: [
+        { stoneLastSyncedAt: { $exists: false } },
+        { stoneLastSyncedAt: { $lte: cutoff } },
+      ],
+    },
+    { $set: { stoneLastSyncedAt: now.toISOString() } },
+    { returnDocument: "after" }
+  );
 }
 
 /** Riwayat order untuk email akun (case-insensitive, cocokkan data lama). */

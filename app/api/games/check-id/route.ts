@@ -4,8 +4,12 @@ import {
   apigamesConfigured,
   checkApigamesUsername,
   isApigamesGameCode,
-  type ApigamesCheckResult,
 } from "@/lib/apigames"
+import {
+  getCachedCheckId,
+  setCachedCheckId,
+  type CachedCheckIdResult,
+} from "@/lib/check-id-cache"
 import { checkMlbbAccount } from "@/lib/mlbb-check"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
 
@@ -22,7 +26,7 @@ export const dynamic = "force-dynamic"
 const CACHE_TTL_MS = 10 * 60_000
 const CACHE_MAX = 500
 
-type CheckIdResult = ApigamesCheckResult & { regionMismatch?: boolean }
+type CheckIdResult = CachedCheckIdResult
 
 const globalForCheckId = globalThis as typeof globalThis & {
   _gasCheckIdCache_?: Map<string, { value: CheckIdResult; expiresAt: number }>
@@ -143,6 +147,15 @@ export async function GET(request: Request) {
   const cached = readCache(cacheKey)
   if (cached) return responseFor(cached)
 
+  // Cache dibagi lewat Mongo: instance lain mungkin sudah mengecek ID ini,
+  // jadi kita tidak perlu membayar APIGames lagi. Cache in-memory di atas
+  // tetap jadi jalur tercepat untuk request berulang di instance yang sama.
+  const shared = await getCachedCheckId(cacheKey)
+  if (shared) {
+    writeCache(cacheKey, shared)
+    return responseFor(shared)
+  }
+
   const isMlbb = game.apigamesCode === "mobilelegend"
   const useFallbackOnly = isMlbb && MLBB_FALLBACK_ONLY_SLUGS.has(game.slug)
   const expectedCountry = MLBB_EXPECTED_COUNTRY.get(game.slug)
@@ -163,7 +176,10 @@ export async function GET(request: Request) {
     if (fallback.ok) result = fallback
   }
 
-  if (result.ok) writeCache(cacheKey, result)
+  if (result.ok) {
+    writeCache(cacheKey, result)
+    await setCachedCheckId(cacheKey, result, CACHE_TTL_MS)
+  }
 
   return responseFor(result)
 }

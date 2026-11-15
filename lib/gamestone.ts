@@ -3,6 +3,7 @@
  * Docs: https://www.transportbaganbatu.web.id/api/merchant/v1/openapi
  * Auth: header `x-api-key` (env: GAMESTONE_API_KEY).
  */
+import { getDb } from "./mongodb"
 
 const BASE_URL =
   // Bisa dipinggul via Cloudflare Worker proxy: kalau Gamestone/WAF memblokir
@@ -123,29 +124,39 @@ function recordStoneFetchError(msg: string | null): void {
  * nggak layak di-retry. Network/timeout error yang layak. */
 class StoneHttpError extends Error {}
 
-type StoneFetchInit = RequestInit & { next?: { revalidate?: number } }
+type StoneFetchInit = RequestInit & {
+  next?: { revalidate?: number }
+  /** Override timeout untuk request yang tampil di halaman. */
+  timeoutMs?: number
+  /** Jumlah percobaan GET; halaman top-up cukup satu kali. */
+  attempts?: number
+}
 
 async function stoneFetch<T>(path: string, init?: StoneFetchInit): Promise<T> {
-  const timeoutMs = Number(process.env.GAMESTONE_TIMEOUT_MS) || 20_000
-  // Retry maks 2 percobaan, cuma buat GET (idempotent): glitch jaringan/timeout
-  // sesekali itu hal normal. HTTP error & POST nggak di-retry (rawan dobel order).
-  const isGet = !init?.method || init.method === "GET"
-  const attempts = isGet ? 2 : 1
+  const { timeoutMs: customTimeoutMs, attempts: customAttempts, ...fetchInit } = init ?? {}
+  const timeoutMs =
+    customTimeoutMs ?? (Number(process.env.GAMESTONE_TIMEOUT_MS) || 20_000)
+  // Retry cuma buat GET (idempotent): glitch jaringan/timeout sesekali itu
+  // normal. HTTP error & POST nggak di-retry (rawan dobel order).
+  const isGet = !fetchInit.method || fetchInit.method === "GET"
+  const attempts = isGet
+    ? Math.min(Math.max(Math.trunc(customAttempts ?? 2), 1), 3)
+    : 1
   let lastErr: unknown
 
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       const res = await fetch(`${BASE_URL}${path}`, {
-        ...init,
+        ...fetchInit,
         headers: {
           "x-api-key": apiKey(),
           "Content-Type": "application/json",
           ...(process.env.STONE_PROXY_SECRET ? { "x-proxy-secret": process.env.STONE_PROXY_SECRET } : {}),
-          ...(init?.headers ?? {}),
+          ...(fetchInit.headers ?? {}),
         },
         // Detail game boleh di-cache (halaman top up pakai ISR). Order/polling
         // tetap no-store supaya status pembayaran nggak pernah basi.
-        cache: init?.cache ?? "no-store",
+        cache: fetchInit.cache ?? "no-store",
         // Timeout keras: provider hung nggak boleh bikin request nginx/fetch
         // numpuk pending sampai timeout platform pas traffic tinggi.
         signal: AbortSignal.timeout(timeoutMs),
@@ -238,6 +249,40 @@ const STONE_GAME_TTL_MS = 60_000
 const STONE_GAME_NEGATIVE_TTL_MS = 15_000
 const STONE_GAME_MAX_ENTRIES = 100
 
+// Cache kedua di MongoDB supaya instance baru / cold start tidak langsung
+// menembak provider. Ini yang bikin halaman top-up tetap cepat walau proses
+// Next baru saja restart atau ada beberapa instance.
+type SharedStoneGameDoc = {
+  _id: string
+  game: StoneGame
+  expiresAt: Date
+}
+
+async function readSharedStoneGame(slug: string): Promise<StoneGame | null> {
+  try {
+    const db = await getDb()
+    const doc = await db
+      .collection<SharedStoneGameDoc>("stone_game_cache")
+      .findOne({ _id: slug, expiresAt: { $gt: new Date() } })
+    return doc?.game ?? null
+  } catch {
+    return null
+  }
+}
+
+async function writeSharedStoneGame(slug: string, game: StoneGame): Promise<void> {
+  try {
+    const db = await getDb()
+    await db.collection<SharedStoneGameDoc>("stone_game_cache").updateOne(
+      { _id: slug },
+      { $set: { game, expiresAt: new Date(Date.now() + STONE_GAME_TTL_MS) } },
+      { upsert: true }
+    )
+  } catch {
+    // Cache shared best-effort; request tetap jalan dengan cache in-memory.
+  }
+}
+
 type StoneGameCacheEntry = { game: StoneGame | null; expiresAt: number }
 
 const globalForStone = globalThis as typeof globalThis & {
@@ -267,14 +312,23 @@ export async function getStoneGame(slug: string): Promise<StoneGame | null> {
   if (inflight) return inflight
 
   const task = (async () => {
-    let game: StoneGame | null = null
-    try {
-      game = await stoneFetch<StoneGame>(`/games/${encodeURIComponent(slug)}`, {
-        cache: "force-cache",
-        next: { revalidate: STONE_GAME_TTL_MS / 1000 },
-      })
-    } catch {
-      game = null
+    // Cek cache Mongo dulu: instance lain mungkin sudah mengambil data ini.
+    let game = await readSharedStoneGame(slug)
+    if (!game) {
+      try {
+        game = await stoneFetch<StoneGame>(`/games/${encodeURIComponent(slug)}`, {
+          cache: "force-cache",
+          next: { revalidate: STONE_GAME_TTL_MS / 1000 },
+          // Halaman top-up tidak boleh menggantung puluhan detik kalau WAF/
+          // provider lambat; satu percobaan + 5 detik cukup, lalu fallback
+          // ke nominal katalog lokal.
+          timeoutMs: 5_000,
+          attempts: 1,
+        })
+      } catch {
+        game = null
+      }
+      if (game) await writeSharedStoneGame(slug, game)
     }
 
     if (stoneGameCache.size >= STONE_GAME_MAX_ENTRIES) {
@@ -313,7 +367,11 @@ export async function createStoneOrder(payload: {
 /** GET /orders/{id} — polling status order. */
 export async function getStoneOrder(id: string): Promise<StoneOrder | null> {
   try {
-    return await stoneFetch<StoneOrder>(`/orders/${encodeURIComponent(id)}`)
+    return await stoneFetch<StoneOrder>(`/orders/${encodeURIComponent(id)}`, {
+      // Polling status tidak perlu retry panjang; halaman tetap responsif.
+      timeoutMs: 8_000,
+      attempts: 1,
+    })
   } catch {
     return null
   }

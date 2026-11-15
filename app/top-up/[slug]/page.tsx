@@ -59,22 +59,30 @@ export default async function TopupPage({
 }) {
   const { slug } = await params
 
-  // Jalankan semua query independen bersamaan. Sebelumnya game, provider,
-  // ulasan, dan data blok rekomendasi dieksekusi berurutan.
-  const [game, rating, reviews, allGames, topUpJuga, relatedGuides] = await Promise.all([
-    getDynamicGame(slug),
-    // Ulasan asli pembeli (hanya dari order SELESAI). Kalau DB bermasalah,
-    // sembunyikan section + schema — halaman jualan tetap jalan.
-    getGameRating(slug).catch(() => ({ average: 0, count: 0 })),
-    getGameReviews(slug, 6).catch((): Review[] => []),
-    getDynamicGames(),
-    getTopUpJugaConfig(),
-    getPublishedArticlesForGame(slug, 3).catch(() => []),
-  ])
+  // Jalankan query DB yang independen bersamaan. `game` ditunggu dulu supaya
+  // fetch varian Gamestone bisa mulai lebih awal, tanpa menunggu ulasan,
+  // artikel, dan blok rekomendasi selesai.
+  const gamePromise = getDynamicGame(slug)
+  const ratingPromise = getGameRating(slug).catch(() => ({ average: 0, count: 0 }))
+  const reviewsPromise = getGameReviews(slug, 6).catch((): Review[] => [])
+  const allGamesPromise = getDynamicGames()
+  const topUpJugaPromise = getTopUpJugaConfig()
+  const relatedGuidesPromise = getPublishedArticlesForGame(slug, 3).catch(() => [])
+
+  const game = await gamePromise
   if (!game) notFound()
 
   // Nominal live dari Gamestone (harga provider) kalau game terhubung.
-  const stoneGame = game.stoneSlug ? await getStoneGame(game.stoneSlug) : null
+  // Fetch ini overlap dengan query DB lain yang masih berjalan.
+  const stonePromise = game.stoneSlug ? getStoneGame(game.stoneSlug) : Promise.resolve(null)
+  const [rating, reviews, allGames, topUpJuga, relatedGuides, stoneGame] = await Promise.all([
+    ratingPromise,
+    reviewsPromise,
+    allGamesPromise,
+    topUpJugaPromise,
+    relatedGuidesPromise,
+    stonePromise,
+  ])
   const stoneVariants = stoneGame
     ? activeStoneVariants(stoneGame).map((v) => ({ id: String(v.id), label: v.name, price: v.price }))
     : undefined
@@ -199,7 +207,12 @@ export default async function TopupPage({
       </section>
 
       <section className="px-4 md:px-8 lg:px-12 pb-8 md:pb-24 max-w-[1400px] mx-auto w-full">
-        <TopupForm game={game} stoneVariants={stoneVariants} />
+        {/* Kalau varian provider ada, denominations lokal tidak dipakai form.
+            Jangan kirim dua kali ke client: payload RSC jadi lebih kecil. */}
+        <TopupForm
+          game={stoneVariants?.length ? { ...game, denominations: [] } : game}
+          stoneVariants={stoneVariants}
+        />
       </section>
 
       <GameInfoBlock game={game} allGames={allGames} topUpJuga={topUpJuga} />

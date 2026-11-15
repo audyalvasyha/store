@@ -20,8 +20,14 @@ function makeClient(): MongoClient {
   if (!uri || !uri.startsWith("mongodb")) {
     throw new Error("MONGODB_URI is not set or invalid");
   }
+  // Pool default 20 koneksi per instance. Bisa dinaikkan lewat env saat
+  // menambah replica, tapi jangan melebihi batas koneksi Atlas/Mongo.
+  const configuredPool = Number(process.env.MONGODB_MAX_POOL_SIZE ?? "20")
+  const maxPoolSize = Number.isFinite(configuredPool)
+    ? Math.min(Math.max(Math.trunc(configuredPool), 5), 100)
+    : 20
   return new MongoClient(uri, {
-    maxPoolSize: 10,
+    maxPoolSize,
     // Default driver 30 detik: kalau DB down, halaman publik ikut menggantung
     // 30 detik sebelum fallback katalog. 5 detik cukup untuk DB normal.
     serverSelectionTimeoutMS: 5_000,
@@ -136,5 +142,14 @@ async function runEnsureIndexes(): Promise<void> {
     ]),
     // Rate limiter distribusi: dokumen window auto-hapus pas expiresAt lewat.
     db.collection("rate_limits").createIndexes([{ key: { expiresAt: 1 }, expireAfterSeconds: 0 }]),
+    // Cache cek ID bersama antar-instance; TTL sama dengan cache 10 menit.
+    db.collection("check_id_cache").createIndexes([
+      { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
+    ]),
+    // Cache varian Gamestone bersama; halaman top-up tidak perlu menunggu
+    // provider lagi setelah instance lain mengambil data yang sama.
+    db.collection("stone_game_cache").createIndexes([
+      { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
+    ]),
   ]);
 }

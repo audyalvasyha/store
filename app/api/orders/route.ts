@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server"
 import { getDenomination, PAYMENT_METHODS, STONE_METHOD_IDS } from "@/lib/catalog"
 import { getDynamicGame } from "@/lib/content"
-import { generateOrderCode, getOrder, saveOrder, updateOrder, type Order } from "@/lib/orders"
+import {
+  claimStoneStatusSync,
+  generateOrderCode,
+  getOrder,
+  saveOrder,
+  updateOrder,
+  type Order,
+} from "@/lib/orders"
 import { getStoneGame, activeStoneVariants, createStoneOrder, getStoneOrder, gamestoneConfigured, stoneFetchLastError, type StoneOrder, type StonePaymentMethod } from "@/lib/gamestone"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
 import { checkCoupon, consumeCoupon, normalizeCouponCode } from "@/lib/coupons"
@@ -23,6 +30,12 @@ export const dynamic = "force-dynamic"
  */
 async function syncStoneStatus(order: Order): Promise<void> {
   if (!order.stoneOrderId || order.stoneSynced) return
+
+  // Banyak tab/user bisa membuka order yang sama. Hanya satu request per
+  // 15 detik yang boleh menembak provider; sisanya pakai status terakhir.
+  const claimed = await claimStoneStatusSync(order.code)
+  if (!claimed) return
+
   const so = await getStoneOrder(order.stoneOrderId)
   if (!so) return
 
