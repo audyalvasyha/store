@@ -220,9 +220,6 @@ export function AuthNav({
           className="h-6 w-6 shrink-0"
           fallbackClassName="text-xs"
         />
-        <span className="hidden max-w-[96px] truncate font-mono text-[9px] uppercase tracking-[0.08em] text-foreground/75 md:text-[10px] sm:block">
-          {displayName}
-        </span>
         <span className="text-[8px] text-foreground/40" aria-hidden="true">
           ▼
         </span>
