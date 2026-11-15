@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { headers } from "next/headers"
 import { BackButton } from "@/components/back-button"
 import { getOrder } from "@/lib/orders"
 import { PAYMENT_METHODS, STONE_PAYMENT_METHODS, formatIDR, WA_NUMBER } from "@/lib/catalog"
@@ -12,6 +13,7 @@ import { hasReviewed } from "@/lib/reviews"
 import { AuthNav } from "@/components/auth-nav"
 import { BrandLogo } from "@/components/brand-logo"
 import { SidebarMenuButton } from "@/components/site-sidebar"
+import { clientIp, rateLimit } from "@/lib/rate-limit"
 
 /** Warna semantik badge status — biar user langsung nangkep kondisi order tanpa baca teks. */
 const STATUS_TONE: Record<string, string> = {
@@ -23,7 +25,21 @@ const STATUS_TONE: Record<string, string> = {
 
 export const dynamic = "force-dynamic"
 
-export const metadata = { title: "Status Order // GASTROS" }
+export const metadata = {
+  title: "Status Order // GASTROS",
+  // Halaman ini berisi data pembeli; jangan diindeks mesin pencari.
+  robots: { index: false, follow: false },
+}
+
+function normalizeOrderCode(value: string): string {
+  // Next sudah men-decode params; decode lagi bisa melempar URIError untuk
+  // input aneh seperti "%", jadi fallback ke nilai mentah.
+  try {
+    return decodeURIComponent(value).toUpperCase()
+  } catch {
+    return value.toUpperCase()
+  }
+}
 
 const METHOD_LABEL: Record<string, string> = Object.fromEntries(
   [...PAYMENT_METHODS, ...STONE_PAYMENT_METHODS].map((m) => [m.id, m.label])
@@ -35,13 +51,49 @@ export default async function OrderPage({
   params: Promise<{ code: string }>
 }) {
   const { code } = await params
+  const orderCode = normalizeOrderCode(code)
+
+  // Halaman ini adalah jalur lain untuk membaca order (selain API). Batasi
+  // juga di sini supaya kode order nggak bisa dienumerasi lewat URL langsung.
+  const requestHeaders = await headers()
+  const pageLimit = await rateLimit(
+    "order-page",
+    clientIp(new Request("https://gastros.local/orders", { headers: requestHeaders })),
+    60,
+    60_000
+  )
+  if (!pageLimit.ok) {
+    return (
+      <main className="relative min-h-screen flex items-center justify-center">
+        <div className="noise-overlay" aria-hidden="true" />
+        <div className="relative border border-border bg-card p-6 md:p-10 max-w-md text-center mx-4">
+          <span className="font-mono text-[10px] text-accent tracking-[0.3em] uppercase block mb-3">
+            [Order Status]
+          </span>
+          <h1 className="font-sans text-2xl md:text-3xl tracking-tighter text-foreground uppercase mb-3">
+            Terlalu banyak permintaan
+          </h1>
+          <p className="font-mono text-[11px] md:text-xs text-muted-foreground leading-relaxed mb-6">
+            Coba lagi dalam {pageLimit.retryAfter} detik.
+          </p>
+          <Link
+            href="/orders"
+            className="border border-border font-mono text-[10px] tracking-[0.2em] uppercase px-4 py-2 text-foreground/70 hover:text-accent transition-colors"
+          >
+            Riwayat
+          </Link>
+        </div>
+      </main>
+    )
+  }
+
   // DB order bisa aja nggak nyambung (maintenance / network) — jangan bikin
   // halaman status meledak 500. Bedakan "order nggak ada" (404) vs "sistem
   // sibuk" (pesan ramah, tetap bisa balik / hubungi CS).
   let order: Awaited<ReturnType<typeof getOrder>> = null
   let dbUnavailable = false
   try {
-    order = await getOrder(decodeURIComponent(code).toUpperCase())
+    order = await getOrder(orderCode)
   } catch {
     dbUnavailable = true
   }
@@ -58,13 +110,13 @@ export default async function OrderPage({
             Sistem sibuk
           </h1>
           <p className="font-mono text-[11px] md:text-xs text-muted-foreground leading-relaxed mb-6">
-            Status order {decodeURIComponent(code).toUpperCase()} lagi nggak bisa diakses
+            Status order {orderCode} lagi nggak bisa diakses
             sebentar. Coba refresh halaman — atau konfirmasi langsung ke CS biar
             tetap cepat diproses.
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link
-              href={`/orders/${code}`}
+              href={`/orders/${orderCode}`}
               className="bg-accent text-accent-foreground font-mono text-[10px] tracking-[0.2em] uppercase px-4 py-2 hover:opacity-90 transition-opacity"
             >
               Refresh

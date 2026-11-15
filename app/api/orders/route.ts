@@ -128,7 +128,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Zone ID harus berupa angka" }, { status: 400 })
     }
 
-    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email ?? ""))
+    const emailRaw = String(email ?? "").trim()
+    const emailValid =
+      emailRaw.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)
     if (!emailValid) {
       return NextResponse.json({ error: "Email tidak valid" }, { status: 400 })
     }
@@ -165,7 +167,7 @@ export async function POST(request: Request) {
       userId: uid,
       server: game.needsServer ? serverId : undefined,
       phone: phoneRaw,
-      email: String(email).trim(),
+      email: emailRaw,
       topupStatus: "BELUM",
       ...(hasAttribution(attribution) ? { attribution } : {}),
     }
