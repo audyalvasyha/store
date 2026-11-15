@@ -40,17 +40,27 @@ Error checkout dicatat sebagai JSON di log server. Untuk mengaktifkan email aler
 4. Bayar dan lanjutkan
 5. Cek status pembayaran di halaman order
 
-## Cek ID game (APIGames)
+## Cek ID game (APIGames + fallback MLBB)
 
 Form checkout punya tombol **Cek ID Game** untuk Mobile Legends dan Free Fire.
-Pengecekan memanggil APIGames dan biayanya **Rp5/cek**, dipotong dari saldo
-deposit APIGames — bukan dari pembayaran customer. Hasil di-cache 10 menit dan
-endpoint dibatasi 8 cek/menit per IP supaya biaya tidak boros.
+Pengecekan utama memanggil APIGames dan biayanya **Rp5/cek**, dipotong dari
+saldo deposit APIGames — bukan dari pembayaran customer. Hasil di-cache 10 menit
+dan endpoint dibatasi 8 cek/menit per IP supaya biaya tidak boros.
+
+Checker MLBB APIGames belum mengenali akun region **MY/PH**. Untuk katalog
+`mobile-legends-bang-bang-my`, `-my-partner`, dan `-ph`, endpoint langsung
+memakai fallback MLBB publik (`https://api.isan.eu.org/nickname/ml`) tanpa
+memanggil APIGames. Untuk katalog MLBB utama, APIGames tetap dicoba lebih dulu,
+lalu fallback dipakai kalau APIGames menjawab tidak ditemukan. Fallback tidak
+butuh API key; URL-nya bisa diganti lewat env opsional `MLBB_CHECK_URL`.
 
 Cek ID bersifat opsional: checkout tetap diproses Gamestone (butuh
 `GAMESTONE_API_KEY`) walaupun user tidak menekan tombol cek. Kalau
-`APIGAMES_MERCHANT_ID` / `APIGAMES_SECRET_KEY` kosong, tombol akan menampilkan
-pesan bahwa cek ID belum aktif.
+`APIGAMES_MERCHANT_ID` / `APIGAMES_SECRET_KEY` kosong, Free Fire menampilkan
+pesan bahwa cek ID belum aktif, sedangkan MLBB tetap bisa memakai fallback.
+Untuk katalog MY/PH, negara dari fallback ikut divalidasi supaya akun region
+lain tidak dinyatakan valid. Kalau fallback MLBB sedang down, cek ID
+mengembalikan error dan checkout tetap bisa dilanjutkan.
 
 ## Setup admin pertama
 

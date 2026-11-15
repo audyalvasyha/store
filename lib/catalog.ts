@@ -86,7 +86,13 @@ export function apigamesCodeForSlug(slug: string): string | undefined {
   if (
     slug === "mobile-legends" ||
     slug === "mobile-legends-bang-bang" ||
-    slug === "mobile-legends-bang-bang-partner"
+    slug === "mobile-legends-bang-bang-partner" ||
+    // Varian region yang checker APIGames-nya tidak mengenali akun MY/PH.
+    // Kode ini dipakai sebagai penanda tombol Cek ID; route memakai fallback
+    // MLBB untuk varian-varian ini, bukan APIGames.
+    slug === "mobile-legends-bang-bang-my" ||
+    slug === "mobile-legends-bang-bang-my-partner" ||
+    slug === "mobile-legends-bang-bang-ph"
   )
     return "mobilelegend"
   if (slug === "free-fire") return "freefire"

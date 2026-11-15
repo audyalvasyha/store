@@ -9,6 +9,7 @@ import {
 } from "../lib/order-pricing"
 import { GAMES, apigamesCodeForSlug, filterGames, lowestPrice, toCatalogGame } from "../lib/catalog"
 import { isApigamesGameCode, isApigamesInvalidAccountMessage } from "../lib/apigames"
+import { mlbbCountryMatches, parseMlbbCheckPayload } from "../lib/mlbb-check"
 import { resolveGameGenres } from "../lib/game-genres"
 import { validateCredentials } from "../lib/admin-auth"
 import { clientIp } from "../lib/rate-limit"
@@ -259,7 +260,45 @@ test("cek ID APIGames cuma untuk game yang didukung", () => {
   // Slug provider DB untuk MLBB juga harus dapat tombol cek ID.
   assert.equal(apigamesCodeForSlug("mobile-legends-bang-bang"), "mobilelegend")
   assert.equal(apigamesCodeForSlug("mobile-legends-bang-bang-partner"), "mobilelegend")
-  assert.equal(apigamesCodeForSlug("mobile-legends-bang-bang-my"), undefined)
+  // Varian MY/PH memakai kode yang sama sebagai penanda tombol, tapi route
+  // memakai fallback MLBB (bukan APIGames) untuk pengecekannya.
+  assert.equal(apigamesCodeForSlug("mobile-legends-bang-bang-my"), "mobilelegend")
+  assert.equal(apigamesCodeForSlug("mobile-legends-bang-bang-my-partner"), "mobilelegend")
+  assert.equal(apigamesCodeForSlug("mobile-legends-bang-bang-ph"), "mobilelegend")
+})
+
+test("fallback checker MLBB memvalidasi nickname dengan aman", () => {
+  assert.deepEqual(
+    parseMlbbCheckPayload({
+      success: true,
+      name: "  c'B0b B¤y_044 ",
+      country: "Malaysia",
+    }),
+    { ok: true, valid: true, username: "c'B0b B¤y_044", country: "Malaysia" }
+  )
+  assert.deepEqual(
+    parseMlbbCheckPayload({ success: true, name: "   " }),
+    { ok: true, valid: false }
+  )
+  assert.deepEqual(
+    parseMlbbCheckPayload({ success: false, message: "Player not found" }),
+    { ok: true, valid: false, message: "Player not found" }
+  )
+  assert.deepEqual(
+    parseMlbbCheckPayload({ success: false, message: "Invalid API key" }),
+    { ok: false, error: "Checker MLBB menolak pengecekan" }
+  )
+  assert.equal(parseMlbbCheckPayload(null).ok, false)
+})
+
+test("fallback MLBB menolak akun yang region-nya beda dengan katalog", () => {
+  assert.equal(mlbbCountryMatches("Malaysia", "malaysia"), true)
+  assert.equal(mlbbCountryMatches("MY", "malaysia"), true)
+  assert.equal(mlbbCountryMatches("Indonesia", "malaysia"), false)
+  assert.equal(mlbbCountryMatches("Philippines", "philippines"), true)
+  assert.equal(mlbbCountryMatches("Malaysia", "philippines"), false)
+  // Provider yang tidak mengirim country tetap diizinkan; nickname tetap dicek.
+  assert.equal(mlbbCountryMatches(undefined, "malaysia"), true)
 })
 
 test("quantity Gamestone wajib 1 supaya kupon tidak dihitung dari subtotal palsu", () => {
