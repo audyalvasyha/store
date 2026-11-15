@@ -70,8 +70,18 @@ const NAV_LINKS: Array<{ item: string; href: string }> = [
   { item: "Riwayat", href: "/orders" },
 ]
 
-export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | null }) {
+export function Hero({
+  event,
+  gameCount,
+}: {
+  event?: import("@/lib/content").HeroEvent | null
+  gameCount: number
+}) {
   const heroImage = event?.imageUrl ? resolveHeroImage(event.imageUrl) : null
+  // Jangan tampilkan angka katalog mentah di hero. Bulatkan ke bawah per 10
+  // supaya 156 tetap jujur jadi "150+" dan otomatis ikut saat katalog nambah.
+  const gameStatValue = gameCount >= 150 ? Math.floor(gameCount / 10) * 10 : gameCount
+  const gameStatSuffix = gameCount >= 150 ? "+" : ""
 
   // Render langsung dari server. Sebelumnya seluruh hero ditahan sampai
   // requestAnimationFrame jalan, jadi LCP dan konten utama ikut menunggu JS.
@@ -215,7 +225,7 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
           <div className="flex items-center justify-center md:justify-start gap-2 md:gap-4 mb-2 md:mb-5 anim-wipe-right" style={d(300)}>
             <div className="h-[1.5px] w-5 md:w-16 bg-accent" />
             <span className="font-mono text-[10px] md:text-xs text-accent tracking-[0.15em] md:tracking-[0.4em] uppercase">
-              Instant Top Up // Jalur Resmi
+              Top up game. CS bantu sampai beres.
             </span>
             <div className="h-[1.5px] w-5 bg-accent md:hidden" />
           </div>
@@ -225,25 +235,29 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
               <span> eksplisit, plus sr-only keyword "game online murah". */}
           <div className="relative mb-2 md:mb-0">
             <h1>
-              {["Top Up", "Gas", "Nonstop."].map((word, i) => (
-                <span key={word} className="block overflow-hidden">
+              {["Top up", "beres,", "gas main."].map((line, i) => (
+                <span key={line} className="block overflow-hidden">
                   <span
                     className={`block font-sans leading-[0.85] tracking-[-0.04em] uppercase anim-shutter-up ${
-                      word === "Gas" ? "text-accent" : "text-foreground"
+                      i === 2 ? "text-accent" : "text-foreground"
                     } text-[15vw] sm:text-[14vw] md:text-[13vw] lg:text-[10vw]`}
                     style={d(400 + i * 120)}
                   >
-                    {word}
+                    {line}
                   </span>
                 </span>
               ))}
-              <span className="sr-only">Game online murah proses kilat di gastros.id</span>
+              <span className="sr-only">
+                Top up game murah di gastros.id: Diamond MLBB, Diamond FF, UC PUBG, VP Valorant. Proses cepat, CS bantu sampai beres.
+              </span>
             </h1>
           </div>
 
           {/* Copy */}
-          <p className="font-mono text-[10px] sm:text-[10px] md:text-[13px] text-foreground/60 max-w-[260px] sm:max-w-xs md:max-w-md mx-auto md:mx-0 leading-relaxed anim-cut-in" style={d(800)}>
-            Top up game murah: Diamond MLBB, FF, UC PUBG, VP Valorant &mdash; masuk akun dalam hitungan menit. Jalur resmi publisher, bayar QRIS/e-wallet, layanan 24 jam.
+          <p className="font-mono text-[10px] sm:text-[10px] md:text-[13px] text-foreground/60 max-w-[280px] sm:max-w-xs md:max-w-md mx-auto md:mx-0 leading-relaxed anim-cut-in" style={d(800)}>
+            MLBB, Free Fire, PUBG, Valorant, dan game lain. Isi ID, pilih nominal,
+            bayar QRIS/e-wallet. Order langsung diproses; kalau ada kendala, CS bantu
+            sampai item masuk.
           </p>
 
           {/* CTAs */}
@@ -266,13 +280,20 @@ export function Hero({ event }: { event?: import("@/lib/content").HeroEvent | nu
           {/* Stats row -- tighter, proportional */}
           <div className="mt-4 md:mt-10 flex items-end justify-center md:justify-start gap-4 sm:gap-8 md:gap-12 anim-counter-pop" style={d(950)}>
             {[
-              { target: 7, suffix: "+", label: "Games Aktif" },
-              { target: 99, suffix: "%", label: "Success Rate" },
-              { target: 3, suffix: "m", label: "Proses Kilat" },
+              { target: gameStatValue, suffix: gameStatSuffix, label: "Game Aktif", static: true },
+              { target: 24, suffix: "/7", label: "Order Online", static: false },
+              { target: 3, suffix: "", label: "Langkah Order", static: false },
             ].map((stat, i) => (
               <div key={stat.label} className="relative">
                 <span className="font-sans text-[8vw] sm:text-[7vw] md:text-7xl lg:text-8xl text-foreground leading-none block">
-                  <Counter target={stat.target} suffix={stat.suffix} go />
+                  {stat.static ? (
+                    <span>
+                      {stat.target}
+                      {stat.suffix}
+                    </span>
+                  ) : (
+                    <Counter target={stat.target} suffix={stat.suffix} go />
+                  )}
                 </span>
                 <span className="font-mono text-[10px] sm:text-[10px] md:text-[10px] text-foreground/60 block tracking-[0.12em] md:tracking-[0.25em] uppercase mt-0.5 md:mt-2">
                   {stat.label}

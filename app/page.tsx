@@ -10,7 +10,7 @@ import { FaqSection } from "@/components/faq-section"
 import { FinalCta } from "@/components/cta-block"
 import { Footer } from "@/components/footer"
 import { getHeroEvent, getDynamicGames } from "@/lib/content"
-import { toCatalogGame } from "@/lib/catalog"
+import { isCatalogVisibleGame, toCatalogGame } from "@/lib/catalog"
 import { getEventSlides } from "@/lib/event-carousel-db"
 import { getFeaturedCoupon } from "@/lib/coupons"
 import { getLatestReviews, getRatingsByGame } from "@/lib/reviews"
@@ -42,6 +42,9 @@ export default async function Page() {
     popularDenomsByGame().catch(() => ({})),
   ])
   const games = allGames
+  // Jumlah game di hero mengikuti katalog publik yang benar-benar tampil,
+  // bukan angka hardcoded yang bisa basi saat katalog bertambah.
+  const catalogCount = allGames.filter((game) => isCatalogVisibleGame(game.slug)).length
   // Kirim data ringkas ke client: kartu katalog cuma butuh jumlah nominal +
   // harga termurah, bukan seluruh array denomination tiap game.
   const catalogGames = allGames.map(toCatalogGame)
@@ -68,7 +71,7 @@ export default async function Page() {
         {/* Noise overlay for industrial texture */}
         <div className="noise-overlay" aria-hidden="true" />
 
-        <Hero event={heroEvent} />
+        <Hero event={heroEvent} gameCount={catalogCount} />
         <PromoStrip coupon={featuredCoupon} gameSlug={promoGameSlug} />
         <FeaturedGames games={featuredGames} />
         <MarqueeStrip />
