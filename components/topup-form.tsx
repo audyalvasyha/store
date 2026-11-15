@@ -87,7 +87,7 @@ export function TopupForm({
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  // ── Cek ID game via APIGames (biaya Rp5/cek dipotong dari saldo APIGames).
+  // ── Cek ID game: APIGames (Rp5/cek) + fallback MLBB untuk akun region MY/PH.
   const idCheckSupported = Boolean(game.apigamesCode)
   const [idCheck, setIdCheck] = useState<{
     state: "idle" | "busy" | "ok" | "error"
@@ -457,12 +457,12 @@ export function TopupForm({
 
         {/* STEP 2: akun */}
         <fieldset className="border border-border bg-card p-4 md:p-6">
-          <legend className="font-mono text-[10px] md:text-xs text-accent tracking-[0.25em] uppercase px-2">
+          <legend className="font-mono text-xs md:text-sm text-accent tracking-[0.2em] uppercase px-2">
             02 &mdash; Data Akun {game.short}
           </legend>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mt-2 md:mt-3">
-            <label className="flex flex-col gap-1.5">
-              <span className="font-mono text-[10px] md:text-[11px] text-foreground/60 tracking-[0.15em] uppercase">
+          <div className="mt-3 grid grid-cols-1 items-start gap-x-3 gap-y-4 sm:grid-cols-2 md:mt-4 md:gap-x-4 md:gap-y-5">
+            <label className="flex flex-col gap-2">
+              <span className="font-mono text-xs md:text-sm text-foreground/60 tracking-[0.12em] uppercase">
                 User ID *
               </span>
               <input
@@ -470,50 +470,17 @@ export function TopupForm({
                 onChange={(e) => setUserId(e.target.value)}
                 placeholder="cth: 12345678"
                 autoComplete="off"
-                className={`bg-background border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${userId && !uidValid ? "border-destructive" : "border-border"}`}
+                className={`bg-background border p-3 font-mono text-sm md:text-base text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${userId && !uidValid ? "border-destructive" : "border-border"}`}
               />
               {userId && !uidValid && (
-                <span className="font-mono text-[9px] md:text-[10px] text-destructive">
+                <span className="font-mono text-xs md:text-sm text-destructive">
                   {idCheckSupported ? "4-24 angka" : "4-24 karakter, huruf/angka/._:-"}
                 </span>
               )}
-              {idCheckSupported && (
-                <div className="flex flex-col gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => void checkGameId()}
-                    disabled={
-                      !idCheckUidValid ||
-                      !idCheckServerValid ||
-                      idCheck.state === "busy"
-                    }
-                    className="inline-flex min-h-[40px] w-full items-center justify-center border border-border px-3 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/70 transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    {idCheck.state === "busy" ? "Mengecek..." : "Cek ID Game"}
-                  </button>
-                  {idCheckSupported &&
-                    ((userId && !idCheckUidValid) ||
-                      (game.needsServer && server && !idCheckServerValid)) && (
-                      <span className="font-mono text-[9px] md:text-[10px] text-foreground/50 leading-relaxed">
-                        Cek ID butuh User ID{game.needsServer ? " & Zone ID" : ""} berupa angka.
-                      </span>
-                    )}
-                  {idCheck.state === "ok" && (
-                    <span className="font-mono text-[9px] md:text-[10px] text-accent break-all">
-                      ✓ {idCheck.username ? `Nickname: ${idCheck.username}` : "ID valid"}
-                    </span>
-                  )}
-                  {idCheck.state === "error" && (
-                    <span className="font-mono text-[9px] md:text-[10px] text-destructive leading-relaxed">
-                      {idCheck.message}
-                    </span>
-                  )}
-                </div>
-              )}
             </label>
             {game.needsServer && (
-              <label className="flex flex-col gap-1.5">
-                <span className="font-mono text-[10px] md:text-[11px] text-foreground/60 tracking-[0.15em] uppercase">
+              <label className="flex flex-col gap-2">
+                <span className="font-mono text-xs md:text-sm text-foreground/60 tracking-[0.12em] uppercase">
                   Server / Zone ID *
                 </span>
                 <input
@@ -521,17 +488,49 @@ export function TopupForm({
                   onChange={(e) => setServer(e.target.value)}
                   placeholder="cth: 1234"
                   autoComplete="off"
-                  className={`bg-background border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${server && !serverValid ? "border-destructive" : "border-border"}`}
+                  className={`bg-background border p-3 font-mono text-sm md:text-base text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${server && !serverValid ? "border-destructive" : "border-border"}`}
                 />
                 {server && !serverValid && (
-                  <span className="font-mono text-[9px] md:text-[10px] text-destructive">
+                  <span className="font-mono text-xs md:text-sm text-destructive">
                     {idCheckSupported ? "Angka tanpa spasi" : "Angka/huruf tanpa spasi"}
                   </span>
                 )}
               </label>
             )}
-            <label className="flex flex-col gap-1.5">
-              <span className="font-mono text-[10px] md:text-[11px] text-foreground/60 tracking-[0.15em] uppercase">
+            {idCheckSupported && (
+              <div className="flex flex-col gap-2 sm:col-span-2">
+                <button
+                  type="button"
+                  onClick={() => void checkGameId()}
+                  disabled={
+                    !idCheckUidValid ||
+                    !idCheckServerValid ||
+                    idCheck.state === "busy"
+                  }
+                  className="inline-flex min-h-[44px] w-full items-center justify-center border border-border px-4 font-mono text-xs uppercase tracking-[0.12em] text-foreground/70 transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 md:px-5 md:text-sm sm:w-auto sm:self-start"
+                >
+                  {idCheck.state === "busy" ? "Mengecek..." : "Cek ID Game"}
+                </button>
+                {((userId && !idCheckUidValid) ||
+                  (game.needsServer && server && !idCheckServerValid)) && (
+                  <span className="font-mono text-xs leading-relaxed text-foreground/50 md:text-sm">
+                    Cek ID butuh User ID{game.needsServer ? " & Zone ID" : ""} berupa angka.
+                  </span>
+                )}
+                {idCheck.state === "ok" && (
+                  <span className="break-all font-mono text-xs text-accent md:text-sm">
+                    ✓ {idCheck.username ? `Nickname: ${idCheck.username}` : "ID valid"}
+                  </span>
+                )}
+                {idCheck.state === "error" && (
+                  <span className="font-mono text-xs leading-relaxed text-destructive md:text-sm">
+                    {idCheck.message}
+                  </span>
+                )}
+              </div>
+            )}
+            <label className="flex flex-col gap-2">
+              <span className="font-mono text-xs md:text-sm text-foreground/60 tracking-[0.12em] uppercase">
                 Nomor WhatsApp *
               </span>
               <input
@@ -540,14 +539,14 @@ export function TopupForm({
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="cth: 08123456789"
                 autoComplete="tel"
-                className={`bg-background border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${phone && !phoneValid ? "border-destructive" : "border-border"}`}
+                className={`bg-background border p-3 font-mono text-sm md:text-base text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${phone && !phoneValid ? "border-destructive" : "border-border"}`}
               />
               {phone && !phoneValid && (
-                <span className="font-mono text-[9px] md:text-[10px] text-destructive">Format 08xx / 62xx, 9-15 digit</span>
+                <span className="font-mono text-xs md:text-sm text-destructive">Format 08xx / 62xx, 9-15 digit</span>
               )}
             </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="font-mono text-[10px] md:text-[11px] text-foreground/60 tracking-[0.15em] uppercase">
+            <label className="flex flex-col gap-2">
+              <span className="font-mono text-xs md:text-sm text-foreground/60 tracking-[0.12em] uppercase">
                 Email Notifikasi *
               </span>
               <input
@@ -556,7 +555,7 @@ export function TopupForm({
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="kamu@email.com"
                 autoComplete="email"
-                className={`bg-background border p-2.5 md:p-3 font-mono text-xs md:text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${email && !emailValid ? "border-destructive" : "border-border"}`}
+                className={`bg-background border p-3 font-mono text-sm md:text-base text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-accent transition-colors ${email && !emailValid ? "border-destructive" : "border-border"}`}
               />
             </label>
           </div>
@@ -592,7 +591,7 @@ export function TopupForm({
                       loading="lazy"
                       width={72}
                       height={36}
-                      className="h-9 md:h-10 w-auto max-w-[72px] object-contain bg-white px-1.5 py-1 border border-black/10"
+                      className={`h-9 md:h-10 w-auto max-w-[72px] object-contain bg-transparent ${lg === "qris" ? "invert" : ""}`}
                     />
                   ))}
                 </span>
